@@ -46,14 +46,17 @@ Schmidt.ar()
 //:+
 var sig, abs, out;
 scope{
-	sig = SoundIn.ar();
+	sig = SoundIn.ar(0, 2);
 	abs = sig.abs;
-	out = Amplitude.ar(abs);
+	//out = abs;
+	out = Amplitude.ar(abs, 0.01, 0.01);
 	out = Schmidt.kr(out, MouseX.kr(0.0, 1.0), 1.0);
 	out.poll;
+	out = EnvGen.kr(Env.perc, out, doneAction:0) * SinOsc.ar(444);
 };
+//:+
 
-if(out == 1){
-	play{Out.ar(0, SinOsc.ar(4444) * 0.2 * Env.perc.kr(doneAction:2))}
-}
+//if(out == 1){
+//play{Out.ar(0, SinOsc.ar(4444) * 0.2 * Env.perc.kr(doneAction:2))}
+//}
 //:+
