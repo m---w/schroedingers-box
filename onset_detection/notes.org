@@ -1,0 +1,16 @@
+* Onset detection
+
+  1. ".isStrictlyPositive" does not work on UGens... "DetectScilence" could be an alternative (1 for silence, 0 for exceding threshold --> is inverted)
+
+  2. Regarding envelope follower decay time: It was found out that a convienient value would be 0.2~ (relTime arg Amplitude object). Reslut: impacts are detected and smoothed, even the ones with a short time in between.
+
+  3. Smoothing & trend subtraction: fast lag time & slow lag time where derived from the coyote defaults
+
+  4.
+
+  5.
+
+  6.
+
+
+  ?? Onset detection should also be checked for speech and environment sounds
