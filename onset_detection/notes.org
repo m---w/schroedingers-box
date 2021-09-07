@@ -6,11 +6,11 @@
 
   3. Smoothing & trend subtraction: fast lag time & slow lag time where derived from the coyote defaults
 
-  4.
+  4. --
 
-  5.
+  5. --
 
-  6.
+  6. --
 
 
   ?? Onset detection should also be checked for speech and environment sounds
