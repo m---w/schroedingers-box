@@ -74,7 +74,7 @@ s.meter;
 fork{
 | flagtime = 0.0075, slagtime = 0.2, fastmul = 0.9 |
 	var sig, flsig, slsig, out;
-	//s.record("~/Desktop/HWR2.wav");
+	s.record("~/Desktop/HWR2.wav");
 	1.wait;
 play{
 	//====SOUNDIN====
@@ -86,8 +86,6 @@ play{
 	sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
 
 	~siginit = sig;
-
-
 
 
 
@@ -130,27 +128,23 @@ play{
 	//half wave rectification
 	out = out.max(0);
 	out = (1 * out) - 0.05;
-	//out = out.max(0);
-	
 	
 	//out.scope;
 
 	//threshold detection
-	//InRange.ar()
-	//OR
-	//around 0.34 works ok
+	//InRange.ar() -- alternative
 	//threshold detection with hysterisis
-	//out = Schmidt.ar(out, MouseX.kr(0.0, 1.0), MouseX.kr(0.0, 1.0).poll);
-	out.poll;
-	out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:out));
-	//out = EnvGen.kr(Env.perc(0.0, 0.001), gate:out, doneAction:0) * SinOsc.ar(2222);
+	//around 0.34 works ok
+	out = Schmidt.ar(out, MouseX.kr(0.0, 1.0), MouseX.kr(0.0, 1.0).poll);
+	//out.poll;
+
 	
+	//out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:out));
+	
+	out;
 
-
-	Out.ar(0, Pan2.ar(~siginit, -0.99));
-	Out.ar(0, Pan2.ar(out, 0.99));
-	//Out.ar([0,1], Pan2.ar(out * 10, 1));
-	//Out.ar([0,1], Pan2.ar(~siginit, -1));
+	//Out.ar(0, Pan2.ar(~siginit, -0.99));
+	//Out.ar(0, Pan2.ar(out, 0.99));
 	
 };
 };
