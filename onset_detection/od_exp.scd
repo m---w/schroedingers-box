@@ -74,7 +74,7 @@ s.meter;
 fork{
 | flagtime = 0.0075, slagtime = 0.2, fastmul = 0.9 |
 	var sig, flsig, slsig, out;
-	s.record("~/Desktop/HWR2.wav");
+	//	s.record("~/Desktop/HWR2.wav");
 	1.wait;
 play{
 	//====SOUNDIN====
@@ -135,16 +135,20 @@ play{
 	//InRange.ar() -- alternative
 	//threshold detection with hysterisis
 	//around 0.34 works ok
+
+
+
+	//For visible in s.scope do around ~0.035
 	out = Schmidt.ar(out, MouseX.kr(0.0, 1.0), MouseX.kr(0.0, 1.0).poll);
 	//out.poll;
 
 	
 	//out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:out));
 	
-	out;
+	//out;
 
-	//Out.ar(0, Pan2.ar(~siginit, -0.99));
-	//Out.ar(0, Pan2.ar(out, 0.99));
+	Out.ar(0, Pan2.ar(~siginit, -0.99));
+	Out.ar(0, Pan2.ar(out, 0.99));
 	
 };
 };
