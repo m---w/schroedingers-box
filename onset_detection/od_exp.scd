@@ -8,39 +8,32 @@
     var sig, chain, onsets, pips;
 	
     // Input signal
-    sig = SoundIn.ar(0, 1.0)!2;
-
+    //sig = SoundIn.ar(0, 1.0)!2;
+	//sig = PlayBuf.ar(2, ~sample, loop:1);
+	sig = PlayBuf.ar(1, ~sample, BufRateScale.kr(~sample), loop: 0);
     chain = FFT(LocalBuf(512), sig);
 	
 	//MouseX is actually the threshold
     onsets = Onsets.kr(chain, MouseX.kr(0,1), \rcomplex);
 	
     // output sound
-    pips = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.001, 0.2), onsets));
-    Pan2.ar(pips, -0.75, 0.2) + Pan2.ar(pips, -0.75, 1)
+    pips = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.001, 0.2), onsets)) * 5;
+
+
+	Out.ar(0, Pan2.ar(pips));
+	Out.ar(1, Pan2.ar(sig));
+	
 }.play;
 //:
 ~odi.free; // Free the synth
 //:
 
 
-
-
-
-
-
 //: Detection via the Amplitude class,
 // there has to be a threshold, where if the sig has reached smth is triggered
 // it also has to .set the amplitude value during hiting (if goes higher it sets the amp value to the according level)
-//:
-//simple Schmidt paradigm
-scope{ Schmidt.kr(
-	//Amplitude.ar(
-	SoundIn.ar.abs, MouseY.kr(0.0, 1.0).poll, 1.0)}; // see the trigger
 
-//:
-
-
+//: =====================================================================
 //Simplest onset detector
 play{
 	| cutoff = 4000, rt = 0.1 |
@@ -66,21 +59,52 @@ play{
 //:
 
 
-Pulse.kr(1) * PinkNoise.ar(1);//SoundIn.ar(0, 1);
-s.meter
-//:
 
+
+
+
+
+
+//:
+s.scope;
+s.meter;
+
+//Amplitude tracking onset detection
+//:=======================================================================
 fork{
 | flagtime = 0.0075, slagtime = 0.2, fastmul = 0.9 |
 	var sig, flsig, slsig, out;
-	s.record("~/Desktop/HWR2.wav");
+	//s.record("~/Desktop/HWR2.wav");
 	1.wait;
 play{
+	//====SOUNDIN====
 	//sig = SoundIn.ar();
-	sig = PlayBuf.ar(2, ~sample, loop:1);
-	//sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1) * SinOsc.ar(300);//SoundIn.ar(0, 1);
-	sig = HPF.ar(sig, 1000, 2);
+
+	//====BUFFER=====
+	//sig = PlayBuf.ar(2, ~sample, loop:1);
+	
+	sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
+
+	~siginit = sig;
+
+
+
+
+
+
+	///////////////////////////
+	//CAREFULL HERE! SUPER - AMPLIFIED!!!
+	sig = HPF.ar(sig, 4000, 10);
+	//:=======================
+	//////////////////////////
+
+
+
+
+
+	
 	sig = sig.squared;
+	//out = sig;
 	//sig = sig.abs;
 
 	//-60.dbamp = 0.001
@@ -91,9 +115,10 @@ play{
 
 	//for testing
 	//flagtime = MouseX.kr(0.0, 0.1).poll;
+	
 
-
-
+	//convienient value
+	flagtime = 0.0075;
 
 	
 	//SMOOTHING & TREND SUBTRACTION
@@ -105,26 +130,45 @@ play{
 	//half wave rectification
 	out = out.max(0);
 	out = (1 * out) - 0.05;
-
+	//out = out.max(0);
 	
+	
+	//out.scope;
+
 	//threshold detection
-	//InRange.ar() ==> altenative
+	//InRange.ar()
+	//OR
 	//around 0.34 works ok
 	//threshold detection with hysterisis
-	out = Schmidt.ar(out, MouseX.kr(0.0, 1.0), MouseX.kr(0.0, 1.0));
+	//out = Schmidt.ar(out, MouseX.kr(0.0, 1.0), MouseX.kr(0.0, 1.0).poll);
 	out.poll;
+	out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:out));
+	//out = EnvGen.kr(Env.perc(0.0, 0.001), gate:out, doneAction:0) * SinOsc.ar(2222);
 	
-	out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.001, 0.2), gate:out));
 
-	//Output
-	out;
+
+	Out.ar(0, Pan2.ar(~siginit, -0.99));
+	Out.ar(0, Pan2.ar(out, 0.99));
+	//Out.ar([0,1], Pan2.ar(out * 10, 1));
+	//Out.ar([0,1], Pan2.ar(~siginit, -1));
 	
 };
 };
-
-
 //:
 
+
+//:==============================================================================
+//:
+s.scope;
+
+~b6 = Buffer.read(s,"/Users/jsk/Desktop/HWR2.wav");
+~b6.plot;
+
+~sample = Buffer.read(s,"/Users/jsk/Desktop/sample.wav", 40000, -1900);
+
+~sample.plot;
+
+//:
 //FIrst sig
 76804, 
 85603
@@ -132,14 +176,6 @@ play{
 //final thing
 77066,
 78197
-
-//:
-s.scope
-~b6 = Buffer.read(s,"/Users/jsk/Desktop/HWR2.wav");
-~b6.plot;
-~sample = Buffer.read(s,"/Users/jsk/Desktop/sample.wav", 40000, -1900);
-~sample.plot
-
 //:
 play{EnvGen.kr(Env.perc(0.0, 0.01, curve: \sine), doneAction:0) * LPF.ar(PinkNoise.ar(), 7000);}
 //:
