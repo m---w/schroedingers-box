@@ -2,6 +2,10 @@
 // SuperCollider Workspace
 // =====================================================================
 
+
+
+//:
+
 //https://doc.sccode.org/Classes/Onsets.html
 //: FFT detection
 ~odi = {
@@ -17,7 +21,7 @@
     onsets = Onsets.kr(chain, MouseX.kr(0,1), \rcomplex);
 	
     // output sound
-    pips = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.001, 0.2), onsets)) * 5;
+    pips = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.1, 0.2), onsets)) * 5;
 
 
 	Out.ar(0, Pan2.ar(pips));
@@ -27,7 +31,6 @@
 //:
 ~odi.free; // Free the synth
 //:
-
 
 //: Detection via the Amplitude class,
 // there has to be a threshold, where if the sig has reached smth is triggered
@@ -74,7 +77,7 @@ s.meter;
 fork{
 | flagtime = 0.0075, slagtime = 0.2, fastmul = 0.9 |
 	var sig, flsig, slsig, out;
-		s.record("~/Desktop/HWR2.wav");
+	//s.record("~/Desktop/HWR2.wav");
 	1.wait;
 play{
 	//====SOUNDIN====
@@ -187,6 +190,8 @@ play{EnvGen.kr(Env.perc(0.0, 0.01, curve: \sine), doneAction:0) * LPF.ar(PinkNoi
 ~b4 = Buffer.read(s, "/Users/jsk/Desktop/recs_sB/testersmooth.wav");
 ~b5 = Buffer.read(s, "/Users/jsk/Desktop/first.wav");
 ~b6 = Buffer.read(s,"/Users/jsk/Desktop/HWR2.wav");
+~b7 = Buffer.read(s,"/Users/jsk/Desktop/HWR2.wav");
+~b7.plot
 //:
 ~b1.plot;
 ~b2.plot;
@@ -197,10 +202,7 @@ play{EnvGen.kr(Env.perc(0.0, 0.01, curve: \sine), doneAction:0) * LPF.ar(PinkNoi
 
 
 
-
-
-
-// Gammaton
+// Gammatone
 //: ======================================
 // bandpass filterbank
 // normalize to 70db level ==> filterbank (gammatone) ==> 4 each band ...
@@ -212,15 +214,16 @@ play{EnvGen.kr(Env.perc(0.0, 0.01, curve: \sine), doneAction:0) * LPF.ar(PinkNoi
 ~sample = Buffer.read(s,"/Users/jsk/Desktop/sample.wav", 40000, -1900);
 //0.2.wait;
 play{
-var freqs, bandwidths, filterbank, sig, output, gate; 
+	| flagtime = 0.00, slagtime = 0.2, fastmul = 0.9 |
+var freqs, bandwidths, filterbank, sig, output, gate, flsig, slsig; 
 	gate = 0;
 	//artificial impact
 	//sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
 
 	//recorded
-	//sig = PlayBuf.ar(1, ~sample, loop:1);
+	sig = PlayBuf.ar(1, ~sample, loop:1);
 
-	//sig = SoundIn.ar();
+	sig = SoundIn.ar();
 
 	//cuttoff freqs 
 	freqs = Array.geom(9, 80, 2);
@@ -228,9 +231,10 @@ var freqs, bandwidths, filterbank, sig, output, gate;
 	//bandwidth
 	bandwidths= 400;
 
-	filterbank = Gammatone.ar(sig ,freqs, bandwidths);
+	filterbank = Gammatone.ar(sig, freqs, bandwidths);
 
 	//amp envelope
+	/*
 	~f0 = Amplitude.ar(filterbank[0]);
 	~f1 = Amplitude.ar(filterbank[1]);
 	~f2 = Amplitude.ar(filterbank[2]);
@@ -254,26 +258,74 @@ var freqs, bandwidths, filterbank, sig, output, gate;
 	
 	//sum up the result
 	~fsum = ~f0 + ~f1 + ~f2 + ~f3 + ~f4 + ~f5 +~f6 + ~f7 + ~f8;
-
-	//if 5 BPF 
-	~fsum = InRange.ar(~fsum, 5, 9);
-	~fsum.poll;
+	*/
 	
-		
-	output = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:~fsum));
+
+	
+	filterbank = filterbank.squared;
+	
+	filterbank = Amplitude.ar(filterbank, 0.000, 0.000);
+
+	//for testing
+	//flagtime = MouseX.kr(0.0, 0.1).poll;
+	
+	//convienient value
+	flagtime = 0.00;
+	slagtime = 0.00;
+
+	
+	//SMOOTHING & TREND SUBTRACTION
+	//flag-time ==>> 0.0076
+	flsig = Lag.ar(filterbank, flagtime);
+
+	//This was followed by the calculation of the first derivative and again the application of a lowpass filter (Turchet2018)
+	slsig = Lag.ar(Slope.ar(filterbank), slagtime);
+	filterbank = fastmul * flsig - slsig;
+
+	//half wave rectification
+	filterbank = filterbank.max(0);
+	filterbank = (1 * filterbank) - 0.05;
+	
+	//filterbank.sum.poll;
+
+	//~fsum = Select.ar(filterbank > 0.0, filterbank);
+	
+	//~fsum = InRange.ar(filterbank, 0.0001, 1);
+	//~fsum.poll;
+	
+	
+	//if 5 BPF 
+	//~fsum = InRange.ar(~fsum, 0.0, 4.0);
+	//~fsum.poll;
+	
+
+	
+	//output = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:~fsum));
+
+	//Out.ar(0, Pan2.ar(sig * 0.2, -0.99));
+	//Out.ar(0, Pan2.ar(output, 0.99));
 
 	Out.ar(0, Pan2.ar(sig * 0.2, -0.99));
-	Out.ar(0, Pan2.ar(output, 0.99));
+	Out.ar(0, Pan2.ar(filterbank, 0.99));
 
 }
 
 
-
 //:
-
+s.record("~/Desktop/gammaton.wav")
+//:
+~g0 = Buffer.read(s, "/Users/jsk/Desktop/gammaton.wav");
+~g0.plot
+//:
 FreqScope.new
 //:
 ~gate = 0
+//:
+
+82653-82326
+
+
+
 //:
 
 //tests
