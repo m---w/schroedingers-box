@@ -74,7 +74,7 @@ s.meter;
 fork{
 | flagtime = 0.0075, slagtime = 0.2, fastmul = 0.9 |
 	var sig, flsig, slsig, out;
-	//	s.record("~/Desktop/HWR2.wav");
+		s.record("~/Desktop/HWR2.wav");
 	1.wait;
 play{
 	//====SOUNDIN====
@@ -92,13 +92,11 @@ play{
 
 	///////////////////////////
 	//CAREFULL HERE! SUPER - AMPLIFIED!!!
-	sig = HPF.ar(sig, 4000, 10);
+	sig = HPF.ar(sig, 4000, 3.2);
 	//:=======================
 	//////////////////////////
 
-
-
-
+	
 
 	
 	sig = sig.squared;
@@ -122,7 +120,9 @@ play{
 	//SMOOTHING & TREND SUBTRACTION
 	//flag-time ==>> 0.0076
 	flsig = Lag.ar(out, flagtime);
-	slsig = Lag.ar(out, slagtime);
+
+	//This was followed by the calculation of the first derivative and again the application of a lowpass filter (Turchet2018)
+	slsig = Lag.ar(Slope.ar(out), slagtime);
 	out = fastmul * flsig - slsig;
 
 	//half wave rectification
@@ -143,7 +143,7 @@ play{
 	//out.poll;
 
 	
-	//out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:out));
+	out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:out));
 	
 	//out;
 
@@ -167,11 +167,11 @@ s.scope;
 ~sample.plot;
 
 //:
-//FIrst sig
+//initial sig
 76804, 
 85603
 
-//final thing
+//final 
 77066,
 78197
 //:
@@ -185,39 +185,57 @@ play{EnvGen.kr(Env.perc(0.0, 0.01, curve: \sine), doneAction:0) * LPF.ar(PinkNoi
 ~b2 = Buffer.read(s, "/Users/jsk/Desktop/recs_sB/env_track.wav");
 ~b3 = Buffer.read(s, "/Users/jsk/Desktop/recs_sB/smoothing_subtraction.wav");
 ~b4 = Buffer.read(s, "/Users/jsk/Desktop/recs_sB/testersmooth.wav");
-
 ~b5 = Buffer.read(s, "/Users/jsk/Desktop/first.wav");
-
 ~b6 = Buffer.read(s,"/Users/jsk/Desktop/HWR2.wav");
 //:
 ~b1.plot;
 ~b2.plot;
 ~b3.plot;
 ~b4.plot;
-
 //:
 
 
 
 
+//: ======================================
+// bandpass filterbank
+// normalize to 70db level ==> filterbank (gammatone) ==> 4 each band ...
+// ==> Amplitude envelope ==> Onset component detection ==> compute onset time and intensity
+// after this procedure takes place on each band ==> combine results to yield onsets (+)
+// then full wave rectification SC: ([1sig, 2sig].abs.sum / 2.sqrt).
+
+
+//:+
+play{
+
+	var sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
+
+	//Normalizer.ar() has a delay
+
+	sig = Gammatone.ar()
+}
+
+
+//:+
+
 //:
-//s.record("~/Desktop/schroedingers_box/onset_detection/impact.wav")
-//play{SoundIn.ar(0, 1)}
+ 
+play{
+var freqs, bandwidths, sig; 
+
+freqs = Array.geom(9, 80, 2);
+
+bandwidths= 400;
+
+sig = Gammatone.ar(WhiteNoise.ar,freqs, bandwidths);
+
+sig[0];
+}
+
 //:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+FreqScope.new
+//:
 
 
 
