@@ -218,12 +218,16 @@ var freqs, bandwidths, filterbank, sig, output, gate;
 	//sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
 
 	//recorded
-	sig = PlayBuf.ar(1, ~sample, loop:1);
-	
+	//sig = PlayBuf.ar(1, ~sample, loop:1);
+
+	//sig = SoundIn.ar();
+
+	//cuttoff freqs 
 	freqs = Array.geom(9, 80, 2);
-	
+
+	//bandwidth
 	bandwidths= 400;
-	
+
 	filterbank = Gammatone.ar(sig ,freqs, bandwidths);
 
 	//amp envelope
@@ -248,23 +252,19 @@ var freqs, bandwidths, filterbank, sig, output, gate;
 	~f7 = InRange.ar(~f7, MouseX.kr(0.0, 1.0), 1.0);
 	~f8 = InRange.ar(~f8, MouseX.kr(0.0, 1.0), 1.0);
 	
+	//sum up the result
 	~fsum = ~f0 + ~f1 + ~f2 + ~f3 + ~f4 + ~f5 +~f6 + ~f7 + ~f8;
-	
 
+	//if 5 BPF 
 	~fsum = InRange.ar(~fsum, 5, 9);
 	~fsum.poll;
 	
 		
 	output = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:~fsum));
 
-	//Select.ar(gate > 0.0, gate=1; "ads".postln;);	
-	
-	//out;
-
 	Out.ar(0, Pan2.ar(sig * 0.2, -0.99));
 	Out.ar(0, Pan2.ar(output, 0.99));
 
-	
 }
 
 
