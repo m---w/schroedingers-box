@@ -197,6 +197,10 @@ play{EnvGen.kr(Env.perc(0.0, 0.01, curve: \sine), doneAction:0) * LPF.ar(PinkNoi
 
 
 
+
+
+
+// Gammaton
 //: ======================================
 // bandpass filterbank
 // normalize to 70db level ==> filterbank (gammatone) ==> 4 each band ...
@@ -205,39 +209,72 @@ play{EnvGen.kr(Env.perc(0.0, 0.01, curve: \sine), doneAction:0) * LPF.ar(PinkNoi
 // then full wave rectification SC: ([1sig, 2sig].abs.sum / 2.sqrt).
 
 
-//:+
+~sample = Buffer.read(s,"/Users/jsk/Desktop/sample.wav", 40000, -1900);
+//0.2.wait;
 play{
+var freqs, bandwidths, filterbank, sig, output, gate; 
+	gate = 0;
+	//artificial impact
+	//sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
 
-	var sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
+	//recorded
+	sig = PlayBuf.ar(1, ~sample, loop:1);
+	
+	freqs = Array.geom(9, 80, 2);
+	
+	bandwidths= 400;
+	
+	filterbank = Gammatone.ar(sig ,freqs, bandwidths);
 
-	//Normalizer.ar() has a delay
+	//amp envelope
+	~f0 = Amplitude.ar(filterbank[0]);
+	~f1 = Amplitude.ar(filterbank[1]);
+	~f2 = Amplitude.ar(filterbank[2]);
+	~f3 = Amplitude.ar(filterbank[3]);
+	~f4 = Amplitude.ar(filterbank[4]);
+	~f5 = Amplitude.ar(filterbank[5]);
+	~f6 = Amplitude.ar(filterbank[6]);
+	~f7 = Amplitude.ar(filterbank[7]);
+	~f8 = Amplitude.ar(filterbank[8]);
 
-	sig = Gammatone.ar()
+	//threshold detection
+	~f0 = InRange.ar(~f0, MouseX.kr(0.0, 1.0), 1.0);
+	~f1 = InRange.ar(~f1, MouseX.kr(0.0, 1.0), 1.0);
+	~f2 = InRange.ar(~f2, MouseX.kr(0.0, 1.0), 1.0);
+	~f3 = InRange.ar(~f3, MouseX.kr(0.0, 1.0), 1.0);
+	~f4 = InRange.ar(~f4, MouseX.kr(0.0, 1.0), 1.0);
+	~f5 = InRange.ar(~f5, MouseX.kr(0.0, 1.0), 1.0);
+	~f6 = InRange.ar(~f6, MouseX.kr(0.0, 1.0), 1.0);
+	~f7 = InRange.ar(~f7, MouseX.kr(0.0, 1.0), 1.0);
+	~f8 = InRange.ar(~f8, MouseX.kr(0.0, 1.0), 1.0);
+	
+	~fsum = ~f0 + ~f1 + ~f2 + ~f3 + ~f4 + ~f5 +~f6 + ~f7 + ~f8;
+	
+
+	~fsum = InRange.ar(~fsum, 5, 9);
+	~fsum.poll;
+	
+		
+	output = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:~fsum));
+
+	//Select.ar(gate > 0.0, gate=1; "ads".postln;);	
+	
+	//out;
+
+	Out.ar(0, Pan2.ar(sig * 0.2, -0.99));
+	Out.ar(0, Pan2.ar(output, 0.99));
+
+	
 }
 
 
-//:+
-
-//:
- 
-play{
-var freqs, bandwidths, sig; 
-
-freqs = Array.geom(9, 80, 2);
-
-bandwidths= 400;
-
-sig = Gammatone.ar(WhiteNoise.ar,freqs, bandwidths);
-
-sig[0];
-}
 
 //:
 
 FreqScope.new
 //:
-
-
+~gate = 0
+//:
 
 //tests
 b = Buffer.read(s, "/Users/jsk/Desktop/schroedingers_box/onset_detection/impact.wav"); 
