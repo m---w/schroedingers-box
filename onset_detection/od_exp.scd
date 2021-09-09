@@ -72,8 +72,16 @@ play{
 s.scope;
 s.meter;
 
+
+
 //Amplitude tracking onset detection
 //:=======================================================================
+
+s.record("~/Desktop/gammaton.wav")
+//:
+~g0 = Buffer.read(s, "/Users/jsk/Desktop/gammaton.wav");
+~g0.plot
+//:
 fork{
 | flagtime = 0.0075, slagtime = 0.2, fastmul = 0.9 |
 	var sig, flsig, slsig, out;
@@ -84,9 +92,9 @@ play{
 	//sig = SoundIn.ar();
 
 	//====BUFFER=====
-	//sig = PlayBuf.ar(2, ~sample, loop:1);
+	sig = PlayBuf.ar(2, ~sample, loop:1);
 	
-	sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
+	//sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
 
 	~siginit = sig;
 
@@ -124,8 +132,8 @@ play{
 	//flag-time ==>> 0.0076
 	flsig = Lag.ar(out, flagtime);
 
-	//This was followed by the calculation of the first derivative and again the application of a lowpass filter (Turchet2018)
-	slsig = Lag.ar(Slope.ar(out), slagtime);
+	//This was followed by the calculation of the first derivative and again the application of a lowpass filter (Turchet2018), Slope.ar(out)
+	slsig = Lag.ar(out, slagtime);
 	out = fastmul * flsig - slsig;
 
 	//half wave rectification
@@ -146,20 +154,20 @@ play{
 	//out.poll;
 
 	
-	out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:out));
+	out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.000, 0.2, 0.4), gate:out));
 	
 	//out;
 
 	Out.ar(0, Pan2.ar(~siginit, -0.99));
-	Out.ar(0, Pan2.ar(out, 0.99));
+	Out.ar(1, Pan2.ar(out, 0.99));
 	
 };
 };
-//:
+
 
 
 //:==============================================================================
-//:
+
 s.scope;
 
 ~b6 = Buffer.read(s,"/Users/jsk/Desktop/HWR2.wav");
