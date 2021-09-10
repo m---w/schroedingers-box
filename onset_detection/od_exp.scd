@@ -99,10 +99,10 @@ fork{
 	1.wait;
 play{
 	//====SOUNDIN====
-	sig = SoundIn.ar();
+	//sig = SoundIn.ar();
 
 	//====BUFFER=====
-	//sig = PlayBuf.ar(2, ~sample, loop:1);
+	sig = PlayBuf.ar(2, ~sample, loop:1);
 	
 	//sig = Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2);
 
