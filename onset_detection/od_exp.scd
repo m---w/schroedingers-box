@@ -41,10 +41,11 @@
 play{
 	| cutoff = 4000, rt = 0.1 |
 	var out, thres;
-	var sig = SoundIn.ar();
+	var sig = PlayBuf.ar(1, ~sample, BufRateScale.kr(~sample), loop: 0);//SoundIn.ar();
+	~initsig = sig;
 	sig = HPF.ar(sig, cutoff);
 	sig = sig.squared;
-	sig = Amplitude.ar(sig, attackTime:0.0, releaseTime:rt);
+	sig = Amplitude.ar(sig, attackTime:0.0, releaseTime:-60.dbamp);
 	//sig = DetectSilence.ar(sig, MouseX.kr(0.0, 1.0), 0.0);
 
 	//sig = sig.isStrictlyPositive;
@@ -56,11 +57,13 @@ play{
 	thres.poll;
 	sig.poll;
 	//postln{thres, "Schmidt_trig:" sig.poll};
-	out = EnvGen.kr(Env.perc(0.0, 0.001), sig, doneAction:0) * SinOsc.ar(2222);
-	out;
+	out = EnvGen.kr(Env.perc(0.0, 0.1), gate:sig, doneAction:0) * SinOsc.ar(2222);
+	//out;
+	Out.ar(0, Pan2.ar(~initsig));
+	Out.ar(1, Pan2.ar(out*2));
+	
 }
 //:
-
 
 
 
@@ -79,11 +82,14 @@ s.meter;
 
 s.record("~/Desktop/gammaton.wav")
 //:
+~sample = Buffer.read(s,"/Users/jsk/Desktop/sample.wav", 40000, -1900);
 ~g0 = Buffer.read(s, "/Users/jsk/Desktop/gammaton.wav");
 ~g0.plot
+~g1 = Buffer.read(s, "/Users/jsk/Desktop/HWR2.wav");
+~g1.plot
 //:
 fork{
-| flagtime = 0.0075, slagtime = 0.2, fastmul = 0.9 |
+| flagtime = 0.01, slagtime = 0.2, fastmul = 0.9 |
 	var sig, flsig, slsig, out;
 	//s.record("~/Desktop/HWR2.wav");
 	1.wait;
@@ -94,11 +100,9 @@ play{
 	//====BUFFER=====
 	sig = PlayBuf.ar(2, ~sample, loop:1);
 	
-	//sig = Env.perc(0.000, 0.05, curve:'sin').kr(doneAction:0) * PinkNoise.ar(1);
+	//sig = Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2);
 
 	~siginit = sig;
-
-
 
 
 	///////////////////////////
@@ -115,7 +119,7 @@ play{
 	//sig = sig.abs;
 
 	//-60.dbamp = 0.001
-	out = Amplitude.ar(sig, 0.001, -60.dbamp);
+	out = Amplitude.ar(sig, 0.0, -60.dbamp);
 	
 
 
@@ -136,25 +140,26 @@ play{
 	slsig = Lag.ar(out, slagtime);
 	out = fastmul * flsig - slsig;
 
+	
 	//half wave rectification
 	out = out.max(0);
-	out = (1 * out) - 0.05;
-	
-	//out.scope;
+	out = (1 * out) - 0.00;
+	//out = out.madd(0.0, -0.05);
 
+	//latency is ok till here
+	
 	//threshold detection
-	//InRange.ar() -- alternative
+	//out = InRange.ar(out, 0.0, 2.0);// -- alternative
 	//threshold detection with hysterisis
 	//around 0.34 works ok
 
 
-
 	//For visible in s.scope do around ~0.035
-	out = Schmidt.ar(out, MouseX.kr(0.0, 1.0), MouseX.kr(0.0, 1.0).poll);
+	out = Schmidt.ar(out, 0.00, 0.1);// MouseX.kr(0.0, 0.1), MouseX.kr(0.0, 1.0).poll);
 	//out.poll;
 
 	
-	out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.000, 0.2, 0.4), gate:out));
+	out = Pulse.ar(8222, mul:EnvGen.kr(Env.perc(0.000, 0.2, 0.4), gate:out));
 	
 	//out;
 
@@ -163,6 +168,8 @@ play{
 	
 };
 };
+
+331/44.100
 
 
 
