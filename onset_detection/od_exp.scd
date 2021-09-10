@@ -25,7 +25,7 @@
 
 
 	Out.ar(0, Pan2.ar(pips));
-	Out.ar(1, Pan2.ar(sig));
+	//Out.ar(1, Pan2.ar(sig));
 	
 }.play;
 //:
@@ -36,16 +36,20 @@
 // there has to be a threshold, where if the sig has reached smth is triggered
 // it also has to .set the amplitude value during hiting (if goes higher it sets the amp value to the according level)
 
+
+s.record("~/Desktop/HWR2.wav")
 //: =====================================================================
 //Simplest onset detector
 play{
 	| cutoff = 4000, rt = 0.1 |
-	var out, thres;
-	var sig = PlayBuf.ar(1, ~sample, BufRateScale.kr(~sample), loop: 0);//SoundIn.ar();
-	~initsig = sig;
+	var out, thres, env, initsig;
+	var sig = SoundIn.ar(0);//PlayBuf.ar(1, ~sample, BufRateScale.kr(~sample), loop: 0);//SoundIn.ar();
+	initsig = sig;
 	sig = HPF.ar(sig, cutoff);
 	sig = sig.squared;
-	sig = Amplitude.ar(sig, attackTime:0.0, releaseTime:-60.dbamp);
+	sig = Amplitude.ar(sig, attackTime:0.0, releaseTime: 0.01);
+
+	env = sig;
 	//sig = DetectSilence.ar(sig, MouseX.kr(0.0, 1.0), 0.0);
 
 	//sig = sig.isStrictlyPositive;
@@ -59,14 +63,15 @@ play{
 	//postln{thres, "Schmidt_trig:" sig.poll};
 	out = EnvGen.kr(Env.perc(0.0, 0.1), gate:sig, doneAction:0) * SinOsc.ar(2222);
 	//out;
-	Out.ar(0, Pan2.ar(~initsig));
-	Out.ar(1, Pan2.ar(out*2));
+	//Out.ar(0, Pan2.ar(~initsig));
+	//Out.ar(1, Pan2.ar(out*2));
+	Out.ar(0, [env, initsig])
 	
 }
 //:
 
-
-
+s.record("~/Desktop/Mallet_impacts/hardest.wav")
+play{SoundIn.ar()}
 
 
 
@@ -94,7 +99,7 @@ s.meter;
 //:
 fork{
 | flagtime = 0.01, slagtime = 0.2, fastmul = 0.9 |
-	var sig, flsig, slsig, out;
+	var sig, flsig, slsig, out, envelope, sigsquared;
 	s.record("~/Desktop/HWR2.wav");
 	1.wait;
 play{
@@ -106,12 +111,12 @@ play{
 	
 	//sig = Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2);
 
-	~siginit = sig;
+	//~siginit = sig;
 
 
 	///////////////////////////
 	//CAREFULL HERE! SUPER - AMPLIFIED!!!
-	sig = HPF.ar(sig, 4000, 3.2);
+	sig = HPF.ar(sig, 4000, 1.0);
 	//:=======================
 	//////////////////////////
 
@@ -119,11 +124,13 @@ play{
 
 	
 	sig = sig.squared;
+	sigsquared = sig;
 	//out = sig;
 	//sig = sig.abs;
 
 	//-60.dbamp = 0.001
-	out = Amplitude.ar(sig, 0.0, -60.dbamp);
+	out = Amplitude.ar(sig, 0.0, 0.01);
+	envelope = out;
 	
 
 
@@ -147,11 +154,10 @@ play{
 	
 	//half wave rectification
 	out = out.max(0);
-	out = (1 * out) - 0.00;
+	out = (1 * out) - 0.05;
 	//out = out.madd(0.0, -0.05);
 
 
-	
 	//threshold detection
 	//out = InRange.ar(out, 0.0, 2.0);// -- alternative
 	//threshold detection with hysterisis
@@ -160,7 +166,9 @@ play{
 	
 
 	//For visible in s.scope do around ~0.035
-	out = Schmidt.ar(out, 0.00, 0.1);// MouseX.kr(0.0, 0.1), MouseX.kr(0.0, 1.0).poll);
+
+	//was lo, 0.0, hi, 0.1
+	out = Schmidt.ar(out, 0.1, 0.1);// MouseX.kr(0.0, 0.1), MouseX.kr(0.0, 1.0).poll);
 	//out.poll;
 
 
@@ -171,15 +179,19 @@ play{
 
 
 	
-	out = SinOsc.ar(8222, mul:EnvGen.kr(Env.perc(0.000, 0.2, 0.4), gate:out));
+	out = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.000, 0.2, 0.4), gate:out));
 	
 	//out;
 
-	Out.ar(0, Pan2.ar(~siginit, -0.99));
-	Out.ar(1, Pan2.ar(out, 0.99));
+	//Out.ar(0, Pan2.ar(~siginit, -0.99));
+	//Out.ar(1, Pan2.ar(out * 1, 0.99));
+	//Out.ar(1, envelope);
+	out;
 	
 };
 };
+
+Server.default.options.inDevice_("MobilePre");
 
 
 
@@ -249,7 +261,7 @@ var freqs, bandwidths, filterbank, sig, output, gate, flsig, slsig;
 	//recorded
 	sig = PlayBuf.ar(1, ~sample, loop:1);
 
-	sig = SoundIn.ar();
+	//sig = SoundIn.ar();
 
 	//cuttoff freqs 
 	freqs = Array.geom(9, 80, 2);
@@ -297,7 +309,7 @@ var freqs, bandwidths, filterbank, sig, output, gate, flsig, slsig;
 	
 	//convienient value
 	flagtime = 0.00;
-	slagtime = 0.00;
+	slagtime = 0.20;
 
 	
 	//SMOOTHING & TREND SUBTRACTION
@@ -312,27 +324,29 @@ var freqs, bandwidths, filterbank, sig, output, gate, flsig, slsig;
 	filterbank = filterbank.max(0);
 	filterbank = (1 * filterbank) - 0.05;
 	
-	//filterbank.sum.poll;
+	//filterbank[0].poll;
 
 	//~fsum = Select.ar(filterbank > 0.0, filterbank);
 	
-	//~fsum = InRange.ar(filterbank, 0.0001, 1);
+	~fsum = InRange.ar(filterbank, 0.0001, 1);
 	//~fsum.poll;
 	
 	
 	//if 5 BPF 
 	//~fsum = InRange.ar(~fsum, 0.0, 4.0);
 	//~fsum.poll;
-	
 
+
+	//~fsum = Schmidt.ar(filterbank, 0.0, 0.0);
 	
-	//output = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:~fsum));
+	output = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:~fsum));
 
 	//Out.ar(0, Pan2.ar(sig * 0.2, -0.99));
 	//Out.ar(0, Pan2.ar(output, 0.99));
 
 	Out.ar(0, Pan2.ar(sig * 0.2, -0.99));
-	Out.ar(0, Pan2.ar(filterbank, 0.99));
+	//Out.ar(0, Pan2.ar(filterbank, 0.99));
+	Out.ar(0, Pan2.ar(output * 10, 0.99));
 
 }
 
@@ -372,3 +386,5 @@ plot{[ Lag.ar(SinOsc.ar().squared, 0.01) - Lag.ar(SinOsc.ar().squared, 0.2)]}
 
 
 //:
+
+
