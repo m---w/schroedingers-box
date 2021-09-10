@@ -80,13 +80,17 @@ s.meter;
 //Amplitude tracking onset detection
 //:=======================================================================
 
-s.record("~/Desktop/gammaton.wav")
-//:
+//~g0 = Buffer.read(s, "/Users/jsk/Desktop/gammaton.wav");
+//~g0.plot
+
+
+
+
+
 ~sample = Buffer.read(s,"/Users/jsk/Desktop/sample.wav", 40000, -1900);
-~g0 = Buffer.read(s, "/Users/jsk/Desktop/gammaton.wav");
-~g0.plot
 ~g1 = Buffer.read(s, "/Users/jsk/Desktop/HWR2.wav");
-~g1.plot
+~g1.plot;
+
 //:
 fork{
 | flagtime = 0.01, slagtime = 0.2, fastmul = 0.9 |
@@ -146,17 +150,25 @@ play{
 	out = (1 * out) - 0.00;
 	//out = out.madd(0.0, -0.05);
 
-	//latency is ok till here
+
 	
 	//threshold detection
 	//out = InRange.ar(out, 0.0, 2.0);// -- alternative
 	//threshold detection with hysterisis
 	//around 0.34 works ok
 
+	
 
 	//For visible in s.scope do around ~0.035
 	out = Schmidt.ar(out, 0.00, 0.1);// MouseX.kr(0.0, 0.1), MouseX.kr(0.0, 1.0).poll);
 	//out.poll;
+
+
+
+
+
+	//latency is ok till here
+
 
 	
 	out = Pulse.ar(8222, mul:EnvGen.kr(Env.perc(0.000, 0.2, 0.4), gate:out));
