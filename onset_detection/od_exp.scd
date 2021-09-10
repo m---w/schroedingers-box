@@ -95,14 +95,14 @@ s.meter;
 fork{
 | flagtime = 0.01, slagtime = 0.2, fastmul = 0.9 |
 	var sig, flsig, slsig, out;
-	//s.record("~/Desktop/HWR2.wav");
+	s.record("~/Desktop/HWR2.wav");
 	1.wait;
 play{
 	//====SOUNDIN====
-	//sig = SoundIn.ar();
+	sig = SoundIn.ar();
 
 	//====BUFFER=====
-	sig = PlayBuf.ar(2, ~sample, loop:1);
+	//sig = PlayBuf.ar(2, ~sample, loop:1);
 	
 	//sig = Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2);
 
@@ -171,7 +171,7 @@ play{
 
 
 	
-	out = Pulse.ar(8222, mul:EnvGen.kr(Env.perc(0.000, 0.2, 0.4), gate:out));
+	out = SinOsc.ar(8222, mul:EnvGen.kr(Env.perc(0.000, 0.2, 0.4), gate:out));
 	
 	//out;
 
@@ -181,7 +181,6 @@ play{
 };
 };
 
-331/44.100
 
 
 
