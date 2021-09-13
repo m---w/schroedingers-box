@@ -44,6 +44,22 @@ play{Out.ar(0, PlayBuf.ar(1, ~sample))}
 s.record("~/Desktop/HWR2.wav")
 //: =====================================================================
 
+// Right speaker is the source and at left is a burst of noise when an onset is detected
+(
+SynthDef("coyote", {
+	var sig = Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2);
+	var sigsquared = sig.squared;
+	//var detect = Coyote.kr(Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2), fastMul: 0.6, thresh: 0.001);
+	var detect =  Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(Decay.kr(Coyote.kr(sig,
+                                                                   fastMul: 0.6,
+                                                                   thresh: 0.001), 0.2));
+
+	Out.ar(0, [detect, sigsquared]); } ).send(s);
+);
+​
+x = Synth.new("coyote");
+x.free;
+
 
 //:
 
