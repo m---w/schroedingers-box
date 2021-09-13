@@ -37,17 +37,69 @@
 // it also has to .set the amplitude value during hiting (if goes higher it sets the amp value to the according level)
 
 
+~sample = Buffer.readChannel(s,"/Users/jsk/Desktop/schroedingers_box/Mallet_impacts/hardest.wav", 40000, -1900, channels:[0]);
+
+
+play{Out.ar(0, PlayBuf.ar(1, ~sample))}
 s.record("~/Desktop/HWR2.wav")
 //: =====================================================================
+
+
+//:
+
+play{
+	| cutoff = 4000, rt = 0.1 |
+	var out, thres, sigsquared, env;
+	//var sig = SoundIn.ar();
+	var sig = Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2);
+	sig = HPF.ar(sig, cutoff);
+	sig = sig.squared;
+	sigsquared = sig;
+	sig = Amplitude.ar(sig, attackTime:0.0, releaseTime:rt);
+	env = sig;
+	//sig = DetectSilence.ar(sig, MouseX.kr(0.0, 1.0), 0.0);
+
+	//sig = sig.isStrictlyPositive;
+	//cannot be applied to a ugen
+	//sig.scope;
+
+	//thres = MouseX.kr(0.0);
+	//sig = Schmidt.ar(sig, thres, thres);
+	//thres.poll;
+	//sig.poll;
+	//postln{thres, "Schmidt_trig:" sig.poll};
+	//out = EnvGen.kr(Env.perc(0.0, 0.001), sig, doneAction:0) * SinOsc.ar(2222);
+	//out;
+
+	[sigsquared, env]
+}
+//:
+~g1 = Buffer.read(s, "/Users/jsk/Desktop/HWR2.wav");
+~g1.plot;
+
+
+
+
+
+
+
+
+
+
+
+//:
 //Simplest onset detector
 play{
 	| cutoff = 4000, rt = 0.1 |
-	var out, thres, env, initsig;
-	var sig = SoundIn.ar(0);//PlayBuf.ar(1, ~sample, BufRateScale.kr(~sample), loop: 0);//SoundIn.ar();
+	var out, thres, env, initsig, squaredsig;
+	//var sig = PlayBuf.ar(1, ~sample.bufnum, loop: 1);
+	var sig = Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2);
 	initsig = sig;
-	sig = HPF.ar(sig, cutoff);
+	//sig = HPF.ar(sig, cutoff);
 	sig = sig.squared;
-	sig = Amplitude.ar(sig, attackTime:0.0, releaseTime: 0.01);
+	squaredsig = sig;
+	//sig = Amplitude.ar(sig, attackTime:0.0001, releaseTime: 0.2);
+	sig = Amplitude.ar(squaredsig, 0.001, 0.01);
 
 	env = sig;
 	//sig = DetectSilence.ar(sig, MouseX.kr(0.0, 1.0), 0.0);
@@ -56,31 +108,22 @@ play{
 	//cannot be applied to a ugen
 	//sig.scope;
 
-	thres = MouseX.kr(0.0);
-	sig = Schmidt.ar(sig, thres, thres);
-	thres.poll;
-	sig.poll;
+	//thres = MouseX.kr(0.0, 1.0);
+	//thres = 0.001;
+	//sig = Schmidt.ar(sig, thres, thres);
+	//thres.poll;
+	//sig.poll;
 	//postln{thres, "Schmidt_trig:" sig.poll};
-	out = EnvGen.kr(Env.perc(0.0, 0.1), gate:sig, doneAction:0) * SinOsc.ar(2222);
+	//out = EnvGen.kr(Env.perc(0.0, 0.1), gate:sig, doneAction:0) * SinOsc.ar(2222);
 	//out;
 	//Out.ar(0, Pan2.ar(~initsig));
 	//Out.ar(1, Pan2.ar(out*2));
-	Out.ar(0, [env, initsig])
+	//Out.ar(1, env);
+	//Out.ar(0, [env, squaredsig]);
+	[env, squaredsig]
 	
 }
 //:
-
-s.record("~/Desktop/Mallet_impacts/hardest.wav")
-play{SoundIn.ar()}
-
-
-
-
-//:
-s.scope;
-s.meter;
-
-
 
 //Amplitude tracking onset detection
 //:=======================================================================
@@ -107,7 +150,7 @@ play{
 	//sig = SoundIn.ar();
 
 	//====BUFFER=====
-	sig = PlayBuf.ar(2, ~sample, loop:1);
+	sig = PlayBuf.ar(1, ~sample, loop:1);
 	
 	//sig = Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2);
 
@@ -186,11 +229,11 @@ play{
 	//Out.ar(0, Pan2.ar(~siginit, -0.99));
 	//Out.ar(1, Pan2.ar(out * 1, 0.99));
 	//Out.ar(1, envelope);
-	out;
+	[sigsquared, envelope];
 	
 };
 };
-
+//:
 Server.default.options.inDevice_("MobilePre");
 
 
