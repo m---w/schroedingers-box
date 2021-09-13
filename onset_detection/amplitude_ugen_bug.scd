@@ -31,8 +31,19 @@ g = Buffer.read(s, "/Users/jsk/Desktop/HWR2.wav");
 g.plot(discrete:true);
 
 
-//:
 
+
+
+
+
+
+
+//This works
+//================================================================================================
+//:
+~sample = Buffer.readChannel(s,"/Users/jsk/Desktop/schroedingers_box/Mallet_impacts/hardest.wav", 40000, -1900, channels:[0]);
+
+//:
 //Implementation: HARD REAL-TIME ONSET DETECTION OF PERCUSSIVE SOUNDS ==> Luca Turchet
 
 play{
@@ -61,21 +72,16 @@ play{
 	//smoothing lpf2
 	lpf2 = LPF.ar(derivative, 100);
 
-	thres = MouseX.kr(0.0, 4.0);
+	thres = MouseX.kr(0.0, 1.0);
 	thres.poll;
 	trig = Schmidt.ar(lpf2, thres, thres);
 	trig.poll;
 
-	output = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:trig));
+	output = Saw.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:trig));
 	
-	//[derivative, lpf2];
-	output;
+	//[derivative, lpf2, sig];
+	[initsig * 0.2, output];
 	//Out.ar(0, output);
 }//.plot(0.2)//.plot(duration:0.2)
 
 //:
-
-
-
-{PinkNoise.ar().squared * EnvGen.kr(Env.perc(0.000, 0.03, curve:'sin'))}.plot(0.2)
-{EnvGen.kr(Env.perc(0.000, 0.03, curve:'sin'))}.plot(0.2)
