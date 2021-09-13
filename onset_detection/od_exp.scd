@@ -398,7 +398,7 @@ var freqs, bandwidths, filterbank, sig, output, gate, flsig, slsig;
 
 	//~fsum = Schmidt.ar(filterbank, 0.0, 0.0);
 	
-	output = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:~fsum));
+	
 
 	//Out.ar(0, Pan2.ar(sig * 0.2, -0.99));
 	//Out.ar(0, Pan2.ar(output, 0.99));

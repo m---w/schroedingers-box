@@ -28,7 +28,7 @@ play{ | rt = 0.05 |
 //: then plot it => different amp values
 s.record("~/Desktop/HWR2.wav");
 g = Buffer.read(s, "/Users/jsk/Desktop/HWR2.wav");
-g.plot;
+g.plot(discrete:true);
 
 
 //:
@@ -36,28 +36,46 @@ g.plot;
 //Implementation: HARD REAL-TIME ONSET DETECTION OF PERCUSSIVE SOUNDS ==> Luca Turchet
 
 play{
-	var sig, initsig, sigsquared, env, envtrue, lpf1, lpf2;
+	var sig, initsig, sigsquared, env, envtrue, lpf1, lpf2, derivative, trig, output, thres;
 	envtrue = Env.perc(0.000, 0.03, curve:'sin').ar(doneAction:0);
 
 	//initial sig
-	sig = envtrue * PinkNoise.ar(1);
+	//sig = envtrue * PinkNoise.ar(1);
+	sig = PlayBuf.ar(1, ~sample, loop:1);
 	initsig = sig;
 
 	//HPF
-	sig = HPF.ar(sig, 100);
+	sig = HPF.ar(sig, 4000);
 	
 	//squared
-	sigsquared = sig.squared;;
+	sigsquared = sig.squared;
 
-	//smoothing
+	//smoothing lpf1
 	lpf1 = LPF.ar(sigsquared, 25);
 
-	//
+	//derivative computation
+	derivative = Slope.ar(lpf1);
 
-	[sigsquared, envtrue]
-}
+	//no need to half wave rectification? [deriative, lpf2]
+
+	//smoothing lpf2
+	lpf2 = LPF.ar(derivative, 100);
+
+	thres = MouseX.kr(0.0, 4.0);
+	thres.poll;
+	trig = Schmidt.ar(lpf2, thres, thres);
+	trig.poll;
+
+	output = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4, 0.2), gate:trig));
+	
+	//[derivative, lpf2];
+	output;
+	//Out.ar(0, output);
+}//.plot(0.2)//.plot(duration:0.2)
 
 //:
+
+
 
 {PinkNoise.ar().squared * EnvGen.kr(Env.perc(0.000, 0.03, curve:'sin'))}.plot(0.2)
 {EnvGen.kr(Env.perc(0.000, 0.03, curve:'sin'))}.plot(0.2)
