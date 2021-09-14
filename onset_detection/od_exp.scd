@@ -429,7 +429,7 @@ var freqs, bandwidths, filterbank, sig, output, gate, flsig, slsig;
 	//half wave rectification
 	filterbank = filterbank.max(0);
 	filterbank = (1 * filterbank) - 0.05;
-	
+
 	//filterbank[0].poll;
 
 	//~fsum = Select.ar(filterbank > 0.0, filterbank);

@@ -41,6 +41,7 @@ play{
 	[lpf2, tsub].poll;
 	
 	//thres = MouseX.kr(0.0, 1e-8);
+	//2.04264e-06 a good value for low signal detection
 	thres = MouseX.kr(0.0, 1e-3);
 	thres.poll;
 	trig = Schmidt.ar(tsub, thres, thres);
@@ -67,7 +68,7 @@ play{
 		2,
 		~sound,
 		trigger: trig,
-		doneAction:0, n:4) * Amplitude.ar(lpf2, 0.01, 4) * 2;
+		doneAction:0, n:4);// * Amplitude.ar(lpf2, 0.01, 4) * 2;
 	//Amplitude=long release:4 so it will not stop very fast (according to the input impact) 
 
 	
@@ -94,3 +95,19 @@ play{
 s.record("~/Desktop/test.wav")
 ~test = Buffer.read(s, "/Users/jsk/Desktop/test.wav")
 ~test.plot
+
+
+//:
+/*
+tests performed:
+
+High threshold (0.00044) & gain sound card (1/4) =======> 
+1. better performance than fft, table hit is not detected. One has to hit the table quite hard for it to be detected. 
+2. performance for very low signals is not very good, some signals with fast transient are detected very nicely (exp. mallet stick (upwards)) others are not.
+3. performance for scratching is not good at all, most of the scratching is not detected. One has to scratch very intensivly for it to respond
+
+Low threshold: (7.19401e-06) & gain sound card(1/4) ========>
+1. very low signals are not detected (pp pianissimo and more quiet => (ppp))
+2. better performance compared to FFT reqarding other sounds such as table impact, altough loud claps are detected. Still beter than FFT regarding claps.
+3. scratching is detected as multiple impacts, good performance
+*/
