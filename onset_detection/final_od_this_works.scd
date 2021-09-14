@@ -10,6 +10,7 @@ play{
 	var sig, initsig, sigsquared, env, envtrue, lpf1, lpf2, derivative, trig, output, thres, impact_amp;
 	envtrue = Env.perc(0.000, 0.03, curve:'sin').ar(doneAction:0);
 
+
 	//initial sig
 	//sig = /*envtrue **/ PinkNoise.ar(LFNoise0.kr(1).range(0.1, 1.0)) * Pulse.kr(1, 0.01);
 	//sig = PlayBuf.ar(1, ~sample, loop:1);// * LFNoise0.kr(1).range(0.1, 1.0);
@@ -39,12 +40,9 @@ play{
 	trig = Schmidt.ar(lpf2, thres, thres);
 	trig.poll;
 
-
-
-	impact_amp =
 //super gained compressor raises low amp signals and compresses the high amp ones => very low signals were detected but to low to be audiable (lpf.abs)
 //abs makes the envelope positive so it can be mapped to amp
-		Compander.ar(
+	/*Compander.ar(
 			lpf2.abs.poll * 10,
 			lpf2.abs * 10,
 			thresh: 0.3,
@@ -52,7 +50,7 @@ play{
 			slopeAbove: 0.5,
 			clampTime:  0.01,
 			relaxTime:  0.01
-		) * 40;
+		) * 40;*/
 
 	
 //PlayBufCF is an extension (it clicked a lot without it): it crossfades when trig
@@ -62,8 +60,9 @@ play{
 	PlayBufCF.ar(
 		2,
 		~sound,
-		trigger: trig.range(-1,1),//it trigs from neg to pos so had to be ranged
-		doneAction:0, n:4);
+		trigger: trig,
+		doneAction:0, n:4) * Amplitude.ar(lpf2, 0.01, 4) * 2;
+	//Amplitude=long release:4 so it will not stop very fast (according to the input impact) 
 
 	
 	//PlayBuf.ar(2, ~sound, trigger: trig.range(-1,1).poll, doneAction:0);
@@ -74,7 +73,7 @@ play{
 	//this is just a typical audio compressor for the output sig
 	output = Compander.ar(
 		output, output,
-		thresh:0.1,
+		thresh:0.7,
 		slopeBelow: 1,
 		slopeAbove: 0.5,
 		clampTime:  0.01,
@@ -82,7 +81,7 @@ play{
 	
 	//output
 	//output * 0.5;
-	Out.ar(0, output)
+	Out.ar(0, output *2)
 }
 
 //:
