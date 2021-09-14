@@ -27,7 +27,7 @@ play{
 	
 }
 //:
-
+~sound = Buffer.read(s, "/Users/jsk/Desktop/sound2.wav")
 /*
 tests performed:
 
