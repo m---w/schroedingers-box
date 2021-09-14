@@ -11,8 +11,16 @@ play{
     onsets = Onsets.kr(chain, MouseX.kr(0,1).poll, \rcomplex);
 	
     // output sound
-    pips = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.1, 0.2), onsets)) * 5;
+    //pips = SinOsc.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.1, 0.2), onsets)) * 5;
 
+	//sample
+	
+	pips =
+	PlayBufCF.ar(
+		2,
+		~sound,
+		trigger: onsets,
+		doneAction:0, n:4) * Amplitude.ar(sig, 0.01, 4) * 2;
 
 	Out.ar(0, Pan2.ar(pips));
 	//Out.ar(1, Pan2.ar(sig));
