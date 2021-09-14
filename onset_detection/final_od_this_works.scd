@@ -7,7 +7,7 @@
 //Implementation: HARD REAL-TIME ONSET DETECTION OF PERCUSSIVE SOUNDS ==> Luca Turchet
 
 play{
-	var sig, initsig, sigsquared, env, envtrue, lpf1, lpf2, derivative, trig, output, thres;
+	var sig, initsig, sigsquared, env, envtrue, lpf1, lpf2, derivative, trig, output, thres, impact_amp;
 	envtrue = Env.perc(0.000, 0.03, curve:'sin').ar(doneAction:0);
 
 	//initial sig
@@ -33,12 +33,15 @@ play{
 	//smoothing lpf2
 	lpf2 = LPF.ar(derivative, 100);
 
-	thres = MouseX.kr(0.0, 1e-8);
+	//thres = MouseX.kr(0.0, 1e-8);
+	thres = MouseX.kr(0.0, 1e-3);
 	thres.poll;
 	trig = Schmidt.ar(lpf2, thres, thres);
 	trig.poll;
 
-	output = Saw.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4), gate:trig)) * (
+
+
+	impact_amp =
 //super gained compressor raises low amp signals and compresses the high amp ones => very low signals were detected but to low to be audiable (lpf.abs)
 //abs makes the envelope positive so it can be mapped to amp
 		Compander.ar(
@@ -49,8 +52,25 @@ play{
 			slopeAbove: 0.5,
 			clampTime:  0.01,
 			relaxTime:  0.01
-		)) * 40;
+		) * 40;
 
+	
+//PlayBufCF is an extension (it clicked a lot without it): it crossfades when trig
+//https://github.com/supercollider-quarks/wslib/tree/master/wslib-classes/Extensions/UGens
+	
+	output =
+	PlayBufCF.ar(
+		2,
+		~sound,
+		trigger: trig.range(-1,1),//it trigs from neg to pos so had to be ranged
+		doneAction:0, n:4);
+
+	
+	//PlayBuf.ar(2, ~sound, trigger: trig.range(-1,1).poll, doneAction:0);
+	
+	//* EnvGen.ar(Env.perc(0.001, 2), gate:trig, doneAction:2) * impact_amp;
+	//Saw.ar(2222, mul:EnvGen.kr(Env.perc(0.001, 0.4), gate:trig)) * impact_amp;
+	 
 	//this is just a typical audio compressor for the output sig
 	output = Compander.ar(
 		output, output,
@@ -59,13 +79,11 @@ play{
 		slopeAbove: 0.5,
 		clampTime:  0.01,
 		relaxTime:  0.01);
-
+	
 	//output
 	//output * 0.5;
-	Out.ar(0, output!2)
-	
+	Out.ar(0, output)
 }
 
 //:
 
-Synth(\boing, [\gate, ])
