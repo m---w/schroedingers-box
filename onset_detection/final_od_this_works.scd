@@ -67,4 +67,5 @@ play{
 }
 
 //:
-s.meter
+
+Synth(\boing, [\gate, ])
