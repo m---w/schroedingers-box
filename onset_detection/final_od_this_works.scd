@@ -7,7 +7,7 @@
 //Implementation: HARD REAL-TIME ONSET DETECTION OF PERCUSSIVE SOUNDS ==> Luca Turchet
 
 play{
-	var sig, initsig, sigsquared, env, envtrue, lpf1, lpf2, derivative, trig, output, thres, impact_amp;
+	var sig, initsig, sigsquared, env, envtrue, lpf1, lpf2, derivative, trig, output, thres, impact_amp, tsub;
 	envtrue = Env.perc(0.000, 0.03, curve:'sin').ar(doneAction:0);
 
 
@@ -34,10 +34,16 @@ play{
 	//smoothing lpf2
 	lpf2 = LPF.ar(derivative, 100);
 
+	//trend subtraction
+	tsub = 0.01 * lpf1 - lpf2;
+	tsub = tsub.max(0);
+	//tsub = 2 * tsub ;
+	[lpf2, tsub].poll;
+	
 	//thres = MouseX.kr(0.0, 1e-8);
 	thres = MouseX.kr(0.0, 1e-3);
 	thres.poll;
-	trig = Schmidt.ar(lpf2, thres, thres);
+	trig = Schmidt.ar(tsub, thres, thres);
 	trig.poll;
 
 //super gained compressor raises low amp signals and compresses the high amp ones => very low signals were detected but to low to be audiable (lpf.abs)
@@ -81,8 +87,10 @@ play{
 	
 	//output
 	//output * 0.5;
-	Out.ar(0, output *2)
+	Out.ar(0, output *2);
 }
 
 //:
-
+s.record("~/Desktop/test.wav")
+~test = Buffer.read(s, "/Users/jsk/Desktop/test.wav")
+~test.plot
