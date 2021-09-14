@@ -257,6 +257,53 @@ Server.default.options.inDevice_("MobilePre");
 
 //:==============================================================================
 
+//last example at the bugfile.scd
+//then worked --->> these were written before the final example
+
+/*
+//: when plotted amplitude envelope has same amp as signal
+
+plot{ | rt = 0.1 |
+	var sig, sigsquared, env;
+	sig = Env.perc(0.000, 0.03, curve:'sin').kr(doneAction:0) * PinkNoise.ar(2);
+	sigsquared = sig.squared;
+	env = Amplitude.ar(sigsquared, 0.000, rt);
+	[sigsquared, env];
+}
+
+//: exactly the same code but instead of plot => play
+
+s.record("~/Desktop/HWR2.wav");
+//:
+play{ | rt = 0.05 |
+	var sig, sigsquared, env, envtrue;
+	envtrue = Env.perc(0.000, 0.03, curve:'sin').ar(doneAction:0);
+	sig = envtrue * PinkNoise.ar(1);
+	sigsquared = sig.abs;
+	//env = Lag.ar(sigsquared, 0.01).max(sigsquared).sqrt;//Amplitude.ar(sigsquared, 0.000, rt);
+	//env = Integrator.ar(sig).sqrt;
+	//env = EnvFollow.ar(sigsquared, 0.99);
+	env = Amplitude.ar(sigsquared, 0.0, 0.05);
+	[env, sigsquared];
+	//[sigsquared, env];
+}
+
+//: then plot it => different amp values
+s.record("~/Desktop/HWR2.wav");
+g = Buffer.read(s, "/Users/jsk/Desktop/HWR2.wav");
+g.plot(discrete:true);
+
+*/
+
+
+
+
+
+
+
+
+
+//:
 s.scope;
 
 ~b6 = Buffer.read(s,"/Users/jsk/Desktop/HWR2.wav");
