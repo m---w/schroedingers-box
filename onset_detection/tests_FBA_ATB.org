@@ -32,6 +32,6 @@
 ***  Low threshold: (7.19401e-06) & gain sound card(1/4) ========>
     1 very low signals are not detected (pp pianissimo and more quiet => (ppp)).
 
-    2 better performance compared to FFT reqarding other sounds such as table impact, altough loud claps are detected. Still beter than FFT regarding claps.
+    2 better performance compared to FFT reqarding other sounds such as table impact, although loud claps are detected. Still beter than FFT regarding claps.
 
     3 scratching is detected as multiple impacts, good performance.
