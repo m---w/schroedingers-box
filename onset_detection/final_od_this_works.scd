@@ -63,12 +63,12 @@ play{
 //PlayBufCF is an extension (it clicked a lot without it): it crossfades when trig
 //https://github.com/supercollider-quarks/wslib/tree/master/wslib-classes/Extensions/UGens
 	
-	output =
-	PlayBufCF.ar(
+	output = WhiteNoise.ar(0.5) * Env.perc(0.000, 0.05).kr(gate: trig);
+	/*PlayBufCF.ar(
 		2,
 		~sound,
 		trigger: trig,
-		doneAction:0, n:4) * Amplitude.ar(lpf2, 0.01, 4) * 2;
+		doneAction:0, n:4) * Amplitude.ar(lpf2, 0.01, 4) * 2;*/
 	//Amplitude=long release:4 so it will not stop very fast (according to the input impact) 
 
 	
