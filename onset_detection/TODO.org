@@ -1,0 +1,7 @@
+* TODO
+  1 combine TBA a& FBA in one synth
+  2 the synthdef should be small, stable n ready to, definitely not extensive
+  3 the oscfunc trigger is going to work outside the synthdef
+
+
+  /1 synthdef bc we can use the velocity detection from the TBA to the FBA as well, even if the TBA did not detect an onset./
