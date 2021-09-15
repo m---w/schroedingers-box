@@ -51,7 +51,7 @@ Low threshold: (0.1) & gain sound card(1/4) ========>
 3. loud claps are detected more than before
 */
 
-//:
+//: WORKX
 // register to receive this message
 a = OSCFunc({ arg msg, time;
 	var val, tb_trigval, fb_trigval, sp;
