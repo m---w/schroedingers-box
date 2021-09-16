@@ -28,9 +28,24 @@ SynthDef(\boing, {
 
 
 
+//: change sounds
+
+MIDIClient.init;
+MIDIClient.destinations;
+MIDIClient.init;
+m = MIDIOut.new(0);
+m.noteOn(16, 60, 60);
+
+MIDIdef.noteOn(\s1, {
+    ~sound = Buffer.read(s, "/Users/jsk/Desktop/sound1.wav")
+},chan:0)
+
+//:
 
 
 
+
+//: Sounds
 // =====================================================================
 // SuperCollider Workspace
 // =====================================================================
@@ -175,19 +190,20 @@ SynthDef("wts_rr", {
 //:
 Synth("wts_rr");
 
-Pbind(
+p = Pbind(
     \instrument,
     \wts_rr,
-    \dur, Prand([0.5],inf),
+    \dur, Prand([0.5], inf),
     \scale, Scale.minor,
     \root, -2,
-    \degree, Pseq([0, 7, 5, 10, 3, 12, 3, 2, 3, 7, 2, 0],inf),
-    \octave, Pseq([Pseq([5], 8), Pseq([6],4)],inf)-1,
+    \degree, Pseq([0, 7, 5, 10, 3, 12, 3, 2, 3, 7, 2, 0], inf),
+    \octave, Pseq([Pseq([5], 8), Pseq([6],4)], inf)-1,
     \oct, [2,4,6].choose,
     \susTime, Pwhite(0.1, 0.4,inf),
     \amp, Pwhite(0.5, 0.888, inf)* 0.2,
     \tempo, 100/60,
-).play
+);
+p.play;
 //:
 
 SynthDef ("varsaw",{

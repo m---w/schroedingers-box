@@ -73,24 +73,4 @@ SynthDef("sample_player",{
 
 
 
-//: old, this worx
-a = OSCFunc({ arg msg, time;
-	var val, tb_trigval, fb_trigval, sp;
-    [time, msg].postln;
-	tb_trigval = 0;
-	fb_trigval = 0;
-
-	fork{
-		sp = Synth(\sample_player);
-		0.006.wait;
-		msg[2].postln;
-		fb_trigval = 0;
-		if(msg[2] == 1){
-			fb_trigval = 1;
-			"FBA_agrees".postln;
-		};
-		if(fb_trigval == 0){sp.set(\gate,0); "FBA_disagrees".postln;}
-		
-	};
-},'/tr', s.addr);
 //:

@@ -3,6 +3,12 @@
   +2 the synthdef should be small, stable n ready to, definitely not extensive+
   +3 the oscfunc trigger is going to work outside the synthdef+
   +4 file classification+
-  5 velocity tracking (running max)
+  +5 velocity tracking (running max)+
 
-  /1 synthdef bc we can use the velocity detection from the TBA to the FBA as well, even if the TBA did not detect an onset./
+  +/1 synthdef bc we can use the velocity detection from the TBA to the FBA as well, even if the TBA did not detect an onset./+
+
+  6 the buffers should be loaded from the beginning, and they are going to be changed via an argument in the synthdef, see (buffer help)
+  7 every sound has multiple versions -playback- with filters, rate, etc
+  8 user interface from the computer, osc messages via network to Bela to control threshold
+
+  /make first 2 - 3 sounds with variations and build the sample player, then I will have smth working and do the rest/

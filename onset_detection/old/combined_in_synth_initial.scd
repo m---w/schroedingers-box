@@ -64,3 +64,5 @@ SynthDef("sample_player",{
 	Out.ar(0, Pan2.ar(sig))
 }).add
 //:
+
+
