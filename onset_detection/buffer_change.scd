@@ -18,33 +18,46 @@ SynthDef(\sample_player,{
 //:
 //initialisation
 //for the first sound
-~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]
+//~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]
 //button count
 ~button = 0;
 m = OSCdef(\next_sound, { | msg, time, button = 0 |
 	[time, msg].postln;
 	msg[1].postln;
+	
+	//counter_via_button_hits
+	if(msg[1] == 1.0){
+		~button = ~button + 1;
+	};
+	if(~button == 0){"press the button to start".postln};
+	
+	if(~button == 1){"press the button to start".postln};
+	
 	//sound1
-	if(~button == 0){~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]};
+	if(~button == 2){~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]};
 	
 	//sound2
-	if(~button == 1){~sound = [Buffer.read(s,"/Users/jsk/Desktop/schroedingers_box/onset_detection/sound2.wav") ]};
+	if(~button == 3){~sound = [~sound2var1, ~sound2var2]};
+	
 	//sound3
-	if(~button == 2){~sound = [~sound2var1, ~sound2var2, ~sound2var3]};
+	if(~button == 4){~sound = [~sound3var1, ~sound3var2, ~sound3var3]};
 
-
-	//counter_via_button_hits
-	~button = ~button + 1;
+	//finish
+	if(~button == 5){s.freeAll};
+		
+	
 },'/soundpick/2');
 //:
-Synth("sample_player", [\bufnum, f.value(~sound, ~sound.size)])
-
+Synth("sample_player", [\bufnum, f.value(~sound, ~sound.size)]);
+~button;
 //:
 //OSC_msg sender
-~n = NetAddr("192.168.184.21", 57120);
-~n.sendMsg('/soundpick',  1);
+~n = NetAddr("192.168.43.220", 57120);
+~n.sendMsg('/soundpick/2',  1);
 
 
+~sound.size
+~sound[0].postln
 
 
 
@@ -97,6 +110,11 @@ a = OSCFunc({ arg msg, time;
 
 }.play;
 )
+
+//:
+b = [1, 2, 3];
+f = { | b = 0 | var temp; temp = b.choose; b = b.scramble; b = b.choose; b. //if((b == temp) && (temp != b.last)){b = b + 1};b}; //if(){b = b -1}); }
+	f.}value(b);
 
 //:
 f = { | b = 0 | b = b.scramble; b[~c].postln; ~c = ~c + 1; ~c.postln; if(~c == ~sound1.size){~c = 0};}
