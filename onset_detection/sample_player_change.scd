@@ -1,3 +1,12 @@
+~sound1var1 = Buffer.read(s, "/Users/jsk/Desktop/sounds_processed/ionio/sound1_vars/atakes_vasi_ixeion_me_kleidi_var01.wav");
+~sound1var2 = Buffer.read(s, "/Users/jsk/Desktop/sounds_processed/ionio/sound1_vars/atakes_vasi_ixeion_me_kleidi_var02.wav");
+~sound1var3 = Buffer.read(s, "/Users/jsk/Desktop/sounds_processed/ionio/sound1_vars/atakes_vasi_ixeion_me_kleidi_var03.wav");
+~sound1var4 = Buffer.read(s, "/Users/jsk/Desktop/sounds_processed/ionio/sound1_vars/atakes_vasi_ixeion_me_kleidi_var04.wav");
+~sound1var5 = Buffer.read(s, "/Users/jsk/Desktop/sounds_processed/ionio/sound1_vars/atakes_vasi_ixeion_me_kleidi_var05.wav");
+
+~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5];
+~sound.size;
+
 //: Works but there are duplicates
 f = { | b = 0, l = 0 | b.scramble.keep(l); b.choose};
 f.value(~sound, ~sound.size);
@@ -8,7 +17,6 @@ SynthDef(\sample_player,{
 	| gate = 1, amp = 0.9, bufnum = 0 |
 	var sig, env, out;
 	sig = PlayBuf.ar(numChannels:2, bufnum:bufnum, rate:LFNoise1.kr(0.1).range(0.98, 1.02), trigger: gate);
-	sig = Mix(sig);
 	sig = LPF.ar(sig, LFNoise1.kr(0.1).range(6666, 20000));
 	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 	//no sound must exceed 9 sec
@@ -16,44 +24,6 @@ SynthDef(\sample_player,{
 	Out.ar(0, Pan2.ar(sig))
 }).add;
 //:
-//initialisation
-//for the first sound
-~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]
-//button count
-~button = 0;
-m = OSCdef(\next_sound, { | msg, time, button = 0 |
-	[time, msg].postln;
-	msg[1].postln;
-	//sound1
-	if(~button == 0){~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]};
-	
-	//sound2
-	if(~button == 1){~sound = [Buffer.read(s,"/Users/jsk/Desktop/schroedingers_box/onset_detection/sound2.wav") ]};
-	//sound3
-	if(~button == 2){~sound = [~sound2var1, ~sound2var2, ~sound2var3]};
-
-
-	//counter_via_button_hits
-	~button = ~button + 1;
-},'/soundpick/2');
-//:
-Synth("sample_player", [\bufnum, f.value(~sound, ~sound.size)])
-
-//:
-//OSC_msg sender
-~n = NetAddr("192.168.184.21", 57120);
-~n.sendMsg('/soundpick',  1);
-
-
-
-
-
-
-
-
-
-
-//: When first tests are done ==> apply appropriate changes in the oscdef
 a = OSCFunc({ arg msg, time;
 	var val, tb_trigval, fb_trigval, sp, vel;
     [time, msg].postln;
@@ -75,17 +45,25 @@ a = OSCFunc({ arg msg, time;
 		
 	};
 },'/tr', s.addr);
+//:
+m = OSCFunc({ | msg, time |
+	[time, msg].postln;
+	msg[1].postln;
+	//sound1
+	if(msg[1] == 0){~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]};
+	//sound2
+	if(msg[1] == 1){~sound = [Buffer.read(s,"/Users/jsk/Desktop/schroedingers_box/onset_detection/sound2.wav") ]};
+},'/soundpick');
+//:
+Synth("sample_player", [\bufnum, f.value(~sound, ~sound.size)])
+//:
+
+//OSC_msg sender
+~n = NetAddr("192.168.184.21", 57120);
+~n.sendMsg('/soundpick',  1);
 
 
 
-
-
-
-
-
-
-
-//=================RANDOMISATION====================
 //:this does it but doesnt work in the way I want to
 (
 {
