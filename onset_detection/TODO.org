@@ -7,8 +7,10 @@
 
   +/1 synthdef bc we can use the velocity detection from the TBA to the FBA as well, even if the TBA did not detect an onset./+
 
-  6 the buffers should be loaded from the beginning, and they are going to be changed via an argument in the synthdef, see (buffer help)
+  +6 the buffers should be loaded from the beginning, and they are going to be changed via an argument in the synthdef, see (buffer help)+
   7 every sound has multiple versions -playback- with filters, rate, etc
   8 user interface from the computer, osc messages via network to Bela to control threshold
+  9 FIX CHOOSE EVERYTIME DIFFERENT ELEMENT FROM ARRAY
+  10 overlap sounds if 1 2 3 sounds close to each other the last is everytime going to be gate:0 so it doesnt overload. Additionaly remove any no needed stuff from the code
 
   /make first 2 - 3 sounds with variations and build the sample player, then I will have smth working and do the rest/

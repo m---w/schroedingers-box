@@ -7,9 +7,9 @@ f.value(~sound, ~sound.size);
 SynthDef(\sample_player,{
 	| gate = 1, amp = 0.9, bufnum = 0 |
 	var sig, env, out;
-	sig = PlayBuf.ar(numChannels:2, bufnum:bufnum, rate:LFNoise1.kr(0.1).range(0.98, 1.02), trigger: gate);
+	sig = PlayBuf.ar(numChannels:2, bufnum:bufnum, rate:LFNoise1.kr(0.1).range(0.95, 1.05), trigger: gate);
 	sig = Mix(sig);
-	sig = LPF.ar(sig, LFNoise1.kr(0.1).range(6666, 20000));
+	sig = LPF.ar(sig, LFNoise1.kr(0.1).range(2666, 20000));
 	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 	//no sound must exceed 9 sec
 	sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:9).kr(doneAction:2);
@@ -52,7 +52,7 @@ Synth("sample_player", [\bufnum, f.value(~sound, ~sound.size)]);
 ~button;
 //:
 //OSC_msg sender
-~n = NetAddr("192.168.43.220", 57120);
+~n = NetAddr("192.168.184.21", 57120);
 ~n.sendMsg('/soundpick/2',  1);
 
 
