@@ -1,0 +1,22 @@
+* Bela CPU
+  +Firstly reduced the envelope release for the playback sound (max sound to be played: 1.5 sec)
+
+  +Secondly played around with block size (64 is OK)
+
+  +FFT increased buffer size 512
+
+  +Finally, changed the fft algorithm from \rcomplex which is very CPU intensive to cheaper algos (\power was the cheapest & efficient)
+
+  +also mingap, retrigger limit in fft frames
+
+*Check here* => https://forum.bela.io/d/716-help-with-underruns-using-sdt-for-puredata-on-bela/2
+
+
+/"The usual suspect when you get low average CPU usage but repeated underruns is that the CPU load for the audio callback is not constant. Some Pd vanilla objects (e.g.: *[fft~]*, [sigmund~], [fiddle~], possibly [rms~]) have such a property: most of the time they do nothing, they just copy input samples into a buffer. Every so often, when the buffer is full, they run some expensive computation (e.g.: FFT) in the audio thread, which takes longer than the time available to process one block of data. So you get a low average CPU usage, but for each of the spikes you get a dropout. This is often mitigated by increasing Bela's blocksize. Now, by a quick inspection of the code you linked, I don't see such a behaviour in that specific object, but I may be wrong. Also, maybe there is somewhere else in your patch that causes that?"/
+
+more related content:
+https://forum.bela.io/d/1355-trill-with-pd-causing-underrun-detected
+
+https://forum.bela.io/d/490-underrun-detected-errors/2
+
+https://forum.bela.io/d/716-help-with-underruns-using-sdt-for-puredata-on-bela

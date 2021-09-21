@@ -23,6 +23,9 @@ temp;
 };
 //:
 f.value(~sound);
+
+//:
+play{PlayBuf.ar(1, bufnum:~sound)}
 //:
 
 

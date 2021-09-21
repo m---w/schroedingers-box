@@ -59,13 +59,13 @@ a = OSCFunc({ arg msg, time;
 },'/tr', s.addr);
 
 
-~sound = Buffer.read(s,"/Users/jsk/Desktop/schroedingers_box/onset_detection/sound2.wav");
+~sound = Buffer.read(s,"/Users/jsk/Desktop/schroedingers_box/sounds/sound2_vars/kagelo01.wav");
 
 SynthDef("sample_player",{
 	| gate = 1, amp = 0.1|
 	var sig, env, out;
 	sig = PlayBuf.ar(numChannels:2, bufnum:~sound, trigger: gate);
-	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
+	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate, doneAction:2);
 	//no sound must exceed 9 sec
 	sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:9).kr(doneAction:2);
 	Out.ar(0, Pan2.ar(sig))

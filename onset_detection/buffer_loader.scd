@@ -15,6 +15,6 @@
 ~sound3var3 = Buffer.read(s, "/Users/jsk/Desktop/schroedingers_box/sounds/sound3_vars/metaliko_kouti_diafores _attakes_var3.wav");
 
 
-//play{PlayBuf.ar(2, bufnum: ~sound3var1)}
+//play{PlayBuf.ar(2, bufnum: ~sound3var3)}
 
 	
