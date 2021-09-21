@@ -2,38 +2,27 @@
 // SuperCollider Workspace
 // =====================================================================
 
-Pn(scramble[0,2,3])
-
+// NO DUPS!
+//: This worx
+p = [1,2,3];
 //:
-
-~newID = 0; // reset sample ID counter
-~n = 5; // number of samples
-// create n urns where always one of the 5 is missing (all combinations)
-~urn = n.collect{|i| 
-	var foo = (0..n-1);
-	foo.takeAt(i);
-	foo;
+f = { | in = 0 |
+var temp, arr, val, suf;
+arr = in;
+suf = Pn(Pshuf(in, 1), inf).asStream;
+temp = suf.next;
+if(temp == ~last){
+arr = in; 
+val = arr.remove(temp);
+arr.postln;
+temp = arr.choose;
+arr = arr.add(val);
 };
-~newID = ~urn[~newID][(n-1).rand]
-
-//:
-
-f = {
-	| b = 0, l = 0 | var tempin, here, temper, result;
-	here = (0..b.size).choose;
-	temper = b.slotKey(here);
-	tempin = b[here];
-	if(tempin == ~temp){temper = b.takeAt(temper); result = b};
-	~temp = tempin;
-	[result, ~temp];
-	//temper;
+~last = temp;
+temp;
 };
 //:
-f.value(p,p.size)
-
-
+f.value(~sound);
 //:
-p = [1,2,3]
 
-p.slotAt(1)
-p.size
+
