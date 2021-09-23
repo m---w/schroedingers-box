@@ -27,7 +27,7 @@ fork{
 	10.do{
 		//v.gate(f, 10, 1, [\amp, 0.1, \bufnum, ~sound.choose]);
 		//v.release(4);
-		v.trigger(f, 1, [\amp, 0.1, \bufnum, ~sound.choose]);  
+		v.trigger(0, 1, [\amp, 0.1, \gate, 1, \bufnum, ~sound.choose]);  
 		0.2.wait;
 	}
 	
@@ -35,11 +35,57 @@ fork{
 
 //:
 
-f = Array.fill(5, { 1000.0.rand + 50 });
+// ===onset detection===
+SynthDef(\tba_fba, {	
+	var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp;
+	var chain, onsets, pips, ftrig, fthres;
+	sig = SoundIn.ar([0]);
+	//===TBA===
+	sighpf = HPF.ar(sig, 4000);
+	sigsquared = sighpf.squared;
+	lpf1 = LPF.ar(sigsquared, 25);
+	derivative = Slope.ar(lpf1);
+	lpf2 = LPF.ar(derivative, 100);
+	tsub = 0.01 * lpf1 - lpf2;
+	tsub = tsub.max(0);
+	//2.04264e-06 a good value for low signal detection
+	tthres = MouseX.kr(0.0, 1e-3);
+	//thres = 1000;
+	ttrig = Schmidt.ar(tsub, tthres, tthres);
+	tsend = SendTrig.kr(A2K.kr(ttrig), 0);
+	//===FBA===
+	chain = FFT(LocalBuf(256), sig);
+	fthres = MouseX.kr(0.05,1);
+	onsets = Onsets.kr(chain, fthres, \rcomplex);
+	//vel track test
+	vel = RunningMax.ar(sig, [onsets, ttrig]);
+	ftrig = SendTrig.kr(onsets, 1, value:vel);
+}).play;
 
-  // listen to the notes stop one by one
+// ===onset detection combination===
+a = OSCFunc({ arg msg, time;
+	var val, tb_trigval, fb_trigval, sp, vel;
+    [time, msg].postln;
+	tb_trigval = 0;
+	fb_trigval = 0;
+	vel = 0;
+	vel = msg[3];
+	fork{
+		v.release;
+		//v.trigger(2, 1, [\bufnum, f.value(~sound, ~sound.size), \amp, vel]);
+		//v.gate(1, 0.1, 1, [\amp, vel * 0.5, \bufnum, ~sound.choose]);
+		v.trigger(1, 1, [\amp, vel, \gate, 1, \bufnum, f.value(~sound)]);  
+		0.006.wait;
+		msg[2].postln;
+		fb_trigval = 0;
+		if(msg[2] == 1){
+			fb_trigval = 1;
+			"FBA_agrees".postln;
+		};
+		if(fb_trigval == 0){sp.set(\gate,0); "FBA_disagrees".postln;}		
+	};
+},'/tr', s.addr);
 
-v.gate(f, 3, 1, [\amp, 0.1]);
 
 
 
