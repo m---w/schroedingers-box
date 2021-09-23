@@ -3,6 +3,7 @@
 (
 Window.closeAll;
 s.waitForBoot({
+	~n = NetAddr("192.168.184.21", 57120);
 
     var w, tba_threshi, tba_threslo, fba_thres;
 
@@ -65,6 +66,7 @@ s.waitForBoot({
 		val = obj.value.linlin(0.0, 1.0, 0.0, 1.0);
 		val.postln;
         ~nb_fba.value_(val.value);//GoesToNumberBox
+		//~n.sendMsg('/soundpick/2',  1, 2); //thres control bela FBA
 	});
 	
 	~nb_tba_hi = NumberBox(w, Rect(20, 105, 50, 20))

@@ -19,7 +19,7 @@ SynthDef(\sample_player,{
 	sig = LPF.ar(sig, Rand(3333, 20000));
 	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 	//no sound must exceed 9 sec
-	sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:9).kr(doneAction:2);
+	sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
 	Out.ar(0, Pan2.ar(sig))
 }).add;
 
