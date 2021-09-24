@@ -45,18 +45,20 @@ s.waitForBoot{
 		~last = temp;
 		temp;
 	};
-
+	
 SynthDef("sample_player",{
 	| gate = 1, amp = 0.1, bufnum = 0 |
 	var sig, env, out;
-	sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, trigger: gate);
+	sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, rate: Rand(0.9, 1.1), trigger: gate);
+	p=1.0.linrand;
+	sig = sig - DelayN.ar(sig, maxdelaytime: 0.01, delaytime: (p*0.01)+(0.5/48000));
 	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 2), gate: gate, doneAction:2);
 	amp = Latch.kr(gate, gate) * amp;
 	sig = amp * sig;
 	//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 	//no sound must exceed 1.5 sec
 	//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
-	Out.ar(7, [sig, sig])
+	Out.ar(0, [sig, sig])
 }).add;
 
 v = Voicer.new(10, "sample_player");
