@@ -3,9 +3,10 @@
 (
 Window.closeAll;
 s.waitForBoot({
-	~n = NetAddr("192.168.184.21", 57120);
 
-    var w, tba_threshi, tba_threslo, fba_thres;
+	var w, tba_threshi, tba_threslo, fba_thres;
+	
+	~n = NetAddr("192.168.184.21", 57120);
 
     w = Window("Schroedinger's box control").alwaysOnTop_(true);//Setting Up the Window
     w.bounds_(Rect(900, 500, 300, 200));
@@ -48,8 +49,8 @@ s.waitForBoot({
 		var val;
 		val = obj.value.linlin(0.0, 1.0, 0.0, 1e-3);
 		val.postln;
+		q.set(\tba_hi, val);
 		~nb_tba_hi.value_(val);
-		
 	});
 
 	k[1].action_({
@@ -57,14 +58,16 @@ s.waitForBoot({
 		var val;
 		val = obj.value.linlin(0.0, 1.0, 0.0, 0.001);
 		val.postln;
+		q.set(\tba_lo, val);
 		~nb_tba_lo.value_(val.value);
 	});
 
 	k[2].action_({
 		|obj|
 		var val;
-		val = obj.value.linlin(0.0, 1.0, 0.0, 1.0);
+		val = obj.value.linlin(0.0, 1.0, 0.0, 2.0);
 		val.postln;
+		q.set(\fba_thres, val);
         ~nb_fba.value_(val.value);//GoesToNumberBox
 		//~n.sendMsg('/soundpick/2',  1, 2); //thres control bela FBA
 	});
