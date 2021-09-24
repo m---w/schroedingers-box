@@ -6,7 +6,9 @@ s.waitForBoot({
 
 	var w, tba_threshi, tba_threslo, fba_thres;
 	
-	~n = NetAddr("192.168.184.21", 57120);
+	//~n = NetAddr("192.168.184.21", 57120);
+	~n = NetAddr("bela.local", 57120);
+	
 
     w = Window("Schroedinger's box control").alwaysOnTop_(true);//Setting Up the Window
     w.bounds_(Rect(900, 500, 300, 200));
