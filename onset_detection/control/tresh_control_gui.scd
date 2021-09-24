@@ -49,7 +49,10 @@ s.waitForBoot({
 		var val;
 		val = obj.value.linlin(0.0, 1.0, 0.0, 1e-3);
 		val.postln;
-		q.set(\tba_hi, val);
+				//q.set only local no osc
+		//q.set(\tba_hi, val);
+				//sendMsg to bela
+		~n.sendMsg('/thres/tba_hi', val);
 		~nb_tba_hi.value_(val);
 	});
 
@@ -58,7 +61,10 @@ s.waitForBoot({
 		var val;
 		val = obj.value.linlin(0.0, 1.0, 0.0, 0.001);
 		val.postln;
-		q.set(\tba_lo, val);
+		//q.set only local no osc
+		//q.set(\tba_lo, val);
+		//sendMsg to bela
+		~n.sendMsg('/thres/tba_lo', val);
 		~nb_tba_lo.value_(val.value);
 	});
 
@@ -67,9 +73,11 @@ s.waitForBoot({
 		var val;
 		val = obj.value.linlin(0.0, 1.0, 0.0, 2.0);
 		val.postln;
-		q.set(\fba_thres, val);
+		//q.set only local no osc
+		//q.set(\fba_thres, val);
+		//sendMsg to bela
+		~n.sendMsg('/thres/fba_thres', val);
         ~nb_fba.value_(val.value);//GoesToNumberBox
-		//~n.sendMsg('/soundpick/2',  1, 2); //thres control bela FBA
 	});
 	
 	~nb_tba_hi = NumberBox(w, Rect(20, 105, 50, 20))

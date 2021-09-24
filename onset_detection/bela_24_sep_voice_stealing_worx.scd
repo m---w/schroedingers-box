@@ -113,6 +113,44 @@ a = OSCFunc({ arg msg, time;
 	};
 },'/tr', s.addr);
 
+
+
+
+
+
+
+
+
+	//thresh control
+	OSCFunc({ arg msg, time;
+		var val;
+		[time, msg].postln;
+		val = msg[1];
+		val.postln;
+		q.set(\tba_hi, val);
+		
+	},'/thres/tba_hi');
+
+	OSCFunc({ arg msg, time;
+		var val;
+		[time, msg].postln;
+		val = msg[1];
+		val.postln;
+		q.set(\tba_lo, val);
+		
+	},'/thres/tba_lo');
+
+	OSCFunc({ arg msg, time;
+		var val;
+		[time, msg].postln;
+		val = msg[1];
+		val.postln;
+		q.set(\fba_thres, val);
+		
+	},'/thres/fba_thres');
+
+	
+
 1.wait;
 
 q = Synth(\tba_fba);
