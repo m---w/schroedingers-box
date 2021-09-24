@@ -11,7 +11,6 @@
 f = { | b = 0, l = 0 | b.scramble.keep(l); b.choose};
 f.value(~sound, ~sound.size);
 
-
 //: sample player configured for sample picking
 SynthDef(\sample_player,{
 	| gate = 1, amp = 0.9, bufnum = 0 |

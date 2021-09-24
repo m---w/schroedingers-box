@@ -1,12 +1,14 @@
 //:
 SynthDef(\sample_player,{
-	| gate = 0, amp = 0.1, bufnum = 1, f = 1, releaseTime = 0.0|
+	| outbus = 0, gate = 0, amp = 0.1, bufnum = 1, f = 1, releaseTime = 0.8|
 	var sig, env, out;
-	sig = PlayBuf.ar(numChannels:2, bufnum: bufnum, rate: f, trigger: gate);
-	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, releaseTime), gate: gate, doneAction:2) * amp;
+	sig = PlayBuf.ar(numChannels:1, bufnum: bufnum, rate: f, trigger: gate);
+	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 2), gate: gate, doneAction:2);
+	amp = Latch.kr(gate, gate) * amp;
+	sig = amp * sig;
 	//no sound must exceed 1.5 sec
 	//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
-	Out.ar(0, sig)
+	Out.ar(outbus, sig)
 }).load(s);
 
 //:+
@@ -26,9 +28,9 @@ v = Voicer.new(5, "sample_player");//, [\bufnum, ~sound.choose, \amp, 1.0.rand])
 fork{
 	10.do{
 		//v.gate(f, 10, 1, [\amp, 0.1, \bufnum, ~sound.choose]);
-		//v.release(4);
-		v.trigger(0, 1, [\amp, 0.1, \gate, 1, \bufnum, ~sound.choose]);  
-		0.2.wait;
+		v.release(4);
+		v.trigger1(0, 1, [\amp, rrand(0.1, 1), \gate, 1, \bufnum, ~sound.choose]);  
+		0.1.wait;
 	}
 	
 }
@@ -51,12 +53,13 @@ SynthDef(\tba_fba, {
 	//2.04264e-06 a good value for low signal detection
 	tthres = MouseX.kr(0.0, 1e-3);
 	//thres = 1000;
-	ttrig = Schmidt.ar(tsub, tthres, tthres);
-	tsend = SendTrig.kr(A2K.kr(ttrig), 0);
+	ttrig = Schmidt.ar(tsub, tthres);
+	vel = RunningMax.ar(sig, ttrig);
+	tsend = SendTrig.kr(A2K.kr(ttrig), vel);
 	//===FBA===
 	chain = FFT(LocalBuf(256), sig);
 	fthres = MouseX.kr(0.05,1);
-	onsets = Onsets.kr(chain, fthres, \rcomplex);
+	onsets = Onsets.kr(chain, fthres, \power);
 	//vel track test
 	vel = RunningMax.ar(sig, [onsets, ttrig]);
 	ftrig = SendTrig.kr(onsets, 1, value:vel);
@@ -71,10 +74,12 @@ a = OSCFunc({ arg msg, time;
 	vel = 0;
 	vel = msg[3];
 	fork{
-		v.release;
+		v.release();
 		//v.trigger(2, 1, [\bufnum, f.value(~sound, ~sound.size), \amp, vel]);
 		//v.gate(1, 0.1, 1, [\amp, vel * 0.5, \bufnum, ~sound.choose]);
-		v.trigger(1, 1, [\amp, vel, \gate, 1, \bufnum, f.value(~sound)]);  
+		//v.set([\amp, vel]);
+		v.trigger(1, 1, [\amp, vel, \bufnum, f.value(~sound)]);
+		
 		0.006.wait;
 		msg[2].postln;
 		fb_trigval = 0;
@@ -82,20 +87,11 @@ a = OSCFunc({ arg msg, time;
 			fb_trigval = 1;
 			"FBA_agrees".postln;
 		};
-		if(fb_trigval == 0){sp.set(\gate,0); "FBA_disagrees".postln;}		
+		if(fb_trigval == 0){/*sp.set(\gate,0);*/ "FBA_disagrees".postln;};
+		
+		
 	};
 },'/tr', s.addr);
-
-
-
-
-
-
-
-
-
-
-
 
 
 
