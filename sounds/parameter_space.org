@@ -1,0 +1,12 @@
+* Parameter space
+
+*** keep in mind that the sounds have to be somewhat unrecognisable
+
+   1 wooden
+   2 metallic
+   3 voice / animals
+   4 glass
+   5 paper: page / box impact etc.
+   6 implausible sounds e.g. water boiler, book page noise
+   7 artificial sounds (not too many)
+   8 water-ish sounds, mustard from tube

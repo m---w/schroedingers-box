@@ -52,9 +52,12 @@ Synth("sample_player", [\bufnum, f.value(~sound, ~sound.size)]);
 ~button;
 //:
 //OSC_msg sender
-~n = NetAddr("192.168.184.21", 57120);
-~n.sendMsg('/soundpick/2',  1);
+~n = NetAddr("bela.local", 57120);
+~n = NetAddr("bela.local", 57120);
 
+//:
+~n.sendMsg('/soundpick/2',  1);
+//:
 
 ~sound.size
 ~sound[0].postln
