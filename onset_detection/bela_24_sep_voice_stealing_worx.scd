@@ -29,7 +29,7 @@ s.waitForBoot{
 	//~sound1var5 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var05.wav", channels:1);
 	
 	~sound = [~sound1var1, ~sound1var2, ~sound1var3];//, ~sound1var4, ~sound1var5];
-
+ 
 	f = { | in = 0 |
 		var temp, arr, val, suf;
 		arr = in;
@@ -47,9 +47,9 @@ s.waitForBoot{
 	};
 	
 SynthDef("sample_player",{
-	| gate = 1, amp = 0.1, bufnum = 0 |
+	| gate = 1, amp = 0.1, bufnum = 0, rr |
 	var sig, env, out;
-	sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, rate: Rand(0.9, 1.1), trigger: gate);
+	sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, rate: rr, trigger: gate);
 	p=1.0.linrand;
 	sig = sig - DelayN.ar(sig, maxdelaytime: 0.01, delaytime: (p*0.01)+(0.5/48000));
 	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.3, 0.666, 2), gate: gate, doneAction:2);
@@ -60,7 +60,7 @@ SynthDef("sample_player",{
 	//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
 	Out.ar(0, [sig, sig])
 }).add;
-
+	
 v = Voicer.new(5, "sample_player");
 
 SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
@@ -100,7 +100,7 @@ a = OSCFunc({ arg msg, time;
 		//bufnum = f.value(~sound);
 		vel = msg[3];
 		vel.postln;
-		v.trigger(1, 1, [\amp, vel.linlin(0.0, 1.0, 0.0, 1.0), \gate, 1, \bufnum, f.value(~sound)]);  
+		v.trigger(1, 1, [\amp, vel.linlin(0.0, 1.0, 0.0, 1.0), \gate, 1, \bufnum, f.value(~sound), \rr, rrand(0.9, 1.1)]);  
 		0.006.wait;
 		//msg[2].postln;
 		fb_trigval = 0;
@@ -108,7 +108,7 @@ a = OSCFunc({ arg msg, time;
 			fb_trigval = 1;
 			"FBA_agrees".postln;
 		};//sp.set has to change for the real thing
-		if(fb_trigval == 0){sp.set(\gate,0); "FBA_disagrees".postln};
+		if(fb_trigval == 0){v.set([\gate,0]); "FBA_disagrees".postln};
 		
 	};
 },'/tr', s.addr);
