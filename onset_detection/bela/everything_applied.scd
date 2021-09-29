@@ -1,7 +1,7 @@
 /*
-Schroedinger's Box
-SuperCollider Patch for Bela
-2021 Jason Svoronos-Kanavas, Marian Weger 
+	Schroedinger's Box
+	SuperCollider Patch for Bela
+	2021 Jason Svoronos-Kanavas, Marian Weger 
 */
 
 
@@ -21,71 +21,112 @@ s.options.numInputBusChannels = 4;
 s.options.numOutputBusChannels = 8;
 
 s.waitForBoot{
-//sound1
-~sound1var1 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var01.wav", channels:1);
-~sound1var2 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var02.wav", channels:1);
-~sound1var3 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var03.wav", channels:1);
-~sound1var4 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var04.wav", channels:1);
-~sound1var5 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var05.wav", channels:1);
+	//sound1
+	~sound1var1 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var01.wav", channels:1);
+	~sound1var2 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var02.wav", channels:1);
+	~sound1var3 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var03.wav", channels:1);
+	~sound1var4 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var04.wav", channels:1);
+	~sound1var5 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var05.wav", channels:1);
 
-//sound2
-~sound2var1 = Buffer.readChannel(s, "./sounds/kagelo01.wav", channels:1);
-~sound2var2 = Buffer.readChannel(s, "./sounds/kagelo02.wav", channels:1);
+	//sound2
+	~sound2var1 = Buffer.readChannel(s, "./sounds/kagelo01.wav", channels:1);
+	~sound2var2 = Buffer.readChannel(s, "./sounds/kagelo02.wav", channels:1);
 
-//sound3
-~sound3var1 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var1.wav", channels:1);
-~sound3var2 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var2.wav", channels:1);
-~sound3var3 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var3.wav", channels:1);
+	//sound3
+	~sound3var1 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var1.wav", channels:1);
+	~sound3var2 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var2.wav", channels:1);
+	~sound3var3 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var3.wav", channels:1);
 
-//sound4
-~sound4var1 = Buffer.readChannel(s, "./sounds/timpani_bends1_var1.wav", channels:1);
-~sound4var2 = Buffer.readChannel(s, "./sounds/timpani_bends1_var2.wav", channels:1);
-~sound4var3 = Buffer.readChannel(s, "./sounds/timpani_bends1_var3.wav", channels:1);
-~sound4var4 = Buffer.readChannel(s, "./sounds/timpani_bends1_var4.wav", channels:1);
-~sound4var5 = Buffer.readChannel(s, "./sounds/timpani_bends1_var5.wav", channels:1);
-~sound4var6 = Buffer.readChannel(s, "./sounds/timpani_bends1_var6.wav", channels:1);
+	//sound4
+	~sound4var1 = Buffer.readChannel(s, "./sounds/timpani_bends1_var1.wav", channels:1);
+	~sound4var2 = Buffer.readChannel(s, "./sounds/timpani_bends1_var2.wav", channels:1);
+	~sound4var3 = Buffer.readChannel(s, "./sounds/timpani_bends1_var3.wav", channels:1);
+	~sound4var4 = Buffer.readChannel(s, "./sounds/timpani_bends1_var4.wav", channels:1);
+	~sound4var5 = Buffer.readChannel(s, "./sounds/timpani_bends1_var5.wav", channels:1);
+	~sound4var6 = Buffer.readChannel(s, "./sounds/timpani_bends1_var6.wav", channels:1);
 
-//sound5
-~sound5var1 = Buffer.readChannel(s, "./sounds/35dogtoy_var1.wav", channels:1);
-~sound5var2 = Buffer.readChannel(s, "./sounds/35dogtoy_var2.wav", channels:1);
+	//sound5
+	~sound5var1 = Buffer.readChannel(s, "./sounds/35dogtoy_var1.wav", channels:1);
+	~sound5var2 = Buffer.readChannel(s, "./sounds/35dogtoy_var2.wav", channels:1);
 
 	//~sound1var5 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var05.wav", channels:1);
 	
 	//~sound = [~sound1var1, ~sound1var2, ~sound1var3];//, ~sound1var4, ~sound1var5];
 	
 	
-//initialisation
+	//initialisation
 	~button = 0;
-m = OSCdef(\next_sound, { | msg, time, button = 0 |
-	[time, msg].postln;
-	msg[1].postln;
-	
-	//counter_via_button_hits
-	if(msg[1] == 1.0){
-		~button = ~button + 1;
-	};
-	if(~button == 0){"press the button to start".postln};
-	
-	//sound1
-	if(~button == 1){~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]};
-	
-	//sound2
-	if(~button == 2){~sound = [~sound2var1, ~sound2var2]};
-	
-	//sound3
-	if(~button == 3){~sound = [~sound3var1, ~sound3var2, ~sound3var3]};
-
-	//sound4
-	if(~button == 4){~sound = [~sound4var1, ~sound4var2, ~sound4var3, ~sound4var4, ~sound4var5, ~sound4var6]};
-
-	//sound5
-	if(~button == 5){~sound = [~sound5var1, ~sound5var2]};
-
-	//finish
-	if(~button == 6){s.freeAll};
+	m = OSCdef(\next_sound, { | msg, time, button = 0 |
+		[time, msg].postln;
+		msg[1].postln;
 		
-	
-},'/soundpick/2');
+		//counter_via_button_hits
+		if(msg[1] == 1.0){
+			~button = ~button + 1;
+		};
+		if(~button == 0){"press the button to start".postln};
+		
+		//sound1
+		if(~button == 1){~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]};
+		
+		//sound2
+		if(~button == 2){~sound = [~sound2var1, ~sound2var2]};
+		
+		//sound3
+		if(~button == 3){~sound = [~sound3var1, ~sound3var2, ~sound3var3]};
+
+		//sound4
+		if(~button == 4){~sound = [~sound4var1, ~sound4var2, ~sound4var3, ~sound4var4, ~sound4var5, ~sound4var6]};
+
+		//sound5
+		if(~button == 5){~sound = [~sound5var1, ~sound5var2]};
+
+		//finish
+		if(~button == 6){s.freeAll};
+		
+		
+	},'/soundpick/2');
+
+
+	~button = 0;
+	OSCdef(\next_sound, { | msg, time, button = 0 |
+		[time, msg].postln;
+		//msg[1].postln;
+		msg.postln;
+
+		//direct sample choosing via numberbox
+		if(msg[1].isSymbol){
+			~button = 0;
+			~button = msg[2];
+			msg[2].postln;
+		};		
+		
+		//counter_via_button_hits
+		if(msg[1] == 1.0){
+			~button = ~button + 1;
+		};
+		if(~button == 0){"press the button to start".postln};
+		
+		//sound1
+		if(~button == 1){~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]};
+		
+		//sound2
+		if(~button == 2){~sound = [~sound2var1, ~sound2var2]};
+		
+		//sound3
+		if(~button == 3){~sound = [~sound3var1, ~sound3var2, ~sound3var3];};
+
+		//sound4
+		if(~button == 4){~sound = [~sound4var1, ~sound4var2, ~sound4var3, ~sound4var4, ~sound4var5, ~sound4var6]};
+
+		//sound5
+		if(~button == 5){~sound = [~sound5var1, ~sound5var2]};
+
+		//finish
+		if(~button == 6){s.freeAll};
+		
+		
+	},'/soundpick/2');
 	
 
 	f = { | in = 0 |
@@ -104,72 +145,72 @@ m = OSCdef(\next_sound, { | msg, time, button = 0 |
 		temp;
 	};
 	
-SynthDef("sample_player",{
-	| gate = 1, amp = 0.1, bufnum = 0 |
-	var sig, env, out;
-	sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, rate: Rand(0.9, 1.1), trigger: gate);
-	p=1.0.linrand;
-	sig = sig - DelayN.ar(sig, maxdelaytime: 0.01, delaytime: (p*0.01)+(0.5/48000));
-	sig = sig * EnvGen.ar(Env.adsr(0.0, 0.3, 0.666, 2), gate: gate, doneAction:2);
-	//amp = Latch.kr(gate, gate) * amp;
-	sig = amp * sig;
-	//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
-	//no sound must exceed 1.5 sec
-	//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
-	Out.ar(7, [sig, sig])
-}).add;
+	SynthDef("sample_player",{
+		| gate = 1, amp = 0.1, bufnum = 0 |
+		var sig, env, out;
+		sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, rate: Rand(0.9, 1.1), trigger: gate);
+		p=1.0.linrand;
+		sig = sig - DelayN.ar(sig, maxdelaytime: 0.01, delaytime: (p*0.01)+(0.5/48000));
+		sig = sig * EnvGen.ar(Env.adsr(0.0, 0.3, 0.666, 2), gate: gate, doneAction:2);
+		//amp = Latch.kr(gate, gate) * amp;
+		sig = amp * sig;
+		//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
+		//no sound must exceed 1.5 sec
+		//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
+		Out.ar(7, [sig, sig])
+	}).add;
 
-v = Voicer.new(5, "sample_player");
+	v = Voicer.new(5, "sample_player");
 
-SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
-	var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp, trigtemp;
-	var chain, onsets, pips, ftrig, fthres;
-	sig = SoundIn.ar(0);
-	//===TBA===
-	sighpf = HPF.ar(sig, 4000);
-	sigsquared = sighpf.squared;
-	lpf1 = LPF.ar(sigsquared, 25);
-	derivative = Slope.ar(lpf1);
-	lpf2 = LPF.ar(derivative, 100);
-	tsub = 0.01 * lpf1 - lpf2;
-	tsub = tsub.max(0);
-	tthres = tba_hi;//1e-3;
-	ttrig = Schmidt.ar(tsub, tthres, tthres);
-	vel = RunningMax.ar(sig.abs, ttrig);
-	tsend = SendTrig.kr(A2K.kr(ttrig), 0, value:vel);
-	//===FBA===
-	chain = FFT(LocalBuf(256), sig);
-	fthres = fba_thres;
-	onsets = Onsets.kr(chain, fthres, \power);
-	//vel track test
-	trigtemp = ttrig + onsets;
-	vel = RunningMax.ar(vel + sig.abs, trigtemp);
-	ftrig = SendTrig.kr(onsets, 1, value:vel);
-}).add;
+	SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
+		var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp, trigtemp;
+		var chain, onsets, pips, ftrig, fthres;
+		sig = SoundIn.ar(0);
+		//===TBA===
+		sighpf = HPF.ar(sig, 4000);
+		sigsquared = sighpf.squared;
+		lpf1 = LPF.ar(sigsquared, 25);
+		derivative = Slope.ar(lpf1);
+		lpf2 = LPF.ar(derivative, 100);
+		tsub = 0.01 * lpf1 - lpf2;
+		tsub = tsub.max(0);
+		tthres = tba_hi;//1e-3;
+		ttrig = Schmidt.ar(tsub, tthres, tthres);
+		vel = RunningMax.ar(sig.abs, ttrig);
+		tsend = SendTrig.kr(A2K.kr(ttrig), 0, value:vel);
+		//===FBA===
+		chain = FFT(LocalBuf(256), sig);
+		fthres = fba_thres;
+		onsets = Onsets.kr(chain, fthres, \power);
+		//vel track test
+		trigtemp = ttrig + onsets;
+		vel = RunningMax.ar(vel + sig.abs, trigtemp);
+		ftrig = SendTrig.kr(onsets, 1, value:vel);
+	}).add;
 
-//Vel track tests
-a = OSCFunc({ arg msg, time;
-	var val, tb_trigval, fb_trigval, sp, vel, bufnum;
-    [time, msg].postln;
-	tb_trigval = 0;
-	fb_trigval = 0;
-	//vel = 0;
-	fork{
-		//bufnum = f.value(~sound);
-		vel = msg[3];
-		vel.postln;
-		v.trigger(1, 1, [\amp, vel.linlin(0.0, 1.0, 0.0, 1.0), \gate, 1, \bufnum, f.value(~sound)]);  
-		0.006.wait;
-		//msg[2].postln;
+	//Vel track tests
+	a = OSCFunc({ arg msg, time;
+		var val, tb_trigval, fb_trigval, sp, vel, bufnum;
+		[time, msg].postln;
+		tb_trigval = 0;
 		fb_trigval = 0;
-		if(msg[2] == 1){
-			fb_trigval = 1;
-			"FBA_agrees".postln;
-		};//sp.set has to change for the real thing
-		if(fb_trigval == 0){v.set([\gate,0]); "FBA_disagrees".postln};
-		
-	};
-},'/tr', s.addr);
+		//vel = 0;
+		fork{
+			//bufnum = f.value(~sound);
+			vel = msg[3];
+			vel.postln;
+			v.trigger(1, 1, [\amp, vel.linlin(0.0, 1.0, 0.0, 1.0), \gate, 1, \bufnum, f.value(~sound)]);  
+			0.006.wait;
+			//msg[2].postln;
+			fb_trigval = 0;
+			if(msg[2] == 1){
+				fb_trigval = 1;
+				"FBA_agrees".postln;
+			};//sp.set has to change for the real thing
+			if(fb_trigval == 0){v.set([\gate,0]); "FBA_disagrees".postln};
+			
+		};
+	},'/tr', s.addr);
 
 
 
@@ -209,9 +250,9 @@ a = OSCFunc({ arg msg, time;
 
 	
 
-1.wait;
+	1.wait;
 
-q = Synth(\tba_fba);
+	q = Synth(\tba_fba);
 };
 
 

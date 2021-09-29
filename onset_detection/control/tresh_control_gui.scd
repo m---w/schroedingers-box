@@ -6,13 +6,13 @@ s.waitForBoot({
 
 	var w, tba_threshi, tba_threslo, fba_thres;
 	
-	//~n = NetAddr("192.168.184.21", 57120);
-	~n = NetAddr("bela.local", 57120);
+	~n = NetAddr("192.168.184.21", 57120);
+	//~n = NetAddr("bela.local", 57120);
 	
 
     w = Window("Schroedinger's box control").alwaysOnTop_(true);//Setting Up the Window
     w.bounds_(Rect(900, 500, 300, 200));
-    w.view.background_(Color.gray);
+    w.view.background_(Color(0.1, 0.1, 0.1));
     w.front;
 
     //menu = PopUpMenu(w, Rect(10, 10, 90, 20))//Waveforms__EvaluationAtFuncs0--Carrier
@@ -30,7 +30,7 @@ s.waitForBoot({
         .string_("TBA_thres_high")
         .font_(Font("Times New Roman", 15))
         .align_(\center)
-        .background_(Color.gray)
+        .background_(Color(0.1, 0.1, 0.1))
         .stringColor_(Color.red)});
     ~text[0].bounds_(Rect(8, 0, 120, 20)).string_("TBA");
     ~text[1].bounds_(Rect(-10, 25, 100, 10)).string_("hi-th.").stringColor_(Color.white);
@@ -82,13 +82,13 @@ s.waitForBoot({
         ~nb_fba.value_(val.value);//GoesToNumberBox
 	});
 	
-	~nb_tba_hi = NumberBox(w, Rect(20, 105, 50, 20))
+	~nb_tba_hi = NumberBox(w, Rect(3, 105, 70, 20))
     .value_(0.00)
     .clipLo_(0.0)
     .clipHi_(1e-3)
     .font_(Font ("Times New Roman",16))
     .background_ (Color.new255(240, 240, 255))
-    .decimals_(4)
+    .decimals_(6)
     .action_({
         arg obj;
         var tba_threshi;
@@ -96,13 +96,13 @@ s.waitForBoot({
         k[0].valueAction_(tba_threshi);
     });
 
-    ~nb_tba_lo = NumberBox(w, Rect(80, 105, 50, 20))
+    ~nb_tba_lo = NumberBox(w, Rect(80, 105, 70, 20))
     .value_(0.00)
     .clipLo_(0.00)
     .clipHi_(0.001)
     .font_(Font ("Times New Roman",16))
     .background_ (Color.new255(240, 240, 255))
-    .decimals_(4)
+    .decimals_(6)
     .action_({
         arg obj;
         var tba_threslo;
@@ -111,13 +111,13 @@ s.waitForBoot({
         k[1].valueAction_(tba_threslo);
     });
 	
-    ~nb_fba = NumberBox(w, Rect(220, 105, 50, 20))
+    ~nb_fba = NumberBox(w, Rect(220, 105, 70, 20))
     .value_(0.00)
     .clipLo_(0.00)
     .clipHi_(1.0)
     .font_(Font ("Times New Roman",16))
     .background_ (Color.new255(240, 240, 255))
-    .decimals_(4)
+    .decimals_(6)
     .action_({
         arg obj;
         var fba_thres;
@@ -125,6 +125,26 @@ s.waitForBoot({
 		fba_thres = obj.value.linlin(0.0, 1.0, 0.0, 1.0);
         k[2].valueAction_(fba_thres)
     });
+
+
+	 ~sample_picker = NumberBox(w, Rect(120, 175, 20, 20))
+    .value_(0.00)
+    .clipLo_(0.00)
+    .clipHi_(50.0)
+    .font_(Font ("Times New Roman",16))
+    .background_ (Color.new255(240, 240, 255))
+    .decimals_(0)
+    .action_({
+        arg obj;
+        var sam_num;
+		sam_num = obj.value;
+		//HAV TO IMPLEMENT
+		//if(button = 1) or (soundpick/2 = 1) so it will change with both things
+        //~n.sendMsg('/soundpick/sample',  sam_num, );
+		// Example sending symbols, integers, and a float
+		~n.sendMsg('/soundpick/2', \sam_num, sam_num);
+    });
+
 	
 	/*
 	~numberbox = Array.fill(2, NumberBox(w, Rect(110, 30, 50, 20))
