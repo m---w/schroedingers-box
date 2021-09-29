@@ -53,12 +53,14 @@ s.waitForBoot{
 	~sound6var2 = Buffer.readChannel(s, "./sounds/wood_hitting02.wav", channels:1);
 	~sound6var3 = Buffer.readChannel(s, "./sounds/wood_hitting03.wav", channels:1);
 	//cat
-	~sound6cat1 = Buffer.readChannel(s, "./sounds/cat_01.wav", channels:1);
-	~sound6cat2 = Buffer.readChannel(s, "./sounds/cat_02.wav", channels:1);
+	~soundstopped = 0; //do not play cat on every detected impact
+	~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
+	~sound6cat1 = Buffer.read(s, "./sounds/cat_01.wav");
+	~sound6cat2 = Buffer.read(s, "./sounds/cat_02.wav");
 	~sound6cat3 = Buffer.readChannel(s, "./sounds/cat_03.wav", channels:1);
 	~sound6cat4 = Buffer.readChannel(s, "./sounds/cat_04.wav", channels:1);
-	~sound6cat5 = Buffer.readChannel(s, "./sounds/cat_05.wav", channels:1);
-	~sound6cat6 = Buffer.readChannel(s, "./sounds/cat_06.wav", channels:1);
+	~sound6cat5 = Buffer.read(s, "./sounds/cat_05.wav");
+	~sound6cat6 = Buffer.read(s, "./sounds/cat_06.wav");
 	~soundcat_sum = [~sound6cat1, ~sound6cat2, ~sound6cat3, ~sound6cat4, ~sound6cat5, ~sound6cat6];
 	
 	
@@ -72,7 +74,7 @@ s.waitForBoot{
 		msg.postln;
 
 		//direct sample choosing via numberbox
-		if(msg[1].isSymbol){
+		if(msg[1] == 'sam_num'){
 			~button = 0;
 			~button = msg[2];
 			msg[2].postln;
@@ -189,13 +191,42 @@ s.waitForBoot{
 			if(fb_trigval == 0){v.set([\gate,0]); "FBA_disagrees".postln};
 
 			//cat sounds
-			if((~button == 6) && (1.3.coin == true)){
-				{
-					play{
-						PlayBuf.ar(2, ~sound1cat1)}}.defer(2)
-			}
-			
+			if(~button == 6){
+				"cat".postln;
+				~onset_sum = ~onset_sum + 1;
+				
+				//conitinuous impacts
+				fork{5.wait; 
+					~onset_sum = 0;
+				};
+				
+				if((~soundstopped == 0) && (~onset_sum < 5)){
+				
+					~soundstopped = 1;
+					fork{
+						if(0.5.coin == true){
+				{play{Out.ar(7, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
+					};
+				rrand(5,8).wait;
+				~soundstopped = 0;
+					}
+			};
 		};
+			
+			//multiple impacts 
+			if((~button == 6) && (~onset_sum > 5)){
+			{
+				10.do{~onset_sum.postln};
+				~onset_sum = 0;
+				play{
+					Out.ar(7, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2))/*ENVELOPE MULTIPLY*/
+				};
+			}.defer(rrand(0.5, 1.5));
+			//1.wait;
+			~onset_sum = 0;
+			};
+		}
+				
 	},'/tr', s.addr);
 
 
