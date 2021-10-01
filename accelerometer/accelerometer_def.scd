@@ -7,9 +7,12 @@
 //Accelerometer
 
 //leaves
-~leaves1 = Buffer.readChannel(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/leaves-in-movement_short48.wav", channels:1);
+~leaves1 = Buffer.readChannel(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/leaves-in-movement_short1_48.wav", channels:1);
+~leaves2 = Buffer.readChannel(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/leaves-in-movement_short2_48.wav", channels:1);
+~leaves3 = Buffer.readChannel(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/leaves-in-movement_short3_48.wav", channels:1);
+~leaves4 = Buffer.readChannel(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/leaves-in-movement_short4_48.wav", channels:1);
 
-~accsound = [~leaves1];
+~accsound = [~leaves1, ~leaves2,  ~leaves3,  ~leaves4];
 
 //metal ball
 ~ball1 = Buffer.read(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/rolling-wood-ball1_48.wav");
@@ -98,8 +101,8 @@ OSCdef(\acc, {
 				PlayBuf.ar(
 					numChannels:1,
 					bufnum:f.value(~accsound),
-					rate:1 + (y.abs),
-					doneAction:2) * y.abs.linlin(0.0, 1.0, 0.0, 0.3) !2};
+					rate:1 + (y.abs/2),
+					doneAction:2) * y.abs.linlin(0.0, 1.0, 0.0, 0.5) !2};
 			~ytrigcounter = ~ytrigcounter + 1;
 			
 			
