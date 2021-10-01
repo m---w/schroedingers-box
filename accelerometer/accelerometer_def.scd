@@ -49,6 +49,7 @@ SynthDef(\acc, {
 t = Synth(\acc, [\amp, 0.0, \bunfum, ~accsound.choose]);
 //initialisation
 ~trigcounter = 0; //do not change buffer super fast
+~ytrigcounter = 0; 
 ~rolled = 1; //if ball rolled
 ~bufferinit = 0;
 
@@ -58,6 +59,8 @@ OSCdef(\acc, {
 	
 	x = msg[1].linlin(-10, 10, -1.0, 1.0);
 	y = msg[2].linlin(-10, 10, -1.0, 1.0);
+
+	[x, y].postln;
 
 	if(~bufferinit == 0){t.set(\bufnum, f.value(~accsound))};
 	
@@ -71,7 +74,7 @@ OSCdef(\acc, {
 
 			};
 			~rolled = 0;
-			"eieiei".postln;};
+			"SAMPLE CHANGE".postln;};
 		
 		ampval = x.abs.linlin(0.0, 1.0, 0.0, 0.3);
 		t.set(\amp, ampval.lag(0.1));	
@@ -84,14 +87,30 @@ OSCdef(\acc, {
 		t.set(\amp, x.abs.linlin(0.0, 1.0, 0.0, 0.3), \trig, 1, \pos, rrand(0.0, 0.3));
 		cutoff = (14000 * x.squared) + rrand(4000, 6000);
 		t.set(\cutoff, cutoff);
-		~rolled = 1;
 		
+		~rolled = 1;
 	};
 
+
+	if(y.abs > 0.3){
+		if((~ytrigcounter < 1) && (~rolled == 1)){
+			play{
+				PlayBuf.ar(
+					numChannels:1,
+					bufnum:f.value(~accsound),
+					rate:1 + (y.abs),
+					doneAction:2) * y.abs.linlin(0.0, 1.0, 0.0, 0.3) !2};
+			~ytrigcounter = ~ytrigcounter + 1;
+			
+			
+		}
+	};
+
+	if(y.abs < 0.2){~ytrigcounter = 0};
 	if(x.abs > 0.2){~trigcounter = 0};
 	
 	if((x.abs > 0.8) && (x.abs < 0.99)){
-		t.set(\amp, x.abs.log.abs * 2, \rate, 1 + (x.abs/4));
+		t.set(\amp, x.abs.log.abs * 2, \rate, 1 + (x.abs/2));
 		
 	};
 
