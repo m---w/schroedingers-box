@@ -203,27 +203,115 @@ In SC: SendTrig.ar sends a trigger message (on every non-positive to positive si
 This trigger message can then be used to trigger the polyphonic sample player, i.e., spawn a new synth on the server for every impact.
 
 
+Ideas for sound variability
+---------------------------
+
+In order to achieve that every single hit sounds different, even if it is always the same sample, some simple "effects" could be applied. The parameters should in general be randomly chosen at the start of the sample and then stay constant (the object shouldn't change over time).
+
+* randomize playback speed (changes pitch and duration) (physical explanation: different size or material)
+* random comb filter
+** physical explanation: excitation at different positions leads to attenuation at certain frequencies
+** H(z) = 1-z^{pN+0.5}, where N is the pitch period in samples, and p is the position between 0 and 1.
+** N is period of base frequency in samples. Just assume 100Hz --> 0.01 seconds.
+** Implentation in SC: "signal - DelayN(signal, maxdelaytime: 0.01, delaytime: (p*0.01)+(0.5/48000))". With "DelayN", delay can only happen in steps of 1 sample. But that is enough as we don't need a smooth change over time. Otherwise costly interpolation would be necessary. Randomize playback position between 0 and 1 with "p=1.0.linrand".
+
+
+Voice stealing
+--------------
+
+* In order to limit computing power, the maximum number of voices playing at the same time are limited.
+* If the maximum is reached, a new trigger will steal the voice of the oldest running voice.
+* Best practice would be to not just cancel it, but to trigger its release, letting it fade out so that no click is produced when just cutting it off. This means, however, that the old voice still runs (for the fadeout) while the new is already triggered. The stealing must therefore happen if there is still one voice free. Maybe 4 voices maximum is a good start.
+* In SC: use Voicer from the ddwVoicer Quark.
+
+The maximum number of voices should actually be a parameter that is set individually for each sound. For some sounds, such as the cat, there is no polyphony. A cat can only miao once at a time. For basic physical objects, however, individual impacts will add up.
+
+
+Velocity
+--------
+
+* The velocity (= amplitude of the sample) is controlled by the measured velocity of the onset.
+* Find the right mapping between the measured velocity and the playback amplitude. Easiest would be linear.
+In SC: map between parameter ranges with linlin (linear input range to linear output range), or linexp (linear input, exponential output), or other types.
+
+
+
+
+Sample randomization
+--------------------
+
+* on each hit, a random version of the chosen sound should be selected.
+** additional condition: the new sample should never be the same as the previous one
+
+Possible implementation in SC:
+
+~newID = 0; // reset sample ID counter
+~n = 5; // number of samples
+// create n urns where always one of the 5 is missing (all combinations)
+~urn = n.collect{|i|
+	var foo = (0..n-1);
+	foo.takeAt(i);
+	foo;
+};
+~newID = ~urn[~newID][(n-1).rand] // take a random sample from the one urn that lacks the sample that has been played the last time.
+
+
+
+
+Samples for the experiment
+==========================
+
+Task: Create sample library that covers the whole parameter space equally, with a limited set of about 50? different sounds.
+
+Imagine a parameter space that is defined by a finite number of sound parameters (e.g., pitch, duration, ..., saltyness, ..., miaouiness, ...) and that contains all sounds in the world. Every sound is defined by its position in the parameter space, i.e., its parameter values. These parameters are actually unknown to us. We now want a subset of about 50? sounds that represent the whole parameter space. In other words: we select sounds that are equally spread within the space.
+
+For each sound, we want a couple (e.g., 4) different versions so that not every hit sounds the same. The best way to achieve this is to record it several times.
+
+Soundfiles should be cut tightly at the start. Exactly at a zero-crossing, where the signal changes from negative to positive or vice-versa. The first sample of the signal should be the one after the zero-crossing.
+
+Soundfiles should be cut in the end after the signal has vanished into the general noise-floor. Apply a fade-out in the end, after the signal has vanished, to fade out the noise floor.
+
+
+technical
+---------
+* do it like that: https://www.youtube.com/watch?v=dzSZQWzMGZg
+
+* Here it is described how to used the Zoom H6: https://www.youtube.com/watch?v=wa5sI8EcT7s
+
+* record stereo, at 48kHz, 24bit
+* use XY mic set to 90° angle
+* optimal: place the recorder on a mic stand, so that you have free hands.
+* position everything so that the object is in front of the microphones. not too near, not too far. try about 30cm, depending on size of the object.
+* level the input gains to the loudness of sound you want to record. try it out and set gains so that the sound is loud, but you have still a few dB headroom. What you want is maximum gain, just before it clips. Level should be somewhere between -12 and -6dB.
+* if recording outside, you need to put on the windscreen.
+
 
 Hardware
 ========
 
 Electronics
 -----------
-* BeagleBone Black micro computer + Bela cape (2 audio in/out) + Audio expander (+4 audio in /out)
+* BeagleBone Black micro computer + CTAG FACE cape (8 audio out, 4 audio in at 48kHz) + Bela cape (4 non-audio Analog i/o at 48kHz)
 * 4 piezo contact microphones (raw piezo disks)
-* 2x 2-channel piezo buffer (impedance matching): Schatten Design MicroPre2, powered by 9V block battery
+* 2x 2-channel piezo buffer (impedance matching): Schatten Design MicroPre2, powered by 9V
 * voltage regulator to power piezo buffer from 5V: https://www.neuhold-elektronik.at/catshop/product_info.php?products_id=5478
-* 4 structure-borne exciters (Visaton EX-30S)
-* 4ch amplifier (e.g., 2x https://www.neuhold-elektronik.at/catshop/product_info.php?products_id=7429)
-* Everything (Bela, piezo buffer, amp) powered by a 5V USB Powerbank (or a single 5V power supply)
+* 4 structure-borne exciters (Visaton EX-30S or EX-45S or EX-60S)
+* 4ch audio amplifier (2x https://www.neuhold-elektronik.at/catshop/product_info.php?products_id=7429)
+* Power supply via 10Ah powerbank (Shanqiu FX 5-12 Mini UPS Backup Battery) with separate outputs for 5V (Bela), 9V (piezo buffer), and 12V (amp).
 
 Additional electronics for accelerometer
 ----------------------------------------
-* 3-axes accelerometer (only translation, no rotation) with analog output per axis, e.g., ADXL335
-* connected to Bela through analog inputs: https://learn.bela.io/tutorials/pure-data/sensors/accelerometer/
-* Problem: At 44.1kHz, we can run 2 channels I/O from Bela cape, + 4 channels I/O through audio expander addon. (at 22kHz, we get 4 addditional i/o, but this would deteriorate onset detection)
-* Audio channel usage: 4 Piezo in, 4 Exciter out, 1 Subwoofer out (2 in free, 1 out free)
-* If we allow only sliding  movements, only 2 axes are necessary --> the 2 free input channels are enough.
+* 3-axes accelerometer (only translation, no rotation) with analog output per axis (GY-61 ADXL335 sensor)
+* connected to Bela through analog inputs as in the example (https://learn.bela.io/tutorials/pure-data/sensors/accelerometer/). [x,y,z] connect to channels [0,1,2].
+
+
+Wireless network
+----------------
+* Wireless router (TP-Link TL-WR902AC) creates a local wireless network (ssid: schroedinger, pw: erwindschroedinger)
+* Bela automatically connects to the WLAN via USB-to-WLAN dongle (Xoro HWL 155N or WeChip 150M STB WiFi Adapter). From several tested dongles, only those with Ralink RT5370 chipset worked out of the box.
+* Bela can be controlled by any computer within the network. Bela is identified as "bela.local" or by IP (see below).
+* The router assigns fixed IPs to the known devices (Bela: 192.168.0.100, Jason's laptop: 192.168.0.101, Marian's laptop: 192.168.0.102)
+
 
 
 Box

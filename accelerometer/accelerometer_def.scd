@@ -7,14 +7,11 @@
 //Accelerometer
 
 ~accsound = Buffer.readChannel(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/leaves-in-movement_short.wav", channels:1);
-~accsound = Buffer.read(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/rolling-wood-ball44100.wav");
-
-~tick = Buffer.read(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/ball_tick44100.wav");
-~tick = Buffer.readChannel(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/hollow-tick.wav", channels:1);
+~accsound = Buffer.read(s, "/Users/jsk/Desktop/schroedingers_box/accelerometer_sounds/rolling-wood-ball3.wav");
 
 //:
 SynthDef(\acc, {
-	| bufnum, rate = 1, pos = 0, trig = -1, amp = 0.5, cutoff = 5000, p = 0.666 |
+	| bufnum, rate = 1, pos = 0, trig = -1, amp = 0.5, cutoff = 5000, p = 0.05 |
 	var sig;
 	sig = PlayBuf.ar(1, bufnum, rate:rate, trigger:trig, startPos:pos, loop:0);
 	sig = LPF.ar(sig, cutoff);
@@ -38,10 +35,10 @@ OSCdef(\acc, {
 		ampval = x.abs.linlin(0.0, 1.0, 0.0, 0.3);
 		t.set(\amp, ampval.lag(0.1));	
 		t.set(\trig, -1);
-		t.set(\p, 1.0.linrand);
+		t.set(\p, rrand(0.01, 0.05));
 		
 	};
-	
+
 	if((x.abs > 0.1) && (x.abs < 0.8)){
 		t.set(\bufnum, ~accsound, \amp, x.abs.linlin(0.0, 1.0, 0.0, 0.3), \trig, 1, \pos, rrand(0.0, 0.3));
 		cutoff = (14000 * x.squared) + rrand(4000, 6000);
@@ -50,13 +47,13 @@ OSCdef(\acc, {
 		
 	};
 	
-	if((x.abs > 0.8) && (x.abs < 0.95)){
+	if((x.abs > 0.8) && (x.abs < 0.99)){
 		//ampval = x.abs.linlin(1.0, 0.0, 0.0, 0.3);
 		//t.set(\amp, ampval);
-		t.set(\amp, x.abs.log.abs * 2, \rate, 1 + (x.abs/2));
+		t.set(\amp, x.abs.log.abs * 2, \rate, 1 + (x.abs/4));
 		
 	};
-	
+
 	
 }, '/accxyz'
 
