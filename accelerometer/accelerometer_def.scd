@@ -23,25 +23,30 @@ SynthDef(\acc, {
 }).add;
 
 t = Synth(\acc);
-
+//:
 OSCdef(\acc, {
 	| msg, time, addr, port |
 	var x, y, z, sig, cutoff, ampval;
 	
 	x = msg[1].linlin(-10, 10, -1.0, 1.0);
 	y = msg[2].linlin(-10, 10, -1.0, 1.0);
+	
 	//[x,y].postln;
 	if(x.abs < 0.1){
-		ampval = x.abs.linlin(0.0, 0.1, 0.0, 0.3);
+		ampval = x.abs.linlin(0.0, 1.0, 0.0, 0.3);
 		ampval.postln;
-		t.set(\amp, ampval);
-		t.set(\trig, -1)};
+		t.set(\amp, ampval);	
+		t.set(\trig, -1)
+	};
 	
-	if((x < -0.2) || (x > 0.2)){
-		t.set(\bufnum, ~accsound, \amp, 0.3, \trig, 1, \pos, rrand(0.0, 0.5));
+	if((x < -0.1) || (x > 0.1)){
+		t.set(\bufnum, ~accsound, \amp, x.abs.linlin(0.0, 1.0, 0.0, 0.3), \trig, 1, \pos, rrand(0.0, 0.3));
 		cutoff = (14000 * x.squared) + 6000;
-		//cutoff.postln;
 		t.set(\cutoff, cutoff);
+		[">0.1", x.abs.linlin(0.0, 1.0, 0.0, 0.3)].postln;
+		//t.set(\amp, x.abs.log.abs * 2);
+		
+		
 	};
 	if(x.abs > 0.9){
 		t.set(\amp, x.abs.log.abs * 2);
@@ -49,7 +54,6 @@ OSCdef(\acc, {
 	}
 
 	
-
 }, '/accxyz'
 
 );
