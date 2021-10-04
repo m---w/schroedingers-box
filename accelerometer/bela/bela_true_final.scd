@@ -6,15 +6,6 @@
 
 //Accelerometer
 
-
-/*
-	Schroedinger's Box
-	SuperCollider Patch for Bela
-	2021 Jason Svoronos-Kanavas, Marian Weger 
-*/
-
-//Accelerometer
-
 s = Server.default;
 
 // Set up options for the Bela
@@ -50,7 +41,7 @@ r = fork{
 		var x = Ndef(\xaccvalues).bus.getSynchronous;
 		var y = Ndef(\yaccvalues).bus.getSynchronous;
 		~n.sendMsg('/accxyz', x.postln, y.postln);
-		(0.4).wait;
+		(0.1).wait;
 	}
 };
 	
@@ -123,13 +114,14 @@ OSCdef(\acc, {
 
 	if(~bufferinit == 0){t.set(\bufnum, f.value(~accsound))};
 	
-	if((x.abs < 0.1) && (~trigcounter == 0)){
+	if((x.abs < 0.3) && (~trigcounter == 0)){
 
-		if((x.abs.round(0.01) == 0.0) && (~rolled == 1)){
+		if(/*(x.abs.round(0.01) == 0.0)*/ (x.abs < 0.25) && (~rolled == 1)){
 			t.set(\amp, 0.03);
 			if(~trigcounter == 0){
 				t.set(\bufnum, f.value(~accsound));
-				~trigcounter = ~trigcounter + 1;
+				//~trigcounter = ~trigcounter + 1;
+				~trigcounter = 0;
 
 			};
 			~rolled = 0;
@@ -142,7 +134,7 @@ OSCdef(\acc, {
 		
 	};
 	
-	if((x.abs > 0.1) && (x.abs < 0.8) && (~trigcounter == 0)){
+	if((x.abs > 0.3) && (x.abs < 0.8) && (~trigcounter == 0)){
 		t.set(\amp, x.abs.linlin(0.0, 1.0, 0.0, 0.3), \trig, 1, \pos, rrand(0.0, 0.3));
 		cutoff = (14000 * x.squared) + rrand(4000, 6000);
 		t.set(\cutoff, cutoff);
@@ -152,14 +144,14 @@ OSCdef(\acc, {
 
 
 	if(y.abs > 0.3){
-		if((~ytrigcounter < 1) && (~rolled == 1)){
+		if(/*(*/~ytrigcounter < 1/*) && (~rolled == 1)*/){
 			play{
 				Out.ar(6,
 				PlayBuf.ar(
 					numChannels:1,
 					bufnum:f.value(~accsound),
 					rate:1 + (y.abs/2),
-					doneAction:2) * y.abs.linlin(0.0, 1.0, 0.0, 0.5) !2);
+					doneAction:2) /* y.abs.linlin(0.0, 1.0, 0.0, 0.5)*/ !2);
 			};
 			~ytrigcounter = ~ytrigcounter + 1;
 			
