@@ -1,4 +1,6 @@
 accelerometer_sounds/non44100/
+sounds_processed/
+acc_sounds/
 pictures/
 .DS_Store
 

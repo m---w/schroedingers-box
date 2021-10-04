@@ -1,0 +1,8 @@
+* TODO
+
+1 I have an OSCdef which receives to the /accxyz address, I have to implement a fork or smth that sends the AnalogIn values to that address. I believe that the osc communication works fine. I can not get any values from the accelerometer of Bela. WHAT HAPPENED?
+2 Get an initial eg working, with only Bela, analogin acc values posting (postln).
+3 afterwards see if the fork{inf.do{sendmsg(x,y)}} can work. It is on the 79th line at *"/Users/jsk/Desktop/schroedingers_box/accelerometer/test_from_osc_to_analog.scd"*.
+That was the final file
+
+the one that works with touch osc is */Users/jsk/Desktop/schroedingers_box/accelerometer/bela/latest_applied_on_bela_for_mac_tests.scd*
