@@ -6,6 +6,15 @@
 
 //Accelerometer
 
+
+/*
+	Schroedinger's Box
+	SuperCollider Patch for Bela
+	2021 Jason Svoronos-Kanavas, Marian Weger 
+*/
+
+//Accelerometer
+
 s = Server.default;
 
 // Set up options for the Bela
@@ -89,7 +98,7 @@ SynthDef(\acc, {
 	var sig;
 	sig = PlayBuf.ar(1, bufnum, rate:rate, trigger:trig, startPos:pos, loop:0);
 	sig = LPF.ar(sig, cutoff);
-	sig = sig - DelayL.ar(sig, maxdelaytime: 0.01, delaytime: (p*0.01)+(0.5/48000));
+	sig = sig - DelayL.ar(sig, maxdelaytime: 0.01, delaytime: (p*LFNoise1.kr(0.2).range(0.01, 0.03))+(0.5/48000));
 	sig = sig * amp * 2;
 	Out.ar(6, sig!2)
 }).add;
@@ -146,12 +155,15 @@ OSCdef(\acc, {
 	if(y.abs > 0.3){
 		if(/*(*/~ytrigcounter < 1/*) && (~rolled == 1)*/){
 			play{
-				Out.ar(6,
-				PlayBuf.ar(
+				var sig, p;
+				sig = PlayBuf.ar(
 					numChannels:1,
 					bufnum:f.value(~accsound),
 					rate:1 + (y.abs/2),
-					doneAction:2) /* y.abs.linlin(0.0, 1.0, 0.0, 0.5)*/ !2);
+					doneAction:2)!2; /* y.abs.linlin(0.0, 1.0, 0.0, 0.5)*/
+				p=1.0.linrand;
+				sig = sig - DelayN.ar(sig, maxdelaytime: 0.01, delaytime: (p*LFNoise1.kr(0.2).range(0.01, 0.03))+(0.5/48000));
+				Out.ar(6, sig);
 			};
 			~ytrigcounter = ~ytrigcounter + 1;
 			
