@@ -139,7 +139,7 @@ s.waitForBoot{
 		//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 		//no sound must exceed 1.5 sec
 		//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
-		Out.ar(7, [sig, sig])
+		Out.ar(6, [sig, sig])
 	}).add;
 
 	v = Voicer.new(5, "sample_player");
@@ -205,7 +205,7 @@ s.waitForBoot{
 					~soundstopped = 1;
 					fork{
 						if(0.5.coin == true){
-				{play{Out.ar(7, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
+				{play{Out.ar(6, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
 					};
 				rrand(5,8).wait;
 				~soundstopped = 0;
@@ -219,7 +219,7 @@ s.waitForBoot{
 				10.do{~onset_sum.postln};
 				~onset_sum = 0;
 				play{
-					Out.ar(7, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2))/*ENVELOPE MULTIPLY*/
+					Out.ar(6, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2)/*ENVELOPE MULTIPLY*/
 				};
 			}.defer(rrand(0.5, 1.5));
 			//1.wait;
