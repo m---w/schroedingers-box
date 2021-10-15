@@ -71,6 +71,7 @@ s.waitForBoot{
 	~sound7var5 = Buffer.read(s, "./sounds/impact4.wav");
 	~sound7var6 = Buffer.read(s, "./sounds/impact5.wav");
 	
+	
 	//~sound = [~sound1var1, ~sound1var2, ~sound1var3];//, ~sound1var4, ~sound1var5];
 	
 	~button = 0;
@@ -111,7 +112,6 @@ s.waitForBoot{
 		if(~button == 6){~sound = [~sound6var1, ~sound6var2, ~sound6var3];
 		};
 
-		
 		//sound7
 		if(~button == 7){~sound = [~sound7var1, ~sound7var2, ~sound7var3, ~sound7var4, ~sound7var5, ~sound7var6];
 		};
@@ -150,7 +150,10 @@ s.waitForBoot{
 		//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 		//no sound must exceed 1.5 sec
 		//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
-		Out.ar(6, [sig, sig])
+		Out.ar(0, [sig, sig]);
+		Out.ar(2, [sig, sig]);
+		Out.ar(4, [sig, sig]);
+		Out.ar(6, [sig, sig]);
 	}).add;
 
 	v = Voicer.new(5, "sample_player");
@@ -216,7 +219,7 @@ s.waitForBoot{
 					~soundstopped = 1;
 					fork{
 						if(0.5.coin == true){
-				{play{Out.ar(6, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
+				{play{Out.ar(0, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
 					};
 				rrand(5,8).wait;
 				~soundstopped = 0;
@@ -230,7 +233,7 @@ s.waitForBoot{
 				10.do{~onset_sum.postln};
 				~onset_sum = 0;
 				play{
-					Out.ar(6, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2)/*ENVELOPE MULTIPLY*/
+					Out.ar(0, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2)/*ENVELOPE MULTIPLY*/
 				};
 			}.defer(rrand(0.5, 1.5));
 			//1.wait;

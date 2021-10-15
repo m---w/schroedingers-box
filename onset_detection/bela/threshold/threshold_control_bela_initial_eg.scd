@@ -1,3 +1,23 @@
+// =====================================================================
+// SuperCollider Workspace
+// =====================================================================
+
+~bus = Bus.audio(s, 1);
+//:
+play{
+	var sig = In.ar(4, 1);
+	sig.poll;
+	//Out.ar(0, sig)
+	
+}
+//:
+play{
+	var sig = SinOsc.ar(666);
+	Out.ar(~bus, sig);
+};
+
+
+//:
 /*
 	Schroedinger's Box
 	SuperCollider Patch for Bela
@@ -69,77 +89,56 @@ s.waitForBoot{
 	~sound7var3 = Buffer.read(s, "./sounds/impact2.wav");
 	~sound7var4 = Buffer.read(s, "./sounds/impact3.wav");
 	~sound7var5 = Buffer.read(s, "./sounds/impact4.wav");
-	~sound7var6 = Buffer.read(s, "./sounds/impact5.wav");
+	~sound7var6 = Buffer.read(s, "./sounds/impact5.wav");	
 	
 	//~sound = [~sound1var1, ~sound1var2, ~sound1var3];//, ~sound1var4, ~sound1var5];
+	s.newBusAllocators;
+	~bus = Bus.audio(s, 1);
 	
-	~button = 0;
-	OSCdef(\next_sound, { | msg, time, button = 0 |
-		[time, msg].postln;
-		//msg[1].postln;
-		msg.postln;
-
-		//direct sample choosing via numberbox
-		if(msg[1] == 'sam_num'){
-			~button = 0;
-			~button = msg[2];
-			msg[2].postln;
-		};		
+			SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
+		var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp, trigtemp;
+		var chain, onsets, pips, ftrig, fthres;
+		var businput, amptrack, reduction;
 		
-		//counter_via_button_hits
-		if(msg[1] == 1.0){
-			~button = ~button + 1;
-		};
-		if(~button == 0){"press the button to start".postln};
+		businput = In.ar(~bus, 1);
+		businput.poll;
+		amptrack = Amplitude.kr(businput, 0.001, 1);
+		//amptrack.poll;
+		reduction = amptrack.ampdb - 60.neg;
+		reduction = reduction.dbamp.max(1);
+		//reduction.poll;
+		sig = SoundIn.ar(0);
 		
-		//sound1
-		if(~button == 1){~sound = [~sound1var1, ~sound1var2, ~sound1var3, ~sound1var4, ~sound1var5]};
-		
-		//sound2
-		if(~button == 2){~sound = [~sound2var1, ~sound2var2]};
-		
-		//sound3
-		if(~button == 3){~sound = [~sound3var1, ~sound3var2, ~sound3var3];};
+		//===TBA===
+		sighpf = HPF.ar(sig, 4000);
+		sigsquared = sighpf.squared;
+		lpf1 = LPF.ar(sigsquared, 25);
+		derivative = Slope.ar(lpf1);
+		lpf2 = LPF.ar(derivative, 100);
+		tsub = 0.01 * lpf1 - lpf2;
+		tsub = tsub.max(0);
+		tthres = tba_hi * reduction;//1e-3;
+		ttrig = Schmidt.ar(tsub, tthres, tthres);
+		vel = RunningMax.ar(sig.abs, ttrig);
+		tsend = SendTrig.kr(A2K.kr(ttrig), 0, value:vel);
+		//===FBA===
+		chain = FFT(LocalBuf(256), sig);
+		fthres = fba_thres * reduction;
+		onsets = Onsets.kr(chain, fthres, \power);
+		//vel track test
+		trigtemp = ttrig + onsets;
+		vel = RunningMax.ar(vel + sig.abs, trigtemp);
+		ftrig = SendTrig.kr(onsets, 1, value:vel);
+	}).add;
 
-		//sound4
-		if(~button == 4){~sound = [~sound4var1, ~sound4var2, ~sound4var3, ~sound4var4, ~sound4var5, ~sound4var6]};
+	1.wait;
 
-		//sound5
-		if(~button == 5){~sound = [~sound5var1, ~sound5var2]};
+	q = Synth(\tba_fba);
 
-		//sound6
-		if(~button == 6){~sound = [~sound6var1, ~sound6var2, ~sound6var3];
-		};
-
-		
-		//sound7
-		if(~button == 7){~sound = [~sound7var1, ~sound7var2, ~sound7var3, ~sound7var4, ~sound7var5, ~sound7var6];
-		};
-
-		//finish
-		if(~button == 10){s.freeAll};
-		
-	},'/soundpick/2');
-	
-
-	f = { | in = 0 |
-		var temp, arr, val, suf;
-		arr = in;
-		suf = Pn(Pshuf(in, 1), inf).asStream;
-		temp = suf.next;
-		if(temp == ~last){
-			arr = in; 
-			val = arr.remove(temp);
-			arr.postln;
-			temp = arr.choose;
-			arr = arr.add(val);
-		};
-		~last = temp;
-		temp;
-	};
-	
+	1.wait;
+//:
 	SynthDef(\sample_player,{
-		| gate = 1, amp = 0.1, bufnum = 0 |
+		| bus=0, gate = 1, amp = 0.1, bufnum = 0 |
 		var sig, env, out;
 		sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, rate: Rand(0.9, 1.1), trigger: gate);
 		p=1.0.linrand;
@@ -150,132 +149,35 @@ s.waitForBoot{
 		//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 		//no sound must exceed 1.5 sec
 		//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
-		Out.ar(6, [sig, sig])
+		Out.ar(outbus, sig);
+		//Out.ar(0, sig);
+		//Out.ar(6, [sig, sig]);
+		//Out.ar(0, [sig, sig]);
+		//Out.ar(2, [sig, sig]);
+		//Out.ar(4, [sig, sig]);
+		
 	}).add;
+//:
+	//10.do{Synth(\sample_player); 0.5.wait;}
 
-	v = Voicer.new(5, "sample_player");
-
-	SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
-		var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp, trigtemp;
-		var chain, onsets, pips, ftrig, fthres;
-		sig = SoundIn.ar(0);
-		//===TBA===
-		sighpf = HPF.ar(sig, 4000);
-		sigsquared = sighpf.squared;
-		lpf1 = LPF.ar(sigsquared, 25);
-		derivative = Slope.ar(lpf1);
-		lpf2 = LPF.ar(derivative, 100);
-		tsub = 0.01 * lpf1 - lpf2;
-		tsub = tsub.max(0);
-		tthres = tba_hi;//1e-3;
-		ttrig = Schmidt.ar(tsub, tthres, tthres);
-		vel = RunningMax.ar(sig.abs, ttrig);
-		tsend = SendTrig.kr(A2K.kr(ttrig), 0, value:vel);
-		//===FBA===
-		chain = FFT(LocalBuf(256), sig);
-		fthres = fba_thres;
-		onsets = Onsets.kr(chain, fthres, \power);
-		//vel track test
-		trigtemp = ttrig + onsets;
-		vel = RunningMax.ar(vel + sig.abs, trigtemp);
-		ftrig = SendTrig.kr(onsets, 1, value:vel);
-	}).add;
-
-	//Vel track tests
-	a = OSCFunc({ arg msg, time;
-		var val, tb_trigval, fb_trigval, sp, vel, bufnum;
-		[time, msg].postln;
-		tb_trigval = 0;
-		fb_trigval = 0;
-		//vel = 0;
-		fork{
-			vel = msg[3];
-			vel.postln;
-			v.trigger(1, 1, [\amp, vel.linlin(0.0, 1.0, 0.0, 1.0), \gate, 1, \bufnum, f.value(~sound)]);  
-			0.006.wait;
-			//msg[2].postln;
-			fb_trigval = 0;
-			if(msg[2] == 1){
-				fb_trigval = 1;
-				"FBA_agrees".postln;
-			};//sp.set has to change for the real thing
-			if(fb_trigval == 0){v.set([\gate,0]); "FBA_disagrees".postln};
-
-			//cat sounds
-			if(~button == 6){
-				"cat".postln;
-				~onset_sum = ~onset_sum + 1;
-				
-				//conitinuous impacts
-				fork{5.wait; 
-					~onset_sum = 0;
-				};
-				
-				if((~soundstopped == 0) && (~onset_sum < 5)){
-				
-					~soundstopped = 1;
-					fork{
-						if(0.5.coin == true){
-				{play{Out.ar(6, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
-					};
-				rrand(5,8).wait;
-				~soundstopped = 0;
-					}
-			};
-		};
-			
-			//multiple impacts 
-			if((~button == 6) && (~onset_sum > 5)){
-			{
-				10.do{~onset_sum.postln};
-				~onset_sum = 0;
-				play{
-					Out.ar(6, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2)/*ENVELOPE MULTIPLY*/
-				};
-			}.defer(rrand(0.5, 1.5));
-			//1.wait;
-			~onset_sum = 0;
-			};
-		}
-				
-	},'/tr', s.addr);
-
-
-	//thresh control
-	OSCFunc({ arg msg, time;
-		var val;
-		[time, msg].postln;
-		val = msg[1];
-		val.postln;
-		q.set(\tba_hi, val);
-		
-	},'/thres/tba_hi');
-
-	OSCFunc({ arg msg, time;
-		var val;
-		[time, msg].postln;
-		val = msg[1];
-		val.postln;
-		q.set(\tba_lo, val);
-		
-	},'/thres/tba_lo');
-
-	OSCFunc({ arg msg, time;
-		var val;
-		[time, msg].postln;
-		val = msg[1];
-		val.postln;
-		q.set(\fba_thres, val);
-		
-	},'/thres/fba_thres');
-
-	
-
-	1.wait;
-
-	q = Synth(\tba_fba);
 };
 
+v = Voicer.new(5, "sample_player", bus:0);
+v.trigger(1,1, [\amp, 0.5, \gate, 1, \bus,~bus])
 
 
-ServerQuit.add({ 0.exit }); // quit if the button is pressed
+s.meter(s, 2, ~bus)
+
+
+PeakMonitor(4)  // monitor 2 channels starting with 4
+
+// or
+PeakMonitor(Bus(\audio, 0, 8, s))
+
+//:
+play{
+	var sig = In.ar(4, 1);
+	sig.poll;
+	Out.ar(0, sig)
+	
+}

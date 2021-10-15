@@ -69,9 +69,11 @@ s.waitForBoot{
 	~sound7var3 = Buffer.read(s, "./sounds/impact2.wav");
 	~sound7var4 = Buffer.read(s, "./sounds/impact3.wav");
 	~sound7var5 = Buffer.read(s, "./sounds/impact4.wav");
-	~sound7var6 = Buffer.read(s, "./sounds/impact5.wav");
+	~sound7var6 = Buffer.read(s, "./sounds/impact5.wav");	
 	
 	//~sound = [~sound1var1, ~sound1var2, ~sound1var3];//, ~sound1var4, ~sound1var5];
+	s.newBusAllocators;
+	~bus = Bus.audio(s, 1);
 	
 	~button = 0;
 	OSCdef(\next_sound, { | msg, time, button = 0 |
@@ -111,7 +113,6 @@ s.waitForBoot{
 		if(~button == 6){~sound = [~sound6var1, ~sound6var2, ~sound6var3];
 		};
 
-		
 		//sound7
 		if(~button == 7){~sound = [~sound7var1, ~sound7var2, ~sound7var3, ~sound7var4, ~sound7var5, ~sound7var6];
 		};
@@ -137,6 +138,43 @@ s.waitForBoot{
 		~last = temp;
 		temp;
 	};
+
+		SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
+		var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp, trigtemp;
+		var chain, onsets, pips, ftrig, fthres;
+		var businput, amptrack, reduction;
+		
+		businput = In.ar(~bus, 1);
+		businput.poll;
+		amptrack = Amplitude.kr(businput, 0.001, 1);
+		//amptrack.poll;
+		reduction = amptrack.ampdb - 60.neg;
+		reduction = reduction.dbamp.max(1);
+		//reduction.poll;
+		sig = SoundIn.ar([0,1,2,3]).sum;
+			
+		//===TBA===
+		sighpf = HPF.ar(sig, 4000);
+		sigsquared = sighpf.squared;
+		lpf1 = LPF.ar(sigsquared, 25);
+		derivative = Slope.ar(lpf1);
+		lpf2 = LPF.ar(derivative, 100);
+		tsub = 0.01 * lpf1 - lpf2;
+		tsub = tsub.max(0);
+		tthres = tba_hi * reduction;//1e-3;
+		ttrig = Schmidt.ar(tsub, tthres, tthres);
+		vel = RunningMax.ar(sig.abs, ttrig);
+		tsend = SendTrig.kr(A2K.kr(ttrig), 0, value:vel);
+		//===FBA===
+		chain = FFT(LocalBuf(256), sig);
+		fthres = fba_thres * reduction;
+		onsets = Onsets.kr(chain, fthres, \power);
+		//vel track test
+		trigtemp = ttrig + onsets;
+		vel = RunningMax.ar(vel + sig.abs, trigtemp);
+		ftrig = SendTrig.kr(onsets, 1, value:vel);
+	}).add;
+
 	
 	SynthDef(\sample_player,{
 		| gate = 1, amp = 0.1, bufnum = 0 |
@@ -150,37 +188,23 @@ s.waitForBoot{
 		//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 		//no sound must exceed 1.5 sec
 		//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
-		Out.ar(6, [sig, sig])
+		Out.ar(~bus, sig!2);
+		Out.ar(6, [sig, sig]);
+		Out.ar(0, [sig, sig]);
+		Out.ar(2, [sig, sig]);
+		Out.ar(4, [sig, sig]);
+		
 	}).add;
 
-	v = Voicer.new(5, "sample_player");
-
-	SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
-		var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp, trigtemp;
-		var chain, onsets, pips, ftrig, fthres;
-		sig = SoundIn.ar(0);
-		//===TBA===
-		sighpf = HPF.ar(sig, 4000);
-		sigsquared = sighpf.squared;
-		lpf1 = LPF.ar(sigsquared, 25);
-		derivative = Slope.ar(lpf1);
-		lpf2 = LPF.ar(derivative, 100);
-		tsub = 0.01 * lpf1 - lpf2;
-		tsub = tsub.max(0);
-		tthres = tba_hi;//1e-3;
-		ttrig = Schmidt.ar(tsub, tthres, tthres);
-		vel = RunningMax.ar(sig.abs, ttrig);
-		tsend = SendTrig.kr(A2K.kr(ttrig), 0, value:vel);
-		//===FBA===
-		chain = FFT(LocalBuf(256), sig);
-		fthres = fba_thres;
-		onsets = Onsets.kr(chain, fthres, \power);
-		//vel track test
-		trigtemp = ttrig + onsets;
-		vel = RunningMax.ar(vel + sig.abs, trigtemp);
-		ftrig = SendTrig.kr(onsets, 1, value:vel);
-	}).add;
-
+	//strange voicer behaviour
+	m = MixerChannel.new(\sine, s, 2, 2,inbus:~bus);
+	v = Voicer.new(8, \sine, target:m);
+	0.5.wait;
+	10.do{"popos".postln};
+	m = MixerChannel.new(\sine, s, 2, 2, outbus:~bus);
+	v = Voicer.new(8, \sine, target:m);
+	1.wait;
+	
 	//Vel track tests
 	a = OSCFunc({ arg msg, time;
 		var val, tb_trigval, fb_trigval, sp, vel, bufnum;
@@ -240,7 +264,6 @@ s.waitForBoot{
 				
 	},'/tr', s.addr);
 
-
 	//thresh control
 	OSCFunc({ arg msg, time;
 		var val;
@@ -269,11 +292,10 @@ s.waitForBoot{
 		
 	},'/thres/fba_thres');
 
-	
-
 	1.wait;
 
 	q = Synth(\tba_fba);
+
 };
 
 
