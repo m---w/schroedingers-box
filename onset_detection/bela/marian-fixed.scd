@@ -235,7 +235,7 @@ s.waitForBoot{
 					~soundstopped = 1;
 					fork{
 						if(0.5.coin == true){
-				{play{Out.ar(2, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
+				{play{Out.ar(2, LPF.ar(PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2), 500)!2/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
 					};
 				rrand(5,8).wait;
 				~soundstopped = 0;
@@ -249,7 +249,7 @@ s.waitForBoot{
 				10.do{~onset_sum.postln};
 				~onset_sum = 0;
 				play{
-					Out.ar(2, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2)/*ENVELOPE MULTIPLY*/
+					Out.ar(2, LPF.ar(PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2), 500)!2)/*ENVELOPE MULTIPLY*/
 				};
 			}.defer(rrand(0.5, 1.5));
 			//1.wait;
