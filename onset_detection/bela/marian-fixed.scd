@@ -144,9 +144,9 @@ s.waitForBoot{
 		sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, rate: Rand(0.9, 1.1), trigger: gate);
 		p=1.0.linrand;
 		sig = sig - DelayN.ar(sig, maxdelaytime: 0.01, delaytime: (p*0.01)+(0.5/48000));
-		sig = sig * EnvGen.ar(Env.adsr(0.0, 0.3, 0.666, 2), gate: gate, doneAction:2);
+		sig = sig * EnvGen.ar(Env.adsr(0.0, 0.3, 0.666, 0.005), gate: gate, doneAction:2);
 		//amp = Latch.kr(gate, gate) * amp;
-		sig = amp * sig;
+		sig = amp.lag(0.001) * sig * 4;
 		//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 		//no sound must exceed 1.5 sec
 		//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
@@ -159,7 +159,7 @@ s.waitForBoot{
 	v = Voicer.new(5, "sample_player");
 
 	SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
-		var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp, trigtemp;
+		var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp, trigtemp, ttrigdel, ttrigdelfba;
 		var chain, onsets, pips, ftrig, fthres;
 		sig = SoundIn.ar(0);
 		//===TBA===
@@ -172,18 +172,23 @@ s.waitForBoot{
 		tsub = tsub.max(0);
 		tthres = tba_hi;//1e-3;
 		ttrig = Schmidt.ar(tsub, tthres, tthres);
-		vel = RunningMax.ar(sig.abs, ttrig);
+		ttrigdel = DelayN.ar(ttrig, 0.006, 0.006);
+		vel = RunningMax.ar(sig.abs, ttrigdel);
 		tsend = SendTrig.kr(A2K.kr(ttrig), 0, value:vel);
+		//tsend = SendTrig.kr(A2K.kr(ttrigdel), 2, value:vel);	
 		//===FBA===
-		chain = FFT(LocalBuf(256), sig);
+		chain = FFT(LocalBuf(256), sig, wintype:1);
 		fthres = fba_thres;
 		onsets = Onsets.kr(chain, fthres, \power);
 		//vel track test
-		trigtemp = ttrig + onsets;
-		vel = RunningMax.ar(vel + sig.abs, trigtemp);
+		ttrigdelfba = DelayN.ar(onsets, 0.006, 0.006);//ttrig + onsets;
+		vel = RunningMax.ar(sig.abs, ttrigdelfba);
+		tsend = SendTrig.kr(A2K.kr(ttrigdelfba), 3, value:vel);
 		ftrig = SendTrig.kr(onsets, 1, value:vel);
 	}).add;
 
+	~trigflag = false;
+	
 	//Vel track tests
 	a = OSCFunc({ arg msg, time;
 		var val, tb_trigval, fb_trigval, sp, vel, bufnum;
@@ -193,16 +198,27 @@ s.waitForBoot{
 		//vel = 0;
 		fork{
 			vel = msg[3];
-			vel.postln;
-			v.trigger(1, 1, [\amp, vel.linlin(0.0, 1.0, 0.0, 1.0), \gate, 1, \bufnum, f.value(~sound)]);  
+			//vel.postln;
+			if((msg[2] == 0) && (~trigflag == false)){
+			~lastvoice = v.trigger(1, 1, [\amp, 0.001, \gate, 1, \bufnum, f.value(~sound)]);
+			~trigflag = true;
+			};
+			//if(msg[2] == 2){~lastvoice.set([\amp,msg[3]]); 20.do{[vel, "RMAX MAP TBA"].postln}};	
+			if(msg[2] == 3){~lastvoice.set([\amp,msg[3]]); 20.do{[vel, "RMAX MAP FBA"].postln}};
 			0.006.wait;
 			//msg[2].postln;
 			fb_trigval = 0;
-			if(msg[2] == 1){
+			if((msg[2] == 1) && (~trigflag == true)){
 				fb_trigval = 1;
 				"FBA_agrees".postln;
-			};//sp.set has to change for the real thing
-			if(fb_trigval == 0){v.set([\gate,0]); "FBA_disagrees".postln};
+			};
+			if((fb_trigval == 0) && (~trigflag == true)){~lastvoice.set([\gate,0]); "FBA_disagrees".postln;};
+			
+			if((msg[2] == 1) && (~trigflag == false)){
+			~lastvoice = v.trigger(1, 1, [\amp, 0.001, \gate, 1, \bufnum, f.value(~sound)]);
+			};
+			
+			~trigflag = false;	
 
 			//cat sounds
 			if(~button == 6){
@@ -219,7 +235,7 @@ s.waitForBoot{
 					~soundstopped = 1;
 					fork{
 						if(0.5.coin == true){
-				{play{Out.ar(6, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
+				{play{Out.ar(2, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
 					};
 				rrand(5,8).wait;
 				~soundstopped = 0;
@@ -233,7 +249,7 @@ s.waitForBoot{
 				10.do{~onset_sum.postln};
 				~onset_sum = 0;
 				play{
-					Out.ar(6, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2)/*ENVELOPE MULTIPLY*/
+					Out.ar(2, PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2)!2)/*ENVELOPE MULTIPLY*/
 				};
 			}.defer(rrand(0.5, 1.5));
 			//1.wait;

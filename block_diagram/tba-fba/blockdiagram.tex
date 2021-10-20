@@ -22,17 +22,18 @@
     \node [int] (d) [align=left, right of=c] {squaring: \\signal ** 2};
     %\node [coordinate] [right of=d, node distance=1.75cm]{};
     \node [int] (e) [align=left, right of=d] {envelope \\follower};
-    \node [int] (f) [align=left, right of=e] {trend \\subtraction};
+    \node [int] (smoothing) [align=left, right of=e] {smoothing \\low pass filters};
+    \node [int] (f) [align=left, right of=smoothing] {trend \\subtraction};
     \node [int] (g) [align=left, right of=f] {half wave \\rectification};
-    \node [int, pin={[init]above:\hspace{3.75cm}lo \hspace{0.25em}|\hspace{0.25em} hi |\hspace{0.5em} GUI laptop control}] (h) [align=left, right of=g] {threshold \\detection};
+    \node [int, pin={[init]above:\hspace{1.5cm}lo \hspace{0.25em}|\hspace{0.25em} hi |\hspace{0.5em} GUI}] (h) [align=left, right of=g] {threshold \\detection};
     \node [int] (i) [align=left, below of=h] {trigger};
     \node [int] (j) [align=left, below of=e] {Running \\max};
     \node [int] (k) [align=left, below of=j] {+};
     \node [int] (l) [align=left, below of=k, node distance=1.5cm] {trigger};
     \node [int] (m) [align=left, left of=l] {Running \\Max};
     \node [int] (n) [align=left, below of=c, node distance=8cm] {FFT:256};
-    \node [int, pin={[init]below:\hspace{3.75cm}FBA threshold | \\GUI laptop control}] (o) [align=left, below of=d, node distance=8cm] {ODFT};
-    \node [int] (p) [align=left, right of=l, node distance=7.5cm] {sample player*};
+    \node [int, pin={[init]below:\hspace{3.75cm}FBA threshold | \\GUI}] (o) [align=left, below of=d, node distance=8cm] {ODFT};
+    \node [int] (p) [align=left, right of=l, node distance=10cm] {sample player*};
 
     %tmp
     \node [coordinate, right of=a, node distance=1.25cm] (tmp1){$H(s)$};
@@ -78,7 +79,11 @@
 
     \draw[->] (c) edge node {} (d);
     \draw[->] (d) edge node {} (e);
-    \draw[->] (e) edge node {} (f);
+    \draw[->] (e) edge node {} (smoothing);
+
+    %\draw[->] (e) edge node {} (f);
+    %\draw[->] (f) edge node {} (g);
+    \draw[->] (smoothing) edge node {} (f);
     \draw[->] (f) edge node {} (g);
     \draw[->] (g) edge node {} (h);
     \draw[->] (h) edge node {} (i);

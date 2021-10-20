@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.11.6)  15 OCT 2021 13:04
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.11.6)  18 OCT 2021 10:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -402,11 +402,11 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 38.
+(Font)              <7> on input line 39.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 38.
+(Font)              <5> on input line 39.
 
-Overfull \hbox (130.1508pt too wide) in paragraph at lines 15--108
+Overfull \hbox (136.89825pt too wide) in paragraph at lines 15--113
 []  [] 
  []
 
@@ -415,16 +415,16 @@ Overfull \hbox (130.1508pt too wide) in paragraph at lines 15--108
 {/usr/local/texlive/2020/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
 (./blockdiagram.aux) ) 
 Here is how much of TeX's memory you used:
- 12212 strings out of 480608
- 255692 string characters out of 5903630
- 471252 words of memory out of 5000000
- 27929 multiletter control sequences out of 15000+600000
+ 12219 strings out of 480608
+ 255830 string characters out of 5903630
+ 472809 words of memory out of 5000000
+ 27936 multiletter control sequences out of 15000+600000
  532338 words of font info for 24 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  60i,9n,60p,416b,893s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/local/texlive/2020/texmf-dist/fonts/type1/public/am
 sfonts/cm/cmr10.pfb>
-Output written on blockdiagram.pdf (1 page, 21833 bytes).
+Output written on blockdiagram.pdf (1 page, 21924 bytes).
 PDF statistics:
  15 PDF objects out of 1000 (max. 8388607)
  10 compressed objects within 1 object stream

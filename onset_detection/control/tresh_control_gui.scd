@@ -71,7 +71,7 @@ s.waitForBoot({
 	k[2].action_({
 		|obj|
 		var val;
-		val = obj.value.linlin(0.0, 1.0, 0.0, 2.0);
+		val = obj.value.linlin(0.0, 1.0, 0.0, 5.0);
 		val.postln;
 		//q.set only local no osc
 		//q.set(\fba_thres, val);
@@ -112,7 +112,7 @@ s.waitForBoot({
     ~nb_fba = NumberBox(w, Rect(220, 105, 70, 20))
     .value_(0.00)
     .clipLo_(0.00)
-    .clipHi_(1.0)
+    .clipHi_(5.0)
     .font_(Font ("Times New Roman",16))
     .background_ (Color.new255(240, 240, 255))
     .decimals_(6)
@@ -120,7 +120,7 @@ s.waitForBoot({
         arg obj;
         var fba_thres;
         fba_thres = obj.value;
-		fba_thres = obj.value.linlin(0.0, 1.0, 0.0, 1.0);
+		//fba_thres = obj.value.linlin(0.0, 1.0, 0.0, 1.0);
         k[2].valueAction_(fba_thres)
     });
 
