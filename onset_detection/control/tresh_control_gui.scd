@@ -15,7 +15,7 @@ s.waitForBoot({
 	
 
     w = Window("Schroedinger's box control").alwaysOnTop_(true);
-    w.bounds_(Rect(900, 500, 300, 200));
+    w.bounds_(Rect(900, 500, 300, 300));
     w.view.background_(Color(0.1, 0.1, 0.1));
     w.front;
 
@@ -24,7 +24,7 @@ s.waitForBoot({
 
 	fba_thres = 0;
 
-	~text = Array.fill( 5, {StaticText (w , Rect (200, 175, 100, 20))
+	~text = Array.fill( 7, {StaticText (w , Rect (200, 175, 100, 20))
         .string_("TBA_thres_high")
         .font_(Font("Times New Roman", 15))
         .align_(\center)
@@ -35,7 +35,8 @@ s.waitForBoot({
 	~text[2].bounds_(Rect(80, 25, 50, 10)).string_("lo-th.").stringColor_(Color.white);
 	~text[3].bounds_(Rect(180, 0, 120, 20)).string_("FBA");
 	~text[4].bounds_(Rect(180, 20, 120, 20)).string_("thres.").stringColor_(Color.white);
-    
+    ~text[5].bounds_(Rect(215, 190, 120, 20)).string_("cat").stringColor_(Color.white);
+	~text[6].bounds_(Rect(105, 190, 120, 20)).string_("main").stringColor_(Color.white);
 	
     //knobs
     k = Array.fill(3, {Knob(w, Rect(0,100, 100, 50))});
@@ -137,6 +138,27 @@ s.waitForBoot({
 		sam_num = obj.value;
 		~n.sendMsg('/soundpick/2', \sam_num, sam_num);
     });
+
+
+	//master fader sliders
+	k = Array.fill(2, {Slider(w, Rect(0,100,30,130))});
+    k[0].bounds_(Rect(185, 150, 30, 130)).value_(1);//main sounds
+    k[1].bounds_(Rect(230, 150, 30, 130)).value_(1);//cat sounds
+    k[0].action_({
+        |obj|
+		var master;
+		master = obj.value.squared;
+        //~numboxcarf.value_(obj.value.linexp(0, 1, 100, 4444));//GoesToNumBox
+		~n.sendMsg('/master', \main, master);
+	});
+	k[1].action_({
+        |obj|
+		var master;
+		master = obj.value.squared;
+        //~numboxcarf.value_(obj.value.linexp(0, 1, 100, 4444));//GoesToNumBox
+		~n.sendMsg('/master', \cat, master);
+	});
+
 	
 });
 )
