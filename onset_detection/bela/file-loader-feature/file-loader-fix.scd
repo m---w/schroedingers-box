@@ -1,0 +1,329 @@
+/*
+	Schroedinger's Box
+	SuperCollider Patch for Bela
+	2021 Jason Svoronos-Kanavas, Marian Weger 
+*/
+
+//Onsets \power, 256 FFT, 1.5 sec rel time env of playback sound, minigap:30 
+
+s = Server.default;
+
+// Set up options for the Bela
+s.options.numAnalogInChannels = 4;
+s.options.numAnalogOutChannels = 4;
+s.options.numDigitalChannels = 0;
+s.options.maxLogins = 4;
+
+s.options.blockSize = 64;
+s.options.numInputBusChannels = 4;
+s.options.numOutputBusChannels = 8;
+
+s.waitForBoot{
+	//sound1
+	/*~sound1var1 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var01.wav", channels:1);
+	~sound1var2 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var02.wav", channels:1);
+	~sound1var3 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var03.wav", channels:1);
+	~sound1var4 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var04.wav", channels:1);
+		~sound1var5 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var05.wav", channels:1);*/
+
+	//sound2
+	/*~sound2var1 = Buffer.readChannel(s, "./sounds/kagelo01.wav", channels:1);
+		~sound2var2 = Buffer.readChannel(s, "./sounds/kagelo02.wav", channels:1);*/
+
+	//sound3
+	/*~sound3var1 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var1.wav", channels:1);
+	~sound3var2 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var2.wav", channels:1);
+		~sound3var3 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var3.wav", channels:1);*/
+
+	//sound4
+	/*~sound4var1 = Buffer.readChannel(s, "./sounds/timpani_bends1_var1.wav", channels:1);
+	~sound4var2 = Buffer.readChannel(s, "./sounds/timpani_bends1_var2.wav", channels:1);
+	~sound4var3 = Buffer.readChannel(s, "./sounds/timpani_bends1_var3.wav", channels:1);
+	~sound4var4 = Buffer.readChannel(s, "./sounds/timpani_bends1_var4.wav", channels:1);
+	~sound4var5 = Buffer.readChannel(s, "./sounds/timpani_bends1_var5.wav", channels:1);
+	~sound4var6 = Buffer.readChannel(s, "./sounds/timpani_bends1_var6.wav", channels:1);*/
+
+	//sound5
+	/*~sound5var1 = Buffer.readChannel(s, "./sounds/35dogtoy_var1.wav", channels:1);
+		~sound5var2 = Buffer.readChannel(s, "./sounds/35dogtoy_var2.wav", channels:1);*/
+
+	//sound6
+	/*~sound6var1 = Buffer.readChannel(s, "./sounds/wood_hitting01.wav", channels:1);
+	~sound6var2 = Buffer.readChannel(s, "./sounds/wood_hitting02.wav", channels:1);
+		~sound6var3 = Buffer.readChannel(s, "./sounds/wood_hitting03.wav", channels:1);*/
+	//cat
+	/*~soundstopped = 0; //do not play cat on every detected impact
+	~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
+	~sound6cat1 = Buffer.read(s, "./sounds/cat_01.wav");
+	~sound6cat2 = Buffer.read(s, "./sounds/cat_02.wav");
+	~sound6cat3 = Buffer.readChannel(s, "./sounds/cat_03.wav", channels:1);
+	~sound6cat4 = Buffer.readChannel(s, "./sounds/cat_04.wav", channels:1);
+	~sound6cat5 = Buffer.read(s, "./sounds/cat_05.wav");
+	~sound6cat6 = Buffer.read(s, "./sounds/cat_06.wav");
+	~soundcat_sum = [~sound6cat1, ~sound6cat2, ~sound6cat3, ~sound6cat4, ~sound6cat5, ~sound6cat6];*/
+	
+	//sound7
+	/*~sound7var1 = Buffer.read(s, "./sounds/impact.wav");
+	~sound7var2 = Buffer.read(s, "./sounds/impact1.wav");
+	~sound7var3 = Buffer.read(s, "./sounds/impact2.wav");
+	~sound7var4 = Buffer.read(s, "./sounds/impact3.wav");
+	~sound7var5 = Buffer.read(s, "./sounds/impact4.wav");
+		~sound7var6 = Buffer.read(s, "./sounds/impact5.wav");*/
+	
+	//~sound = [~sound1var1, ~sound1var2, ~sound1var3];//, ~sound1var4, ~sound1var5];
+	
+	~button = 0;
+	OSCdef(\next_sound, { | msg, time, button = 0 |
+		[time, msg].postln;
+		//msg[1].postln;
+		msg.postln;
+
+		//direct sample choosing via numberbox
+		if(msg[1] == 'sam_num'){
+			~button = 0;
+			~button = msg[2];
+			msg[2].postln;
+		};		
+		
+		//counter_via_button_hits
+		if(msg[1] == 1.0){
+			~button = ~button + 1;
+		};
+		if(~button == 0){"press the button to start".postln
+		};
+		
+		//sound1
+		if(~button == 1){"./loader/sound1/sound1.scd".load;
+		};
+		
+		//sound2
+		if(~button == 2){"./loader/sound2/sound2.scd".load;
+		};
+		
+		//sound3
+		if(~button == 3){"./loader/sound3/sound3.scd".load;
+		};
+
+		//sound4
+		if(~button == 4){"./loader/sound4/sound4.scd".load;
+		};
+
+		//sound5
+		if(~button == 5){"./loader/sound5/sound5.scd".load;
+		};
+
+		//sound6
+		if(~button == 6){"./loader/sound6/sound6.scd".load;
+		};
+
+		
+		//sound7
+		if(~button == 7){"./loader/sound7/sound7.scd".load;
+		};
+
+		//finish
+		if(~button == 10){s.freeAll};
+		
+	},'/soundpick/2');
+	
+
+	f = { | in = 0 |
+		var temp, arr, val, suf;
+		arr = in;
+		suf = Pn(Pshuf(in, 1), inf).asStream;
+		temp = suf.next;
+		if(temp == ~last){
+			arr = in; 
+			val = arr.remove(temp);
+			arr.postln;
+			temp = arr.choose;
+			arr = arr.add(val);
+		};
+		~last = temp;
+		temp;
+	};
+	
+	SynthDef(\sample_player,{
+		| gate = 1, amp = 0.1, bufnum = 0, ampfactor = 1 |
+		var sig, env, out;
+		sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, rate: Rand(0.9, 1.1), trigger: gate);
+		p=1.0.linrand;
+		sig = sig - DelayN.ar(sig, maxdelaytime: 0.01, delaytime: (p*0.01)+(0.5/48000));
+		sig = sig * EnvGen.ar(Env.adsr(0.0, 0.3, 0.666, 0.005), gate: gate, doneAction:2);
+		//amp = Latch.kr(gate, gate) * amp;
+		sig = amp.lag(0.001) * sig * 4 * ampfactor;
+		//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
+		//no sound must exceed 1.5 sec
+		//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
+		Out.ar(0, [sig, sig]);
+		Out.ar(2, [sig, sig]);
+		Out.ar(4, [sig, sig]);
+		Out.ar(6, [sig, sig]);
+	}).add;
+
+	SynthDef(\addsound, {
+		| out = 0, bufnum, amp = 0.5, minwaittime = 0.5, maxwaittime = 1.5, cutoff = 500 |
+		var sig, deltime;
+		deltime = Rand(minwaittime, maxwaittime);
+		sig = DelayN.ar(PlayBuf.ar(1, bufnum, doneAction:0)!2, deltime, deltime);
+		sig = LPF.ar(sig, cutoff);
+		sig = sig * Env.perc(deltime + 0.25, curve:8).kr(doneAction:2);
+		sig = sig * amp;
+		Out.ar(out, sig);
+	}).add;
+	
+	v = Voicer.new(5, "sample_player");
+
+	SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
+		var sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tthres, tsub, tsend, vel, temp, trigtemp, ttrigdel, ttrigdelfba;
+		var chain, onsets, pips, ftrig, fthres;
+		sig = SoundIn.ar((0..3)).sum;
+		//===TBA===
+		sighpf = HPF.ar(sig, 4000);
+		sigsquared = sighpf.squared;
+		lpf1 = LPF.ar(sigsquared, 25);
+		derivative = Slope.ar(lpf1);
+		lpf2 = LPF.ar(derivative, 100);
+		tsub = 0.01 * lpf1 - lpf2;
+		tsub = tsub.max(0);
+		tthres = tba_hi;//1e-3;
+		ttrig = Schmidt.ar(tsub, tthres, tthres);
+		ttrigdel = DelayN.ar(ttrig, 0.006, 0.006);
+		vel = RunningMax.ar(sig.abs, ttrigdel);
+		tsend = SendTrig.kr(A2K.kr(ttrig), 0, value:vel);
+		//tsend = SendTrig.kr(A2K.kr(ttrigdel), 2, value:vel);	
+		//===FBA===
+		chain = FFT(LocalBuf(256), sig, wintype:1);
+		fthres = fba_thres;
+		onsets = Onsets.kr(chain, fthres, \power);
+		//vel track test
+		ttrigdelfba = DelayN.ar(onsets, 0.006, 0.006);//ttrig + onsets;
+		vel = RunningMax.ar(sig.abs, ttrigdelfba);
+		tsend = SendTrig.kr(A2K.kr(ttrigdelfba), 3, value:vel);
+		ftrig = SendTrig.kr(onsets, 1, value:vel);
+	}).add;
+
+	~trigflag = false;
+	~ampfactor = 1;
+	~ampfactorcat = 1;
+	~onset_sum = 0;
+	
+	a = OSCFunc({ arg msg, time;
+		var val, tb_trigval, fb_trigval, sp, vel, bufnum;
+		[time, msg].postln;
+		tb_trigval = 0;
+		fb_trigval = 0;
+		fork{
+			vel = msg[3];
+			//vel.postln;
+			if((msg[2] == 0) && (~trigflag == false)){
+				~lastvoice = v.trigger(1, 1, [\amp, 0.001, \ampfactor, ~ampfactor, \gate, 1, \bufnum, f.value(~sound)]);
+				~trigflag = true;
+			};
+			//if(msg[2] == 2){~lastvoice.set([\amp,msg[3]]); 20.do{[vel, "RMAX MAP TBA"].postln}};	
+			if(msg[2] == 3){~lastvoice.set([\amp,msg[3]]); 20.do{[vel, "RMAX MAP FBA"].postln}};
+			0.006.wait;
+			fb_trigval = 0;
+			if((msg[2] == 1) && (~trigflag == true)){
+				fb_trigval = 1;
+				"FBA_agrees".postln;
+			};
+			if((fb_trigval == 0) && (~trigflag == true)){~lastvoice.set([\gate,0]); "FBA_disagrees".postln;};
+			
+			if((msg[2] == 1) && (~trigflag == false)){
+				~lastvoice = v.trigger(1, 1, [\amp, 0.001, \ampfactor, ~ampfactor, \gate, 1, \bufnum, f.value(~sound)]);
+			};
+			
+			~trigflag = false;	
+
+			//cat sounds
+			if(~button == 6){
+				"cat".postln;
+				~onset_sum = ~onset_sum + 1;
+				
+				//conitinuous impacts
+				fork{
+					5.wait; 
+					~onset_sum = 0;
+				};
+				
+				if((~soundstopped == 0) && (~onset_sum < 5)){
+					~soundstopped = 1;
+					if(x.isPlaying == false){	
+						fork{
+							if(0.5.coin == true){
+								x = Synth(\addsound, [\bufnum, f.value(~soundcat_sum), \amp, ~ampfactorcat]);
+							};
+							rrand(5,8).wait;
+							~soundstopped = 0;
+						}
+					};	
+				};
+			};
+			
+			//multiple impacts 
+			if((~button == 6) && (~onset_sum > 5)){
+				if(x.isPlaying == false){
+					10.do{~onset_sum.postln};
+					~onset_sum = 0;
+					x = Synth(\addsound, [\bufnum, f.value(~soundcat_sum), \amp, ~ampfactorcat]);
+					~onset_sum = 0;
+				}
+			};
+		}
+		
+	},'/tr', s.addr);
+
+
+	//thresh control
+	OSCFunc({ arg msg, time;
+		var val;
+		[time, msg].postln;
+		val = msg[1];
+		val.postln;
+		q.set(\tba_hi, val);
+		
+	},'/thres/tba_hi');
+
+	OSCFunc({ arg msg, time;
+		var val;
+		[time, msg].postln;
+		val = msg[1];
+		val.postln;
+		q.set(\tba_lo, val);
+		
+	},'/thres/tba_lo');
+
+	OSCFunc({ arg msg, time;
+		var val;
+		[time, msg].postln;
+		val = msg[1];
+		val.postln;
+		q.set(\fba_thres, val);
+		
+	},'/thres/fba_thres');
+
+	OSCFunc({ arg msg, time;
+		var val;
+		[time, msg].postln;
+		val = msg[2];
+		val.postln;
+		if(msg[1] == \main){
+			~ampfactor = val;
+		};
+		if(msg[1] == \cat){
+			~ampfactorcat = val;
+		};
+
+	},'/master');
+
+	
+
+	1.wait;
+
+	q = Synth(\tba_fba);
+};
+
+
+
+ServerQuit.add({ 0.exit }); // quit if the button is pressed
