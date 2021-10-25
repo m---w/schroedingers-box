@@ -19,63 +19,10 @@ s.options.numInputBusChannels = 4;
 s.options.numOutputBusChannels = 8;
 
 s.waitForBoot{
-	//sound1
-	/*~sound1var1 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var01.wav", channels:1);
-	~sound1var2 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var02.wav", channels:1);
-	~sound1var3 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var03.wav", channels:1);
-	~sound1var4 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var04.wav", channels:1);
-		~sound1var5 = Buffer.readChannel(s, "./sounds/atakes_vasi_ixeion_me_kleidi_var05.wav", channels:1);*/
 
-	//sound2
-	/*~sound2var1 = Buffer.readChannel(s, "./sounds/kagelo01.wav", channels:1);
-		~sound2var2 = Buffer.readChannel(s, "./sounds/kagelo02.wav", channels:1);*/
-
-	//sound3
-	/*~sound3var1 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var1.wav", channels:1);
-	~sound3var2 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var2.wav", channels:1);
-		~sound3var3 = Buffer.readChannel(s, "./sounds/metaliko_kouti_diafores _attakes_var3.wav", channels:1);*/
-
-	//sound4
-	/*~sound4var1 = Buffer.readChannel(s, "./sounds/timpani_bends1_var1.wav", channels:1);
-	~sound4var2 = Buffer.readChannel(s, "./sounds/timpani_bends1_var2.wav", channels:1);
-	~sound4var3 = Buffer.readChannel(s, "./sounds/timpani_bends1_var3.wav", channels:1);
-	~sound4var4 = Buffer.readChannel(s, "./sounds/timpani_bends1_var4.wav", channels:1);
-	~sound4var5 = Buffer.readChannel(s, "./sounds/timpani_bends1_var5.wav", channels:1);
-	~sound4var6 = Buffer.readChannel(s, "./sounds/timpani_bends1_var6.wav", channels:1);*/
-
-	//sound5
-	/*~sound5var1 = Buffer.readChannel(s, "./sounds/35dogtoy_var1.wav", channels:1);
-		~sound5var2 = Buffer.readChannel(s, "./sounds/35dogtoy_var2.wav", channels:1);*/
-
-	//sound6
-	/*~sound6var1 = Buffer.readChannel(s, "./sounds/wood_hitting01.wav", channels:1);
-	~sound6var2 = Buffer.readChannel(s, "./sounds/wood_hitting02.wav", channels:1);
-		~sound6var3 = Buffer.readChannel(s, "./sounds/wood_hitting03.wav", channels:1);*/
-	//cat
-	/*~soundstopped = 0; //do not play cat on every detected impact
-	~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
-	~sound6cat1 = Buffer.read(s, "./sounds/cat_01.wav");
-	~sound6cat2 = Buffer.read(s, "./sounds/cat_02.wav");
-	~sound6cat3 = Buffer.readChannel(s, "./sounds/cat_03.wav", channels:1);
-	~sound6cat4 = Buffer.readChannel(s, "./sounds/cat_04.wav", channels:1);
-	~sound6cat5 = Buffer.read(s, "./sounds/cat_05.wav");
-	~sound6cat6 = Buffer.read(s, "./sounds/cat_06.wav");
-	~soundcat_sum = [~sound6cat1, ~sound6cat2, ~sound6cat3, ~sound6cat4, ~sound6cat5, ~sound6cat6];*/
-	
-	//sound7
-	/*~sound7var1 = Buffer.read(s, "./sounds/impact.wav");
-	~sound7var2 = Buffer.read(s, "./sounds/impact1.wav");
-	~sound7var3 = Buffer.read(s, "./sounds/impact2.wav");
-	~sound7var4 = Buffer.read(s, "./sounds/impact3.wav");
-	~sound7var5 = Buffer.read(s, "./sounds/impact4.wav");
-		~sound7var6 = Buffer.read(s, "./sounds/impact5.wav");*/
-	
-	//~sound = [~sound1var1, ~sound1var2, ~sound1var3];//, ~sound1var4, ~sound1var5];
-	
 	~button = 0;
 	OSCdef(\next_sound, { | msg, time, button = 0 |
 		[time, msg].postln;
-		//msg[1].postln;
 		msg.postln;
 
 		//direct sample choosing via numberbox
@@ -85,44 +32,20 @@ s.waitForBoot{
 			msg[2].postln;
 		};		
 		
-		//counter_via_button_hits
+		//button counter
 		if(msg[1] == 1.0){
 			~button = ~button + 1;
 		};
-		if(~button == 0){"press the button to start".postln
-		};
 		
-		//sound1
-		if(~button == 1){"./loader/sound1/sound1.scd".load;
-		};
-		
-		//sound2
-		if(~button == 2){"./loader/sound2/sound2.scd".load;
-		};
-		
-		//sound3
-		if(~button == 3){"./loader/sound3/sound3.scd".load;
+		if(~button == 0){"press the button to start".postln;
 		};
 
-		//sound4
-		if(~button == 4){"./loader/sound4/sound4.scd".load;
-		};
-
-		//sound5
-		if(~button == 5){"./loader/sound5/sound5.scd".load;
-		};
-
-		//sound6
-		if(~button == 6){"./loader/sound6/sound6.scd".load;
-		};
-
-		
-		//sound7
-		if(~button == 7){"./loader/sound7/sound7.scd".load;
+		if(~button > 0){var path = "./loader/sound"++~button.asInt ++"/sound"++~button.asInt ++".scd"; path.load;
 		};
 
 		//finish
-		if(~button == 10){s.freeAll};
+		if(~button == 10){s.freeAll;
+		};
 		
 	},'/soundpick/2');
 	
@@ -203,6 +126,7 @@ s.waitForBoot{
 		ftrig = SendTrig.kr(onsets, 1, value:vel);
 	}).add;
 
+	//init
 	~trigflag = false;
 	~ampfactor = 1;
 	~ampfactorcat = 1;
@@ -237,7 +161,7 @@ s.waitForBoot{
 			~trigflag = false;	
 
 			//cat sounds
-			if(~button == 6){
+			if(~addsound == true){
 				"cat".postln;
 				~onset_sum = ~onset_sum + 1;
 				
@@ -262,7 +186,7 @@ s.waitForBoot{
 			};
 			
 			//multiple impacts 
-			if((~button == 6) && (~onset_sum > 5)){
+			if((~addsound == true) && (~onset_sum > 5)){
 				if(x.isPlaying == false){
 					10.do{~onset_sum.postln};
 					~onset_sum = 0;
