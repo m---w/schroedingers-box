@@ -44,7 +44,7 @@ s.waitForBoot{
 		};
 
 		//finish
-		if(~button == 10){s.freeAll;
+		if(~button == 20){s.freeAll;
 		};
 		
 	},'/soundpick/2');
@@ -140,6 +140,15 @@ s.waitForBoot{
 		fork{
 			vel = msg[3];
 			//vel.postln;
+
+			//break glass
+			if(~outcome == true){
+				if(msg[3] > 0.1){
+					~sound = ~soundcat_sum;
+				};
+			};
+			
+			
 			if((msg[2] == 0) && (~trigflag == false)){
 				~lastvoice = v.trigger(1, 1, [\amp, 0.001, \ampfactor, ~ampfactor, \gate, 1, \bufnum, f.value(~sound)]);
 				~trigflag = true;
@@ -193,6 +202,12 @@ s.waitForBoot{
 					x = Synth(\addsound, [\bufnum, f.value(~soundcat_sum), \amp, ~ampfactorcat]);
 					~onset_sum = 0;
 				}
+			};
+
+			if(~outcome == true){
+				if(msg[3] > 0.1){
+					~sound = ~soundcat_sum;
+				};
 			};
 		}
 		

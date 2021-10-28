@@ -7,4 +7,4 @@
 ~sound = [~sound9var1, ~sound9var2, ~sound9var3, ~sound9var4, ~sound9var5];
 
 ~addsound = false;
-
+~outcome = false;
