@@ -10,7 +10,7 @@ s.waitForBoot({
 
 	var w, tba_threshi, tba_threslo, fba_thres;
 	
-	//~n = NetAddr("192.168.184.21", 57120);
+	//~n = NetAddr("192.168.185.50", 57120);
 	~n = NetAddr("bela.local", 57120);
 	
 
@@ -73,14 +73,15 @@ s.waitForBoot({
 		|obj|
 		var val;
 		val = obj.value.linlin(0.0, 1.0, 0.0, 5.0);
+		//after marian code change - uncomment
+		//val = obj.value.linlin(0.0, 1.0, 0.0, 1.0);
+		//val = val/100;
 		val.postln;
-		//q.set only local no osc
-		//q.set(\fba_thres, val);
 		//sendMsg to bela
 		~n.sendMsg('/thres/fba_thres', val);
-        ~nb_fba.value_(val.value);//GoesToNumberBox
+        ~nb_fba.value_(val.value /** 10*/);//GoesToNumberBox
 	});
-	
+
 	~nb_tba_hi = NumberBox(w, Rect(3, 105, 70, 20))
     .value_(0.00)
     .clipLo_(0.0)
