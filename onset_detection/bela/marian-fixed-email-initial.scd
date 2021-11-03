@@ -158,12 +158,14 @@ s.waitForBoot{
 
 	v = Voicer.new(5, "sample_player");
 
-	SynthDef(\tba_fba, { |tba_hi = 1e-3, tba_lo = 1e-3, fba_thres = 1 |
-		var sigRaw, sig, sighpf, sigsquared, lpf1, lpf2, derivative, ttrig, tsub, vel, ttrigdel, ttrigdelfba;
-		var chain, onsets;
-		sigRaw = SoundIn.ar(0..3); // 4 input channels
+	SynthDef(\tba_fba, { |tba_hi=1e-3, tba_lo=1e-4, fba_thres=1,  relaxtime=1.0, floor=0.1, mingap=10, medianspan=11, velDelay=0.006|
+		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, tbTrigLong, chain, fbTrig, fbTrigLong, fbTrigLongInv, tbTrigDelShort, facTrig, vel;
+		var sampleDur = 1.0/SampleRate.ir; // duration of one audio sample
+		var nfft = 256; // FFT size in samples
+		var frameDur = (nfft/SampleRate.ir).roundUp(1e-4); // duration of one fft frame in seconds, rounded up on grid of 0.1ms. 5.4ms at 48kHz and 256samp fft size.
+		sigRaw = SoundIn.ar([0,1,2,3]); // 4 input channels
 		sig = sigRaw.sum; // downmix to mono
-		//===TBA===
+		//=== TBOD ===
 		sighpf = HPF.ar(sig, 4000); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
 		sigsquared = sighpf.squared; // Squaring (get signal energy)
 		lpf1 = LPF.ar(sigsquared, 25); // Smoothing 1. Turchet2018: 25
@@ -172,17 +174,22 @@ s.waitForBoot{
 		// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 		tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
 		// ttrig = Schmidt.ar(tsub, tba_hi, tba_lo); // thresholding with high and low threshold
-		ttrig = Trig.ar(tsub-tba_hi, 0.0054); // simple thresholding, trigger lasts for one FFT block (256/48000 s)
-		SendTrig.ar(ttrig, 1); // send TBA onset trigger to language. ID 0 means TBA.
-		//===FBA===
-		chain = FFT(LocalBuf(256), sig, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64
-		onsets = Onsets.kr(chain, fba_thres, \rcomplex, relaxtime: 1, floor: 0.1, mingap: 10, medianspan: 11); // rcomplex is best. if it takes up too much cpu, then use power.
-		SendTrig.ar(onsets, 2, ttrig+onsets); // send FBA onset trigger to language. ID 1 means FBA. Value: 1 means new onset (TBA miss, FBA hit), 2 means onset confirmation (TBA hit, FBA hit).
-		ttrigdelfba = 1.0-Trig.ar(onsets, 0.0054); // delay trigger by one fft block (happens to be 6ms, so can be reused)
-		vel = RunningMax.ar(sighpf.abs, ttrigdelfba); // running max of highpass-filtered input. reset with each trigger.
-		SendTrig.ar(1.0-ttrig-ttrigdelfba, 0); // send FBA cancel trigger to language. ID 0 means FBA cancel (TBA false alarm, FBA correct rejection)
-		// ttrigdelfba = DelayN.ar(onsets, 0.006, 0.006); // wait 6ms after triggering, to get velocity
-		SendTrig.ar(ttrigdelfba, 3, value: vel); // send velocity value to language
+		tbTrig = tsub-tba_hi; // simple thresholding
+		tbTrigLong = Trig.ar(tbTrig, frameDur); // trigger lasts for one FFT block
+		SendTrig.ar(tbTrigLong, 1); // send TBOD trigger to language. ID 1 means TBOD.
+		//=== FBOD ===
+		chain = FFT(LocalBuf(nfft), sig, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64. Wintype 1 is Hann window.
+		fbTrig = Onsets.kr(chain, fba_thres, \rcomplex, relaxtime: relaxtime, floor: floor, mingap: mingap, medianspan: medianspan); // rcomplex is best. if it takes up too much cpu, then use power.
+		SendTrig.ar(fbTrig, 2, tbTrigLong+fbTrig); // send FBOD onset trigger to language. ID 1 means FBOD. Value: 1 means new onset (TBOD miss, FBOD hit), 2 means onset confirmation (TBOD hit, FBOD hit).
+		//=== FAC: false alarm cancellation ===
+		fbTrigLong = Trig.ar(fbTrig, frameDur); // make FBOD triger 6ms long
+		fbTrigLongInv = 1.0 - fbTrigLong; // inverse signal: zero between FBOD and 6ms afterwards, otherwise one.
+		tbTrigDelShort = Trig.ar(1.0-tbTrigLong, sampledur); // TBOD trigger, delayed by 6ms, only one sample long.
+		facTrig = tbTrigDelShort * fbTrigLongInv; // triggers 6ms after a TBOD trigger in case of no FBOD trigger within this timeframe.
+		SendTrig.ar(facTrig, 0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
+		//=== VD: velocity detection ===
+		vel = RunningMax.ar(sig.abs, DelayN.ar(fbTrig, 0.1, velDel+sampleDur); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
+		SendTrig.ar(DelayN.ar(fbTrig, 0.1, velDel), 3, value: vel); // send velocity value to language. Waiting time is set via velDel.
 	}).add;
 
 
