@@ -20,11 +20,11 @@ s.options.numOutputBusChannels = 8;
 
 s.waitForBoot{
 
-	~button = 0;
+	~button = 0;	
+	
 	OSCdef(\next_sound, { | msg, time, button = 0 |
 		[time, msg].postln;
 		msg.postln;
-
 		//direct sample choosing via numberbox
 		if(msg[1] == 'sam_num'){
 			~button = 0;
@@ -124,138 +124,230 @@ s.waitForBoot{
 		SendTrig.ar(ttrigdelfba, 3, value: vel); // send velocity value to language
 	}).add;
 
-
 	//init
 	~trigflag = false;
 	~ampfactor = 1;
 	~ampfactorcat = 1;
 	~onset_sum = 0;
-	
-	// function to trigger voice
+	~velfortobreak = 0;
+
+// function to trigger voice
 	~voicetrigger = {|amp=0.01|
 		// trigger new voice
-		v.trigger(1, 1, [\amp, amp, \gate, 1, \bufnum, f.value(~sound)]);
+		v.trigger(1, 1, [\amp, amp, \ampfactor, ~ampfactor, \gate, 1, \bufnum, f.value(~sound)]);
 
-		//cat sounds
-		if(~button == 6){
-			"cat".postln;
-			~onset_sum = ~onset_sum + 1;
 
-			//conitinuous impacts
-			fork{5.wait;
-				~onset_sum = 0;
-			};
-
-			if((~soundstopped == 0) && (~onset_sum < 5)){
-
-				~soundstopped = 1;
+			//cat sounds
+			if(~addsound == true){
+				"cat".postln;
+				~onset_sum = ~onset_sum + 1;
+				
+				//conitinuous impacts
 				fork{
-					if(0.5.coin == true){
-						{play{Out.ar(2, LPF.ar(PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2), 500)!2/*ENVELOPE MULTIPLY*/)}}.defer(rrand(0.5, 1.5));
-					};
-					rrand(5,8).wait;
-					~soundstopped = 0;
+					5.wait; 
+					~onset_sum = 0;
+				};
+				
+				if((~soundstopped == 0) && (~onset_sum < 5)){
+					~soundstopped = 1;
+					if(x.isPlaying == false){	
+						fork{
+							if(0.5.coin == true){
+								x = Synth(\addsound, [\bufnum, f.value(~soundcat_sum), \amp, ~ampfactorcat]);
+							};
+							rrand(5,8).wait;
+							~soundstopped = 0;
+						}
+					};	
+				};
+			};
+			
+			//multiple impacts 
+			if((~addsound == true) && (~onset_sum > 5)){
+				if(x.isPlaying == false){
+					10.do{~onset_sum.postln};
+					~onset_sum = 0;
+					x = Synth(\addsound, [\bufnum, f.value(~soundcat_sum), \amp, ~ampfactorcat]);
+					~onset_sum = 0;
 				}
 			};
-		};
 
-		//multiple impacts
-		if((~button == 6) && (~onset_sum > 5)){
-			{
-				10.do{~onset_sum.postln};
-				~onset_sum = 0;
-				play{
-					Out.ar(2, LPF.ar(PlayBuf.ar(1, f.value(~soundcat_sum), doneAction:2), 500)!2)/*ENVELOPE MULTIPLY*/
+			if(~outcome == true){
+				if(~velfortobreak > 0.1){
+					~sound = ~soundcat_sum;
 				};
-			}.defer(rrand(0.5, 1.5));
-			//1.wait;
-			~onset_sum = 0;
+			};
 		};
 
-	};
-
-
-
-	// Receive OSC from synth
+	//receive OSC from synth
 	a = OSCFunc({ arg msg, time;
-		var id, val, tb_trigval, fb_trigval, sp, vel, bufnum;
+		var val, tb_trigval, fb_trigval, sp, vel, bufnum, id;
 		[time, msg].postln;
 		tb_trigval = 0;
 		fb_trigval = 0;
-		//vel = 0;
-		id = msg[2];
-		val = msg[3];
-		switch (id,
-			0, { // FBA Cancel
-				~lastvoice.set([\gate, 0]);
-				"FBA cancels TBA.".postln;
-			},
-			1, { // TBA trigger
-				~lastvoice = ~voicetrigger.();
-				"TBA triggers new onset.".postln;
-			},
-			2, { // FBA trigger
-				if( val==1.0,
-					{ // new onset
+		fork{
+			//	vel = msg[3];
+			//~velfortobreak = vel;
+			//vel.postln;
+
+			//break glass
+			//if(~outcome == true){
+			//if(~velfortobreak > 0.1){
+			//~sound = ~soundcat_sum;
+			//	};
+			//};
+
+
+			id = msg[2];
+			val = msg[3];
+			switch (id,
+				0, { // FBA Cancel
+					//if(~trigflag == true){
+						~lastvoice.set([\gate, 0]);
+						"FBA cancels TBA.".postln;
+						//}
+				},
+				1, { // TBA trigger
+					//if(~trigflag == false){
 						~lastvoice = ~voicetrigger.();
-						"FBA triggers new onset.".postln;
-					},
-					{ // existing onset
-						"FBA agrees with TBA.".postln;
-					}
-				);
-			},
-			3, { // Velocity update
-				~lastvoice.set([\amp, val]);
-				("Velocity update:"+val).postln;
-			},
-		);
+						"TBA triggers new onset.".postln;
+					//}
+				},
+				2, { // FBA trigger
+					if( val==1.0,
+						{ // new onset
+							//if(~trigflag == false){
+								~lastvoice = ~voicetrigger.();
+								"FBA triggers new onset.".postln;
+							//}
+						},
+						{ // existing onset
+							"FBA agrees with TBA.".postln;
+						}
+					);
+				},
+				3, { // Velocity update
+					//if(~trigflag == true){
+						~lastvoice.set([\amp, val]);
+						("Velocity update:"+val).postln;
+					//}
+				},
+			);
 
+			~trigflag = false;
+			
+			/* if((msg[2] == 0) && (~trigflag == false)){
+				~lastvoice = v.trigger(1, 1, [\amp, 0.001, \ampfactor, ~ampfactor, \gate, 1, \bufnum, f.value(~sound)]);
+				~trigflag = true;
+			};
+			//if(msg[2] == 2){~lastvoice.set([\amp,msg[3]]); 20.do{[vel, "RMAX MAP TBA"].postln}};	
+			if(msg[2] == 3){~lastvoice.set([\amp,msg[3]]); 20.do{[vel, "RMAX MAP FBA"].postln}};
+			0.006.wait;
+			fb_trigval = 0;
+			if((msg[2] == 1) && (~trigflag == true)){
+				fb_trigval = 1;
+				"FBA_agrees".postln;
+			};
+			if((fb_trigval == 0) && (~trigflag == true)){~lastvoice.set([\gate,0]); "FBA_disagrees".postln;};
+			
+			if((msg[2] == 1) && (~trigflag == false)){
+				~lastvoice = v.trigger(1, 1, [\amp, 0.001, \ampfactor, ~ampfactor, \gate, 1, \bufnum, f.value(~sound)]);
+			};
+			
+			~trigflag = false;	
+
+			//cat sounds
+			if(~addsound == true){
+				"cat".postln;
+				~onset_sum = ~onset_sum + 1;
+				
+				//conitinuous impacts
+				fork{
+					5.wait; 
+					~onset_sum = 0;
+				};
+				
+				if((~soundstopped == 0) && (~onset_sum < 5)){
+					~soundstopped = 1;
+					if(x.isPlaying == false){	
+						fork{
+							if(0.5.coin == true){
+								x = Synth(\addsound, [\bufnum, f.value(~soundcat_sum), \amp, ~ampfactorcat]);
+							};
+							rrand(5,8).wait;
+							~soundstopped = 0;
+						}
+					};	
+				};
+			};
+			
+			//multiple impacts 
+			if((~addsound == true) && (~onset_sum > 5)){
+				if(x.isPlaying == false){
+					10.do{~onset_sum.postln};
+					~onset_sum = 0;
+					x = Synth(\addsound, [\bufnum, f.value(~soundcat_sum), \amp, ~ampfactorcat]);
+					~onset_sum = 0;
+				}
+			};
+
+			if(~outcome == true){
+				if(msg[3] > 0.1){
+					~sound = ~soundcat_sum;
+				};
+				};*/
+		}
+		
 	},'/tr', s.addr);
-
 
 	//thresh control
 	OSCFunc({ arg msg, time;
 		var val;
 		[time, msg].postln;
-		val = msg[1];
+		val = msg[1].dbamp;
 		val.postln;
 		q.set(\tba_hi, val);
 		
-	},'/thres/tba_hi');
+	},'/thres/tba_thres_db');
 
 	OSCFunc({ arg msg, time;
 		var val;
 		[time, msg].postln;
-		val = msg[1];
-		val.postln;
-		q.set(\tba_lo, val);
-		
-	},'/thres/tba_lo');
-
-	OSCFunc({ arg msg, time;
-		var val;
-		[time, msg].postln;
-		val = msg[1];
+		val = msg[1].dbamp;
 		val.postln;
 		q.set(\fba_thres, val);
 		
-	},'/thres/fba_thres');
+	},'/thres/fba_thres_db');
 
+	//master faders
 	OSCFunc({ arg msg, time;
 		var val;
 		[time, msg].postln;
-		val = msg[2];
+		val = msg[1].dbamp;
 		val.postln;
-		if(msg[1] == \main){
+		//if(msg[1] == \main){
 			~ampfactor = val;
-		};
-		if(msg[1] == \cat){
+		//};
+		/*if(msg[1] == \cat){
 			~ampfactorcat = val;
-		};
+			};*/
 
-	},'/master');
+	},'/master/main');
 
+		//master faders
+	OSCFunc({ arg msg, time;
+		var val;
+		[time, msg].postln;
+		val = msg[1].dbamp;
+		val.postln;
+		//if(msg[1] == \main){
+			~ampfactorcat = val;
+		//};
+		/*if(msg[1] == \cat){
+			~ampfactorcat = val;
+			};*/
+
+	},'/master/cat');
 	
 
 	1.wait;
