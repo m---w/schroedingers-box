@@ -1,7 +1,8 @@
 old/
-accelerometer_sounds/non44100/
+onset_detection/bela/old
+accelerometer/accelerometer_sounds/
 sounds_processed/
-acc_sounds/
+accelerometer/old/
 pictures/
 sounds/sound8_vars/
 .DS_Store
