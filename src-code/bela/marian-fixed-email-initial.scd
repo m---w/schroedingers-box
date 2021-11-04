@@ -158,23 +158,28 @@ s.waitForBoot{
 
 	v = Voicer.new(5, "sample_player");
 
-	SynthDef(\tba_fba, { |tba_hi=1e-3, tba_lo=1e-4, fba_thres=1,  relaxtime=1.0, floor=0.1, mingap=10, medianspan=11, velDelay=0.006|
+	SynthDef(\tba_fba, { |tba_hi=1e-3, tba_lo=1e-4, fba_thres=1,  relaxtime=1.0, floor=0.1, mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0|
 		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, tbTrigLong, chain, fbTrig, fbTrigLong, fbTrigLongInv, tbTrigDelShort, facTrig, vel;
 		var sampleDur = 1.0/SampleRate.ir; // duration of one audio sample
 		var nfft = 256; // FFT size in samples
 		var frameDur = (nfft/SampleRate.ir).roundUp(1e-4); // duration of one fft frame in seconds, rounded up on grid of 0.1ms. 5.4ms at 48kHz and 256samp fft size.
+		var minusTwoPiT = 2.0.neg*pi/SampleRate.ir; // pre-computation
+		var lpf1CoeffA = exp(lpf1Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf1)
+		var lpf2CoeffA = exp(lpf2Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf2)
+		var lpf1CoeffAm = 1.0-lpf1CoeffA; // pre-computation
+		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
 		sigRaw = SoundIn.ar([0,1,2,3]); // 4 input channels
 		sig = sigRaw.sum; // downmix to mono
 		//=== TBOD ===
-		sighpf = HPF.ar(sig, 4000); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
+		sighpf = HPF.ar(sig, hpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
 		sigsquared = sighpf.squared; // Squaring (get signal energy)
-		lpf1 = LPF.ar(sigsquared, 25); // Smoothing 1. Turchet2018: 25
+		lpf1 = Integrator.ar(lpf1CoeffAm*sigsquared, lpf1CoeffA); // Smoothing 1. Turchet2018: 25
 		derivative = Slope.ar(lpf1); // 1st derivative = slope
-		lpf2 = LPF.ar(derivative, 100); // Smoothing 2. Turchet2018: 25
+		lpf2 = Integrator.ar(lpf2CoeffAm*derivative, lpf2CoeffA); // Smoothing 2. Turchet2018: 25
 		// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 		tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
 		// ttrig = Schmidt.ar(tsub, tba_hi, tba_lo); // thresholding with high and low threshold
-		tbTrig = tsub-tba_hi; // simple thresholding
+		tbTrig = Trig.ar(tsub-tba_hi, tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
 		tbTrigLong = Trig.ar(tbTrig, frameDur); // trigger lasts for one FFT block
 		SendTrig.ar(tbTrigLong, 1); // send TBOD trigger to language. ID 1 means TBOD.
 		//=== FBOD ===
