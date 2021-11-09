@@ -3,6 +3,7 @@ src-code/old/
 accelerometer/accelerometer_sounds/
 sounds_processed/
 sounds/
+sounds/*
 accelerometer/old/
 pictures/
 sounds/sound8_vars/
