@@ -1,13 +1,14 @@
 src-code/bela/old/
 src-code/old/
 accelerometer/accelerometer_sounds/
+temp-sounds/
 sounds_processed/
-sounds/
-sounds/*
 accelerometer/old/
 pictures/
 sounds/sound8_vars/
 .DS_Store
 zoom-recs/
+sounds/
 echothief/
 old/
+temp-sounds/

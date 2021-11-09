@@ -8,7 +8,7 @@ SuperCollider Control Patch for Bela
 (
 Window.closeAll;
 
-//n = NetAddr("192.168.184.21", 57120);
+//n = NetAddr("192.168.185.50", 57120);
 n = NetAddr("bela.local", 57120); // set bela remote address
 
 // parameter default values
@@ -18,6 +18,11 @@ e.fbaThreshDB = -20.0; // fba threshold in dB
 e.mainDB = inf.neg; // main volume in dB
 e.catDB = 60.neg; // cat volume in dB
 e.preset = 0; // sound preset
+e.relaxtime = 1.0;
+e.floor = 0.1;
+e.mingap = 10;
+e.medianspan = 11;
+e.veldelay = 0.006;
 
 
 // GUI function definition
@@ -31,6 +36,12 @@ e.preset = 0; // sound preset
 		['/thres/fba_thres_db', -60, 0, \lin, 0.0, "dB", "FBOD threshold", 1, \fbaThreshDB],
 		['/master/main', -60, 10, \lin, 0.0, "dB", "Master Volume", 1, \mainDB],
 		['/master/cat', -60, 10, \lin, 0.0, "dB", "Cat Volume", 1, \catDB],
+		['/thres/relaxtime', 0, 5, \lin, 0.0, "Sec", "Relax Time", 1, \relaxtime],
+		['/thres/floor', 0.0, 1.0, \lin, 0.0, " ", "Floor", 1, \floor],
+		['/thres/mingap', 0.0, 50.0, \lin, 0.0, "FFT frames", "MinGap", 1, \mingap],
+		['/thres/medianspan', 0, 30, \lin, 0.0, "FFT frames", "MedianSpan", 1, \medianspan],
+		['/thres/veldelay', 0.000, 0.1, \lin, 0.0, "Sec", "Velocity Delay", 1, \veldelay],
+		
 	];
 
 	// convert to dictionary, to address them by name
@@ -90,15 +101,15 @@ e.preset = 0; // sound preset
 
 	// GUI SETUP
 
-	heading.("Onset Detection");
-	newline.();
-	makeSliders.(elements[\params], sliderDict, [\tbaThreshDB, \fbaThreshDB]);
+		//heading.("Onset Detection");
+		//newline.();
+	makeSliders.(elements[\params], sliderDict, [\tbaThreshDB, \fbaThreshDB, \mainDB, \catDB, \relaxtime, \floor, \mingap, \medianspan, \veldelay]);
 	newline.();
 
-	heading.("Sound");
+		/*heading.("Sound");
 	newline.();
 	makeSliders.(elements[\params], sliderDict, [\mainDB, \catDB]);
-	newline.();
+			newline.();*/
 
 	heading.("Sample Picker");
 	newline.();
