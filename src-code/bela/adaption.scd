@@ -3,7 +3,7 @@
 	SuperCollider Patch for Bela
 	2021 Jason Svoronos-Kanavas, Marian Weger 
 */
-
+ 
 //Onsets \power, 256 FFT, 1.5 sec rel time env of playback sound, minigap:30 
 
 s = Server.default;
@@ -97,28 +97,33 @@ s.waitForBoot{
 	
 	v = Voicer.new(5, "sample_player");
 
-	SynthDef(\tba_fba, { |tba_hi=1e-3, tba_lo=1e-4, fba_thres=1,  relaxtime=1.0, floor=0.1, mingap=10, medianspan=11, velDelay=0.006|
+	SynthDef(\tba_fba, { |tba_hi=(1e-3.ampdb), tba_lo=1e-4, fba_thres=0,  relaxtime=1.0, floor=0.1, mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0|
 		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, tbTrigLong, chain, fbTrig, fbTrigLong, fbTrigLongInv, tbTrigDelShort, facTrig, vel;
 		var sampleDur = 1.0/SampleRate.ir; // duration of one audio sample
 		var nfft = 256; // FFT size in samples
 		var frameDur = (nfft/SampleRate.ir).roundUp(1e-4); // duration of one fft frame in seconds, rounded up on grid of 0.1ms. 5.4ms at 48kHz and 256samp fft size.
+		var minusTwoPiT = 2.0.neg*pi/SampleRate.ir; // pre-computation
+		var lpf1CoeffA = exp(lpf1Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf1)
+		var lpf2CoeffA = exp(lpf2Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf2)
+		var lpf1CoeffAm = 1.0-lpf1CoeffA; // pre-computation
+		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
 		sigRaw = SoundIn.ar([0,1,2,3]); // 4 input channels
 		sig = sigRaw.sum; // downmix to mono
 		//=== TBOD ===
-		sighpf = HPF.ar(sig, 4000); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
+		sighpf = HPF.ar(sig, hpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
 		sigsquared = sighpf.squared; // Squaring (get signal energy)
-		lpf1 = LPF.ar(sigsquared, 25); // Smoothing 1. Turchet2018: 25
+		lpf1 = Integrator.ar(lpf1CoeffAm*sigsquared, lpf1CoeffA); // Smoothing 1. Turchet2018: 25
 		derivative = Slope.ar(lpf1); // 1st derivative = slope
-		lpf2 = LPF.ar(derivative, 100); // Smoothing 2. Turchet2018: 25
+		lpf2 = Integrator.ar(lpf2CoeffAm*derivative, lpf2CoeffA); // Smoothing 2. Turchet2018: 25
 		// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 		tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
 		// ttrig = Schmidt.ar(tsub, tba_hi, tba_lo); // thresholding with high and low threshold
-		tbTrig = tsub-tba_hi; // simple thresholding
+		tbTrig = Trig.ar(tsub-tba_hi.dbamp, tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
 		tbTrigLong = Trig.ar(tbTrig, frameDur); // trigger lasts for one FFT block
 		SendTrig.ar(tbTrigLong, 1); // send TBOD trigger to language. ID 1 means TBOD.
 		//=== FBOD ===
 		chain = FFT(LocalBuf(nfft), sig, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64. Wintype 1 is Hann window.
-		fbTrig = Onsets.kr(chain, fba_thres, \rcomplex, relaxtime: relaxtime, floor: floor, mingap: mingap, medianspan: medianspan); // rcomplex is best. if it takes up too much cpu, then use power.
+		fbTrig = Onsets.kr(chain, fba_thres.dbamp, \rcomplex, relaxtime: relaxtime, floor: floor, mingap: mingap, medianspan: medianspan); // rcomplex is best. if it takes up too much cpu, then use power.
 		SendTrig.ar(K2A.ar(fbTrig), 2, tbTrigLong+fbTrig); // send FBOD onset trigger to language. ID 1 means FBOD. Value: 1 means new onset (TBOD miss, FBOD hit), 2 means onset confirmation (TBOD hit, FBOD hit).
 		//=== FAC: false alarm cancellation ===
 		fbTrigLong = Trig.ar(fbTrig, frameDur); // make FBOD triger 6ms long
@@ -128,8 +133,9 @@ s.waitForBoot{
 		SendTrig.ar(facTrig, 0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
 		//=== VD: velocity detection ===
 		vel = RunningMax.ar(sig.abs, DelayN.ar(fbTrig, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
-			SendTrig.ar(DelayN.ar(fbTrig, 0.1, velDelay), 3, value: vel); // send velocity value to language. Waiting time is set via velDel.
+		SendTrig.ar(DelayN.ar(fbTrig, 0.1, velDelay), 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
 	}).add;
+
 
 		
 	//init
@@ -308,19 +314,21 @@ s.waitForBoot{
 			if(printflag, {[time, msg].postln});
 			val = msg[1];
 			val.postln;
-			synth.set(key, val);
+			//synth.set does not work
+			//synth.set(key, val);
+			x.set(key, val);
 		},addr);
 	};
 	
 	// receive OSC from GUI: create receivers
-	~oscSet.(q, \tba_hi, '/thres/tba_thres_db');
-	~oscSet.(q, \tba_lo, '/thres/tba_lo');
-	~oscSet.(q, \fba_thres, '/thres/fba_thres_db');
-	~oscSet.(q, \relaxtime, '/thres/relaxtime');
-	~oscSet.(q, \floor, '/thres/floor');
-	~oscSet.(q, \mingap, '/thres/mingap');
-	~oscSet.(q, \medianspan, '/thres/medianspan');
-	~oscSet.(q, \velDelay, '/thres/veldelay');
+	~oscSet.(x, \tba_hi, '/thres/tba_thres_db');
+	~oscSet.(x, \tba_lo, '/thres/tba_lo');
+	~oscSet.(x, \fba_thres, '/thres/fba_thres_db');
+	~oscSet.(x, \relaxtime, '/thres/relaxtime');
+	~oscSet.(x, \floor, '/thres/floor');
+	~oscSet.(x, \mingap, '/thres/mingap');
+	~oscSet.(x, \medianspan, '/thres/medianspan');
+	~oscSet.(x, \velDelay, '/thres/veldelay');
 	// put other parameters of gui here...
 
 
@@ -357,7 +365,7 @@ s.waitForBoot{
 
 	1.wait;
 
-	q = Synth(\tba_fba);
+	x = Synth(\tba_fba);
 };
 
 

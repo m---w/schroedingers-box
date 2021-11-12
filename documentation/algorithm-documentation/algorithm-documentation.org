@@ -3,7 +3,7 @@
 * General
 This documentation will describe the implemented algorithm for the plausibility experiment entitled: "Schrodinger's box".  The operation will be described in a chronological order starting from the initial input signal to the final output of the sample playback.
 
-The entire algorithm is written in SuperCollider and it is applied/compiled on the Bela platform.  The following prerequisite is required:
+The entire algorithm is written in SuperCollider and it is applied on the Bela platform.  The following prerequisite is required:
 - ddwVoicer(https://github.com/jamshark70/ddwVoicer)
 
 We will divide the system into three parts for greater ease of analysis.
@@ -15,7 +15,7 @@ In addition, (a SuperCollider patch for) an interface was also implemented.  In 
 
 * Onset detection
 
-The onset detection algorithms (ODA) are the first elements in the signal processing chain applied to the input signal.  As already stated, there are two types of onset detection.  The most instant/fast but less reliable is the time based algorithm (TBA).  The frequency based algorithm (FBA) is less fast but significantly reliable compared to the TBA.  In the first stage the 4 channels are mixed to a single one.  Then, split and used as input for both ODA.
+The onset detection algorithms (ODA) are the first elements in the signal processing chain applied to the input signal.  As already stated, there are two types of onset detection.  The most instant/fast but less reliable is the time based algorithm (TBA).  The frequency based algorithm (FBA) is slower but significantly reliable compared to the TBA.  In the first stage the 4 channels are mixed to a single one.  Then, split and used as input for both ODA.
 
 ** TBA
 
@@ -28,7 +28,6 @@ The FBA calculates the FFT to a given sized buffer (256 samples).  Afterwards an
 
 
 work effectively in combination
-**
 
 * References
 [1] Turchet, Luca. (2018). Hard real-time onset detection of percussive sounds.
