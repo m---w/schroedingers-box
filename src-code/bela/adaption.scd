@@ -97,7 +97,7 @@ s.waitForBoot{
 
 	v = Voicer.new(5, "sample_player");
 
-	SynthDef(\tba_fba, { |tba_hi=40.0.neg, fba_thres=0.0,  relaxtime=1.0, floor=0.1, mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0|
+	SynthDef(\tba_fba, { |tba_hi=(40.0.neg), fba_thres=0.0,  relaxtime=1.0, floor=0.1, mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0|
 		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, tbTrigLong, chain, fbTrig, fbTrigShort, fbTrigLong, fbTrigLongInv, tbTrigDelShort, facTrig, vel;
 		var sampleDur = 1.0/SampleRate.ir; // duration of one audio sample
 		var nfft = 256; // FFT size in samples
