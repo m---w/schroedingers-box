@@ -10,6 +10,19 @@ Window.closeAll;
 //n = NetAddr("192.168.185.50", 57120);
 n = NetAddr("bela.local", 57120); // set bela remote address
 
+
+// OSC receiver to get messages from Bela
+OSCFunc({|msg, time|
+	var key = msg[1];
+	("OSC incoming:"+msg).postln;
+	switch(key,
+		\booted, {
+			~gui.resend(); // let GUI resend parameters
+		},
+	);
+},'/bela');
+
+
 // parameter default values
 e = ();
 e.tbaThreshDB = -20.0; // tba trhreshold in dB
@@ -18,11 +31,11 @@ e.mainDB = inf.neg; // main volume in dB
 e.catDB = 60.neg; // cat volume in dB
 e.preset = 0; // sound preset
 e.relaxtime = 1.0;
-e.floor = 0.1;
-e.mingap = 10;
+e.floorDB = 20.0.neg;
+e.mingap = 40;
 e.medianspan = 11;
 e.veldelay = 0.006;
-e.tbRefPeriod = 0.03;
+e.tbRefPeriod = 0.05;
 e.lpf1Freq = 25.0;
 e.lpf2Freq = 25.0;
 e.hpfFreq = 4000.0;
@@ -35,18 +48,18 @@ e.hpfFreq = 4000.0;
 	var sliderList = [
 		// oscname min max warp step units label factor name
 		// 0       1   2   3    4    5     6     7      8
-		['/tbod/threshDB', -60, 0.0, \lin, 0.0, "dB", "TBOD threshold", 1.0, \tbaThreshDB],
-		['/fbod/threshDB', -60, 0.0, \lin, 0.0, "dB", "FBOD threshold", 1.0, \fbaThreshDB],
-		['/master/main', -60.0, 10.0, \lin, 0.0, "dB", "Master Volume", 1.0, \mainDB],
-		['/master/cat', -60.0, 10.0, \lin, 0.0, "dB", "Cat Volume", 1.0, \catDB],
-		['/fbod/relaxtime', 0.0, 5.0, \lin, 0.0, "s", "Relax Time", 1.0, \relaxtime],
-		['/fbod/floor', 0.0, 1.0, \lin, 0.0, " ", "Floor", 1.0, \floor],
-		['/fbod/mingap', 0.0, 50.0, \lin, 1.0, "FFT frames", "MinGap", 1.0, \mingap],
+		['/tbod/threshDB', -120, 0.0, \lin, 1.0, "dB", "TBOD threshold", 1.0, \tbaThreshDB],
+		['/fbod/threshDB', -40, 40.0, \lin, 1.0, "dB", "FBOD threshold", 1.0, \fbaThreshDB],
+		['/master/main', -60.0, 10.0, \lin, 0.1, "dB", "Master Volume", 1.0, \mainDB],
+		['/master/cat', -60.0, 10.0, \lin, 0.1, "dB", "Cat Volume", 1.0, \catDB],
+		['/fbod/relaxtime', 0.1, 10.0, \exp, 0.1, "s", "Relax Time", 1.0, \relaxtime],
+		['/fbod/floorDB', 140.0.neg, 0.0, \exp, 1.0, "dB", "Floor", 1.0, \floorDB],
+		['/fbod/mingap', 0.0, 100.0, \lin, 1.0, "FFT frames", "MinGap", 1.0, \mingap],
 		['/fbod/medianspan', 0.0, 30.0, \lin, 1.0, "FFT frames", "MedianSpan", 1.0, \medianspan],
-		['/vel/delay', 0.1, 50.0, \exp, 0.0, "ms", "Velocity Delay", 1.0e-3, \veldelay],
-		['/tbod/refPeriod', 0.0, 0.5, \lin, 0.0, "ms", "TBOD refractory period", 1.0, \tbRefPeriod],
-		['/tbod/lpf1Freq', 1.0, 120.0, \lin, 0.0, "Hz", "LPF 1 cutoff", 1.0, \lpf1Freq],
-		['/tbod/lpf2Freq', 1.0, 120.0, \lin, 0.0, "Hz", "LPF 2 cutoff", 1.0, \lpf2Freq],
+		['/vel/delay', 0.1, 50.0, \exp, 0.1, "ms", "Velocity Delay", 1.0e-3, \veldelay],
+		['/tbod/refPeriod', 0.1, 500.0, \exp, 1.0, "ms", "TBOD refractory period", 1.0e-3, \tbRefPeriod],
+		['/tbod/lpf1Freq', 1.0, 120.0, \lin, 1.0, "Hz", "LPF 1 cutoff", 1.0, \lpf1Freq],
+		['/tbod/lpf2Freq', 1.0, 120.0, \lin, 1.0, "Hz", "LPF 2 cutoff", 1.0, \lpf2Freq],
 		['/tbod/hpfFreq', 80.0, 8000.0, \exp, 1.0, "Hz", "HPF cutoff", 1.0, \hpfFreq],
 
 	];
@@ -158,6 +171,8 @@ e.hpfFreq = 4000.0;
 
 // START GUI
 ~gui = ~schroedingersGUI.(n, e);
+
+~gui.resend.();
 
 // if parameters are updated within the settings dictionary e, then call ~gui.upd.() to update the gui
 // to resend the current gui state, call ~gui.resend.()

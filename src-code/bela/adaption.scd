@@ -18,18 +18,19 @@ s.options.blockSize = 64;
 s.options.numInputBusChannels = 4;
 s.options.numOutputBusChannels = 8;
 
+
 s.waitForBoot{
 
 	~button = 0;
 
-	OSCdef(\next_sound, { | msg, time, button = 0 |
-		[time, msg].postln;
-		msg.postln;
+	OSCdef(\next_sound, { | msg, time |
+		var num = msg[2];
+
+
 		//direct sample choosing via numberbox
 		if(msg[1] == 'sam_num'){
-			~button = 0;
-			~button = msg[2];
-			msg[2].postln;
+			~button = num;
+			("New sound selected:"+num).postln;
 		};
 
 		//button counter
@@ -98,12 +99,12 @@ s.waitForBoot{
 	v = Voicer.new(5, "sample_player");
 
 	SynthDef(\onsetDetection, {
-		|tbThreshDB=(40.0.neg), fbThreshDB=0.0,  relaxtime=1.0, floor=0.1, mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0|
+		|tbThreshDB=(40.0.neg), fbThreshDB=0.0,  relaxtime=1.0, floorDB=(20.0.neg), mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0|
 
-		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, tbTrigLong, chain, fbTrig, fbTrigShort, fbTrigLong, fbTrigLongInv, tbTrigDelShort, facTrig, vel;
-		var sampleDur = 1.0/SampleRate.ir; // duration of one audio sample
+		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, vel;
+		var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
 		var nfft = 256; // FFT size in samples
-		var frameDur = (nfft/SampleRate.ir).roundUp(1.0e-4); // duration of one fft frame in seconds, rounded up on grid of 0.1ms. 5.4ms at 48kHz and 256samp fft size.
+		var frameDur = (nfft/SampleRate.ir)*1.1; // duration of one fft frame in seconds, plus safety of 10 percent. 5.4ms at 48kHz and 256samp fft size.
 		var minusTwoPiT = 2.0.neg*pi/SampleRate.ir; // pre-computation
 		var lpf1CoeffA = exp(lpf1Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf1)
 		var lpf2CoeffA = exp(lpf2Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf2)
@@ -122,28 +123,34 @@ s.waitForBoot{
 		// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 		tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
 		// ttrig = Schmidt.ar(tsub, tbThreshDB.dbamp, tbThreshLowDB.dbamp); // thresholding with high and low threshold
-		tbTrig = Trig.ar(tsub-tbThreshDB.dbamp, tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
-		tbTrigLong = Trig.ar(tbTrig, frameDur); // trigger lasts for one FFT block
-		SendTrig.ar(tbTrigLong, 1); // send TBOD trigger to language. ID 1 means TBOD.
+		tbTrig = Trig.ar((tsub-tbThreshDB.dbamp).sign.max(0), tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
+		SendTrig.ar(tbTrig, 1); // send TBOD trigger to language. ID 1 means TBOD.
+		//tbTrigLong = Trig.ar(tbTrig, frameDur); // trigger lasts for one FFT block
+		//SendTrig.ar(tbTrigLong, 1); // send TBOD trigger to language. ID 1 means TBOD.
 
 		//=== FBOD ===
 		chain = FFT(LocalBuf(nfft), sig, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64. Wintype 1 is Hann window.
-		fbTrig = Onsets.kr(chain, fbThreshDB.dbamp, \rcomplex, relaxtime: relaxtime, floor: floor, mingap: mingap, medianspan: medianspan); // rcomplex is best. if it takes up too much cpu, then use power.
-		fbTrigShort = Trig.ar(K2A.ar(fbTrig), sampleDur); // make sure that fbTrig is audio rate, and only one sample long.
-		// SendTrig.ar(K2A.ar(fbTrig), 2, tbTrigLong+fbTrig); // send FBOD onset trigger to language. ID 2 means FBOD. Value: 1 means new onset (TBOD miss, FBOD hit), 2 means onset confirmation (TBOD hit, FBOD hit).
-		SendTrig.ar(fbTrigShort-tbTrigLong, 2); // send FBOD onset trigger to language. ID 2 means new onset (TBOD miss, FBOD hit).
-		SendTrig.ar(fbTrigShort*tbTrigLong, 4); // send FBOD confirmation trigger to language. ID 4 means onset confirmation (TBOD hit, FBOD hit).
+		fbTrigKR = Onsets.kr(chain, fbThreshDB.dbamp, \rcomplex, relaxtime: relaxtime, floor: floorDB.dbamp, mingap: mingap, medianspan: medianspan); // rcomplex is best. if it takes up too much cpu, then use power.
+		fbTrigAR = T2A.ar(fbTrigKR, offset: 0);
+		//fbTrigShort = Trig.ar(T2A.ar(fbTrig, offset: 0), sampleDur).sign.max(0); // make sure that fbTrig is audio rate, and only one sample long.
+		//SendTrig.ar(fbTrigShort*(1.0-tbTrigLong), 2); // send FBOD onset trigger to language. ID 2 means new onset (TBOD miss, FBOD hit).
+		//SendTrig.ar(fbTrigShort*tbTrigLong, 4); // send FBOD confirmation trigger to language. ID 4 means onset confirmation (TBOD hit, FBOD hit).
+		SendTrig.ar(fbTrigAR, 2); // send FBOD trigger to language. ID 2 means FBOD.
 
+		/*
 		//=== FAC: false alarm cancellation ===
-		fbTrigLong = Trig.ar(fbTrigShort, frameDur); // make FBOD triger 6ms long
+		fbTrigLong = Trig.ar(fbTrigShort, frameDur).sign.max(0); // make FBOD triger 6ms long
 		fbTrigLongInv = 1.0 - fbTrigLong; // inverse signal: zero between FBOD and 6ms afterwards, otherwise one.
-		tbTrigDelShort = Trig.ar(1.0-tbTrigLong, sampleDur); // TBOD trigger, delayed by 6ms, only one sample long.
+		tbTrigDelShort = Trig.ar(1.0-tbTrigLong, sampleDur).sign.max(0); // TBOD trigger, delayed by 6ms, only one sample long.
 		facTrig = tbTrigDelShort * fbTrigLongInv; // triggers 6ms after a TBOD trigger in case of no FBOD trigger within this timeframe.
 		SendTrig.ar(facTrig, 0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
+		*/
+
 
 		//=== VD: velocity detection ===
-		vel = RunningMax.ar(sig.abs, DelayN.ar(fbTrigShort, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
-		SendTrig.ar(DelayN.ar(fbTrigShort, 0.1, velDelay), 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
+
+		vel = RunningMax.ar(sig.abs, DelayN.ar(fbTrigAR, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
+		SendTrig.ar(DelayN.ar(fbTrigAR, 0.1, velDelay), 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
 
 	}).add;
 
@@ -151,8 +158,8 @@ s.waitForBoot{
 
 	//init
 	//~trigflag = false;
-	~ampfactor = 1; // master volume initial value (can be set from GUI)
-	~ampfactorcat = 1; // cat volume initial value (can be set from GUI)
+	~ampfactor = 60.0.neg.dbamp; // master volume initial value (can be set from GUI)
+	~ampfactorcat = 60.0.neg.dbamp; // cat volume initial value (can be set from GUI)
 	~onset_sum = 0;
 	~globalvel = 0.0;
 
@@ -215,33 +222,43 @@ s.waitForBoot{
 	};
 
 
+	~timeStampOld = 0.0;
+	~frameDur = 1.1*256.0/48000.0; // frame duration + 10% safety
+	~tbodTriggered = false;
+	~fbodTriggered = false;
+
+
+
 	// Receive OSC from synth
 	a = OSCFunc({ |msg, time|
 		var id = msg[2];
 		var val = msg[3];
-		var timestamp = time;
+		var timeStampNew = time;
+		var timeMsg = ( 1000.0 * (timeStampNew-~timeStampOld) ).round(0.1).asString;
 
+		~timeStampOld = timeStampNew;
 
+		/*
 		//sound triggering logic
 		switch (id,
 			0, { // FBOD Cancel
 				~lastvoice.set([\gate, 0]);
-				(timestamp++": FBOD cancels TBOD.").postln;
+				(timeMsg+"ms later: FBOD cancels TBOD.").postln;
 			},
 			1, { // TBOD trigger new
 				~lastvoice = ~voicetrigger.();
-				(timestamp++": TBOD triggers new onset.").postln;
+				(timeMsg+"ms later: TBOD triggers new onset.").postln;
 			},
 			2, { // FBOD trigger new
 				~lastvoice = ~voicetrigger.();
-				(timestamp++": FBOD triggers new onset.").postln;
+				(timeMsg+"ms later: FBOD triggers new onset.").postln;
 			},
 			4, { // FBOD agree with TBOD
-				(timestamp++": FBOD agrees with TBOD.").postln;
+				(timeMsg+"ms later: FBOD agrees with TBOD.").postln;
 			},
 			3, { // Velocity update
 				~lastvoice.set([\amp, val]);
-				(timestamp++": Velocity update:"+val).postln;
+				(timeMsg+"ms later: Velocity update:"+val).postln;
 
 				//break glass
 				// IS THIS STILL NECESSARY?
@@ -254,6 +271,51 @@ s.waitForBoot{
 
 			};
 		);
+		*/
+
+		//sound triggering logic
+		switch (id,
+			1, { // TBOD trigger new
+				~lastvoice = ~voicetrigger.();
+				("TBOD triggers new onset.").postln;
+				~tbodTriggered = true;
+				~fbodTriggered = false;
+				fork{
+					(10*~frameDur).wait;
+					if(~fbodTriggered.not, { // cancel
+						~lastvoice.set([\gate, 0]);
+						("No confirmation from FBOD. --> Onset cancelled.").postln;
+						~tbodTriggered = false;
+					});
+				};
+			},
+			2, { // FBOD trigger
+				if( ~tbodTriggered, { // agree
+					~fbodTriggered = true;
+					("FBOD agrees with TBOD.").postln;
+				}, { // trigger new
+					~lastvoice = ~voicetrigger.();
+					("FBOD triggers new onset.").postln;
+				});
+				~tbodTriggered = false;
+			},
+			3, { // Velocity update
+				~lastvoice.set([\amp, val]);
+				("Velocity update:"+val).postln;
+
+				//break glass
+				// IS THIS STILL NECESSARY?
+				if(~outcome == true){
+					if(val > 0.1){
+						~globalvel = val;
+						~sound = ~soundcat_sum;
+					};
+				};
+
+			};
+		);
+
+
 
 		//fork{
 		//vel = msg[3];
@@ -309,17 +371,18 @@ s.waitForBoot{
 		OSCFunc({|msg, time|
 			var val = msg[1];
 			if(printflag, {
-				("OSC incoming:"+time+key+val).postln;
+				// ("OSC incoming:"+time+key+val).postln;
+				("OSC incoming:"+key+val).postln;
 			});
 			x.set(key, val);
 		},addr);
 	};
 
 	// receive OSC from GUI: create receivers
-	~oscSet.(x, \tbaThreshDB, '/tbod/threshDB');
-	~oscSet.(x, \fbaThreshDB, '/fbod/threshDB');
+	~oscSet.(x, \tbThreshDB, '/tbod/threshDB');
+	~oscSet.(x, \fbThreshDB, '/fbod/threshDB');
 	~oscSet.(x, \relaxtime, '/fbod/relaxtime');
-	~oscSet.(x, \floor, '/fbod/floor');
+	~oscSet.(x, \floorDB, '/fbod/floorDB');
 	~oscSet.(x, \mingap, '/fbod/mingap');
 	~oscSet.(x, \medianspan, '/fbod/medianspan');
 	~oscSet.(x, \velDelay, '/vel/delay');
@@ -335,7 +398,8 @@ s.waitForBoot{
 		OSCFunc({|msg, time|
 			var val = msg[1];
 			if(printflag, {
-				("OSC incoming:"+time+key+val).postln;
+				// ("OSC incoming:"+time+key+val).postln;
+				("OSC incoming:"+key+val).postln;
 			});
 			func.(val);
 		},addr);
@@ -351,6 +415,15 @@ s.waitForBoot{
 	1.wait;
 
 	x = Synth(\onsetDetection);
+
+	0.5.wait;
+
+	// request parameters from GUI
+	n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120) ]; // set GUI addresses
+	n.do{|item| item.sendMsg(\bela, \booted) }; // send request via OSC to all addresses
+
+
+
 };
 
 
