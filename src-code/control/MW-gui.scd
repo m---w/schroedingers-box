@@ -3,7 +3,6 @@ Schroedinger's Box
 SuperCollider Control Patch for Bela
 2021 Jason Svoronos-Kanavas, Marian Weger
 */
-([[1,2],[3,4]]).flop.last
 
 (
 Window.closeAll;
@@ -23,6 +22,10 @@ e.floor = 0.1;
 e.mingap = 10;
 e.medianspan = 11;
 e.veldelay = 0.006;
+e.tbRefPeriod = 0.03;
+e.lpf1Freq = 25.0;
+e.lpf2Freq = 25.0;
+e.hpfFreq = 4000.0;
 
 
 // GUI function definition
@@ -32,16 +35,20 @@ e.veldelay = 0.006;
 	var sliderList = [
 		// oscname min max warp step units label factor name
 		// 0       1   2   3    4    5     6     7      8
-		['/thres/tba_thres_db', -60, 0, \lin, 0.0, "dB", "TBOD threshold", 1, \tbaThreshDB],
-		['/thres/fba_thres_db', -60, 0, \lin, 0.0, "dB", "FBOD threshold", 1, \fbaThreshDB],
-		['/master/main', -60, 10, \lin, 0.0, "dB", "Master Volume", 1, \mainDB],
-		['/master/cat', -60, 10, \lin, 0.0, "dB", "Cat Volume", 1, \catDB],
-		['/thres/relaxtime', 0, 5, \lin, 0.0, "Sec", "Relax Time", 1, \relaxtime],
-		['/thres/floor', 0.0, 1.0, \lin, 0.0, " ", "Floor", 1, \floor],
-		['/thres/mingap', 0.0, 50.0, \lin, 0.0, "FFT frames", "MinGap", 1, \mingap],
-		['/thres/medianspan', 0, 30, \lin, 0.0, "FFT frames", "MedianSpan", 1, \medianspan],
-		['/thres/veldelay', 0.000, 0.1, \lin, 0.0, "Sec", "Velocity Delay", 1, \veldelay],
-		
+		['/tbod/threshDB', -60, 0.0, \lin, 0.0, "dB", "TBOD threshold", 1.0, \tbaThreshDB],
+		['/fbod/threshDB', -60, 0.0, \lin, 0.0, "dB", "FBOD threshold", 1.0, \fbaThreshDB],
+		['/master/main', -60.0, 10.0, \lin, 0.0, "dB", "Master Volume", 1.0, \mainDB],
+		['/master/cat', -60.0, 10.0, \lin, 0.0, "dB", "Cat Volume", 1.0, \catDB],
+		['/fbod/relaxtime', 0.0, 5.0, \lin, 0.0, "s", "Relax Time", 1.0, \relaxtime],
+		['/fbod/floor', 0.0, 1.0, \lin, 0.0, " ", "Floor", 1.0, \floor],
+		['/fbod/mingap', 0.0, 50.0, \lin, 1.0, "FFT frames", "MinGap", 1.0, \mingap],
+		['/fbod/medianspan', 0.0, 30.0, \lin, 1.0, "FFT frames", "MedianSpan", 1.0, \medianspan],
+		['/vel/delay', 0.1, 50.0, \exp, 0.0, "ms", "Velocity Delay", 1.0e-3, \veldelay],
+		['/tbod/refPeriod', 0.0, 0.5, \lin, 0.0, "ms", "TBOD refractory period", 1.0, \tbRefPeriod],
+		['/tbod/lpf1Freq', 1.0, 120.0, \lin, 0.0, "Hz", "LPF 1 cutoff", 1.0, \lpf1Freq],
+		['/tbod/lpf2Freq', 1.0, 120.0, \lin, 0.0, "Hz", "LPF 2 cutoff", 1.0, \lpf2Freq],
+		['/tbod/hpfFreq', 80.0, 8000.0, \exp, 1.0, "Hz", "HPF cutoff", 1.0, \hpfFreq],
+
 	];
 
 	// convert to dictionary, to address them by name
@@ -103,7 +110,8 @@ e.veldelay = 0.006;
 
 		//heading.("Onset Detection");
 		//newline.();
-	makeSliders.(elements[\params], sliderDict, [\tbaThreshDB, \fbaThreshDB, \mainDB, \catDB, \relaxtime, \floor, \mingap, \medianspan, \veldelay]);
+	// makeSliders.(elements[\params], sliderDict, [\tbaThreshDB, \fbaThreshDB, \mainDB, \catDB, \relaxtime, \floor, \mingap, \medianspan, \veldelay]);
+	makeSliders.(elements[\params], sliderDict, sliderDict.keys);
 	newline.();
 
 		/*heading.("Sound");

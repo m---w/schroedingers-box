@@ -97,7 +97,9 @@ s.waitForBoot{
 
 	v = Voicer.new(5, "sample_player");
 
-	SynthDef(\tba_fba, { |tba_hi=(40.0.neg), fba_thres=0.0,  relaxtime=1.0, floor=0.1, mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0|
+	SynthDef(\onsetDetection, {
+		|tbThreshDB=(40.0.neg), fbThreshDB=0.0,  relaxtime=1.0, floor=0.1, mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0|
+
 		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, tbTrigLong, chain, fbTrig, fbTrigShort, fbTrigLong, fbTrigLongInv, tbTrigDelShort, facTrig, vel;
 		var sampleDur = 1.0/SampleRate.ir; // duration of one audio sample
 		var nfft = 256; // FFT size in samples
@@ -107,8 +109,10 @@ s.waitForBoot{
 		var lpf2CoeffA = exp(lpf2Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf2)
 		var lpf1CoeffAm = 1.0-lpf1CoeffA; // pre-computation
 		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
+
 		sigRaw = SoundIn.ar([0,1,2,3]); // 4 input channels
 		sig = sigRaw.sum; // downmix to mono
+
 		//=== TBOD ===
 		sighpf = HPF.ar(sig, hpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
 		sigsquared = sighpf.squared; // Squaring (get signal energy)
@@ -117,26 +121,30 @@ s.waitForBoot{
 		lpf2 = Integrator.ar(lpf2CoeffAm*derivative, lpf2CoeffA); // Smoothing 2. Turchet2018: 25
 		// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 		tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
-		// ttrig = Schmidt.ar(tsub, tba_hi, tba_lo); // thresholding with high and low threshold
-		tbTrig = Trig.ar(tsub-tba_hi.dbamp, tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
+		// ttrig = Schmidt.ar(tsub, tbThreshDB.dbamp, tbThreshLowDB.dbamp); // thresholding with high and low threshold
+		tbTrig = Trig.ar(tsub-tbThreshDB.dbamp, tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
 		tbTrigLong = Trig.ar(tbTrig, frameDur); // trigger lasts for one FFT block
 		SendTrig.ar(tbTrigLong, 1); // send TBOD trigger to language. ID 1 means TBOD.
+
 		//=== FBOD ===
 		chain = FFT(LocalBuf(nfft), sig, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64. Wintype 1 is Hann window.
-		fbTrig = Onsets.kr(chain, fba_thres.dbamp, \rcomplex, relaxtime: relaxtime, floor: floor, mingap: mingap, medianspan: medianspan); // rcomplex is best. if it takes up too much cpu, then use power.
+		fbTrig = Onsets.kr(chain, fbThreshDB.dbamp, \rcomplex, relaxtime: relaxtime, floor: floor, mingap: mingap, medianspan: medianspan); // rcomplex is best. if it takes up too much cpu, then use power.
 		fbTrigShort = Trig.ar(K2A.ar(fbTrig), sampleDur); // make sure that fbTrig is audio rate, and only one sample long.
 		// SendTrig.ar(K2A.ar(fbTrig), 2, tbTrigLong+fbTrig); // send FBOD onset trigger to language. ID 2 means FBOD. Value: 1 means new onset (TBOD miss, FBOD hit), 2 means onset confirmation (TBOD hit, FBOD hit).
 		SendTrig.ar(fbTrigShort-tbTrigLong, 2); // send FBOD onset trigger to language. ID 2 means new onset (TBOD miss, FBOD hit).
 		SendTrig.ar(fbTrigShort*tbTrigLong, 4); // send FBOD confirmation trigger to language. ID 4 means onset confirmation (TBOD hit, FBOD hit).
+
 		//=== FAC: false alarm cancellation ===
 		fbTrigLong = Trig.ar(fbTrigShort, frameDur); // make FBOD triger 6ms long
 		fbTrigLongInv = 1.0 - fbTrigLong; // inverse signal: zero between FBOD and 6ms afterwards, otherwise one.
 		tbTrigDelShort = Trig.ar(1.0-tbTrigLong, sampleDur); // TBOD trigger, delayed by 6ms, only one sample long.
 		facTrig = tbTrigDelShort * fbTrigLongInv; // triggers 6ms after a TBOD trigger in case of no FBOD trigger within this timeframe.
 		SendTrig.ar(facTrig, 0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
+
 		//=== VD: velocity detection ===
 		vel = RunningMax.ar(sig.abs, DelayN.ar(fbTrigShort, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
 		SendTrig.ar(DelayN.ar(fbTrigShort, 0.1, velDelay), 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
+
 	}).add;
 
 
@@ -208,44 +216,42 @@ s.waitForBoot{
 
 
 	// Receive OSC from synth
-	a = OSCFunc({ arg msg, time;
-		var id, val, tb_trigval, fb_trigval, sp, vel, bufnum;
-		[time, msg].postln;
-		tb_trigval = 0;
-		fb_trigval = 0;
-		//vel = 0;
-		id = msg[2];
-		val = msg[3];
-		~globalvel = val;
+	a = OSCFunc({ |msg, time|
+		var id = msg[2];
+		var val = msg[3];
+		var timestamp = time;
 
-
-		//break glass
-		if(~outcome == true){
-			if(msg[3] > 0.1){
-				~sound = ~soundcat_sum;
-			};
-		};
 
 		//sound triggering logic
 		switch (id,
 			0, { // FBOD Cancel
 				~lastvoice.set([\gate, 0]);
-				"FBOD cancels TBOD.".postln;
+				(timestamp++": FBOD cancels TBOD.").postln;
 			},
 			1, { // TBOD trigger new
 				~lastvoice = ~voicetrigger.();
-				"TBOD triggers new onset.".postln;
+				(timestamp++": TBOD triggers new onset.").postln;
 			},
 			2, { // FBOD trigger new
 				~lastvoice = ~voicetrigger.();
-				"FBOD triggers new onset.".postln;
+				(timestamp++": FBOD triggers new onset.").postln;
 			},
 			4, { // FBOD agree with TBOD
-				"FBOD agrees with TBOD.".postln;
+				(timestamp++": FBOD agrees with TBOD.").postln;
 			},
 			3, { // Velocity update
 				~lastvoice.set([\amp, val]);
-				("Velocity update:"+val).postln;
+				(timestamp++": Velocity update:"+val).postln;
+
+				//break glass
+				// IS THIS STILL NECESSARY?
+				if(~outcome == true){
+					if(val > 0.1){
+						~globalvel = val;
+						~sound = ~soundcat_sum;
+					};
+				};
+
 			};
 		);
 
@@ -299,65 +305,52 @@ s.waitForBoot{
 
 
 	// receive OSC from GUI: define function
-	~oscSet = {|synth, key, addr, printflag=false|
+	~oscSet = {|synth, key, addr, printflag=true|
 		OSCFunc({|msg, time|
-			var val;
-			"osc-msg".postln;
-			if(printflag, {[time, msg].postln});
-			val = msg[1];
-			val.postln;
-			//synth.set does not work
-			//synth.set(key, val);
+			var val = msg[1];
+			if(printflag, {
+				("OSC incoming:"+time+key+val).postln;
+			});
 			x.set(key, val);
 		},addr);
 	};
 
 	// receive OSC from GUI: create receivers
-	~oscSet.(x, \tba_hi, '/thres/tba_thres_db');
-	~oscSet.(x, \tba_lo, '/thres/tba_lo');
-	~oscSet.(x, \fba_thres, '/thres/fba_thres_db');
-	~oscSet.(x, \relaxtime, '/thres/relaxtime');
-	~oscSet.(x, \floor, '/thres/floor');
-	~oscSet.(x, \mingap, '/thres/mingap');
-	~oscSet.(x, \medianspan, '/thres/medianspan');
-	~oscSet.(x, \velDelay, '/thres/veldelay');
+	~oscSet.(x, \tbaThreshDB, '/tbod/threshDB');
+	~oscSet.(x, \fbaThreshDB, '/fbod/threshDB');
+	~oscSet.(x, \relaxtime, '/fbod/relaxtime');
+	~oscSet.(x, \floor, '/fbod/floor');
+	~oscSet.(x, \mingap, '/fbod/mingap');
+	~oscSet.(x, \medianspan, '/fbod/medianspan');
+	~oscSet.(x, \velDelay, '/vel/delay');
+	~oscSet.(x, \tbRefPeriod, '/tbod/refPeriod');
+	~oscSet.(x, \lpf1Freq, '/tbod/lpf1Freq');
+	~oscSet.(x, \lpf2Freq, '/tbod/lpf2Freq');
+	~oscSet.(x, \hpfFreq, '/tbod/hpfFreq');
 	// put other parameters of gui here...
 
 
-	//master faders
-	OSCFunc({ arg msg, time;
-		var val;
-		[time, msg].postln;
-		val = msg[1].dbamp;
-		val.postln;
-		//if(msg[1] == \main){
-		~ampfactor = val;
-		//};
-		/*if(msg[1] == \cat){
-		~ampfactorcat = val;
-		};*/
+	// receive OSC from GUI: define function
+	~oscSetVar = { |key, addr, func, printflag=true|
+		OSCFunc({|msg, time|
+			var val = msg[1];
+			if(printflag, {
+				("OSC incoming:"+time+key+val).postln;
+			});
+			func.(val);
+		},addr);
+	};
 
-	},'/master/main');
+	// receive OSC from GUI: create receivers
+	~oscSetVar.(\master, '/master/main', {|val| ~ampfactor=val.dbamp});
+	~oscSetVar.(\cat, '/master/cat', {|val| ~ampfactorcat=val.dbamp});
 
-	//master faders
-	OSCFunc({ arg msg, time;
-		var val;
-		[time, msg].postln;
-		val = msg[1].dbamp;
-		val.postln;
-		//if(msg[1] == \main){
-		~ampfactorcat = val;
-		//};
-		/*if(msg[1] == \cat){
-		~ampfactorcat = val;
-		};*/
 
-	},'/master/cat');
 
 
 	1.wait;
 
-	x = Synth(\tba_fba);
+	x = Synth(\onsetDetection);
 };
 
 
