@@ -5,38 +5,66 @@ MIDIClient.init;
 MIDIIn.connectAll;
 
 
+//=======================================
+//FIRST EVALUATE LATIN SQUARE
+//to initialise ~experimentOrder variable
+//=======================================
+
+//: walk through the sounds: participant: latin square order
+//check
+~experimentOrder[0];
+
+//initialisation
+//~participant_id = 0;
+//has to be -1 => array (0..55)
+//first press is 0 - first sound
+~sample = -1;
+
+//MIDIdef
 MIDIdef.cc(\bigredbutton, {
 	| ...args|
+	var next, val;
 	
-	args.postln;
-	
+	//args.postln;
+	val = args[0];
+
+	//evaluate: when pressed 
+	if (val == 0){
+		if (~sample > (~experimentOrder[e.participantID].size -1)){
+			//~sample = 0;
+			"all samples were completed -- invite next participant".postln;
+		}{
+			//participant_id at which sample
+			next = ~experimentOrder[e.participantID].at(~sample.max(0));
+			//if sample = -1 make it 0
+			if(~sample == (-1)){~sample = 0};
+			("sample "++next).postln;
+			n.sendMsg('/soundpick/2', \sam_num, next);
+			
+			e[\preset] = next;
+			{~gui.upd;}.defer;		
+			~sample = ~sample + 1;
+		};
+	};
 	
 }, 16); // match cc 1
-
-
 //:
-f = { | in = 0 |
-	var temp, arr, val, suf;
-	arr = in;
-	suf = Pn(Pshuf(in, 1), inf).asStream;
-	temp = suf.next;
-	if(temp == ~last){
-		arr = in;
-		val = arr.remove(temp);
-		arr.postln;
-		temp = arr.choose;
-		arr = arr.add(val);
-	};
-	~last = temp;
-	temp;
-};
 
-//:
 n = NetAddr("192.168.185.50", 57120);
 //:
-n.sendMsg('/soundpick/2', \sam_num, f.((1..20)));
+OSCdef(\participant_id, {
+	| msg |
+	var id;
+	id = msg[1];
+	id.postln;
+	//update participant id value
+	~participant_id = id;
+}, '/participant_id')
+
 //:
 
+
+//tester, receive sample num change
 OSCdef(\test, {
 	| ...args |
 	args.postln;
@@ -45,48 +73,5 @@ OSCdef(\test, {
 
 
 
-//: latin square sound selection logic
-// initial function
-l = {
-	| participants, n |
-	var arr, calc, counter, temp, tempn, finale;
-	tempn = n;
-	counter = 1;
-	arr = (1..n);
-	finale = Array(participants+100);
-	tempn = participants;
-	participants.do{
-		tempn = tempn - 1;
-		temp = arr.rotate(tempn);
-		finale = finale.add(temp);
-		counter = counter + 1;
-		//temp.postln;
-	};
-	finale.postln;
-	~order = finale;
-};
 
-//: evaluate
-//1st arg participants, 2nd object sum
-//54 sounds (MW-PhD)
-l.(4,5)
-//global access
-~order[1];
-
-m = Matrix.with(~order);
-m.postmln;
-//:
-
-
-
-
-//logic
-a = (1..4)
-b = (1..4).rotate(-1)
-c = (1..4).rotate(-2)
-d = (1..4).rotate(-3)
-
-[1, 2, 3, 4, 5].rotate(1).postln;
-[1, 2, 3, 4, 5].rotate(-1).postln;
-[1, 2, 3, 4, 5].rotate(3).postln;
 
