@@ -187,13 +187,10 @@ e.preset = 0; // sound preset
 	.action_({ |ez|
 		e[\participantID] = ez.value.asInteger; // update value in settings dictionary
 		n.sendMsg('/experiment', \participantID, e[\participantID]); // send updated value via OSC (DOES BELA NEED TO KNOW IT?)
-		// DO SOMETHING HERE!
-
+		//initialise sample number 
 		~sample = -1;
-		//elements[\samplePicker].valueAction_(~sample);
+		//send it to the samplePicker
 		elements[\samplePicker].valueAction_(~sample);
-		
-		
 		("Participant ID:"+e[\participantID]).postln; // print message
 	});
 
