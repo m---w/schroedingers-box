@@ -4,7 +4,6 @@ SuperCollider Patch for Bela
 2021 Jason Svoronos-Kanavas, Marian Weger
 */
 
-//Onsets \power, 256 FFT, 1.5 sec rel time env of playback sound, minigap:30
 
 s = Server.default;
 
@@ -13,7 +12,6 @@ s.options.numAnalogInChannels = 4;
 s.options.numAnalogOutChannels = 4;
 s.options.numDigitalChannels = 0;
 s.options.maxLogins = 4;
-
 s.options.blockSize = 64;
 s.options.numInputBusChannels = 4;
 s.options.numOutputBusChannels = 8;
@@ -59,7 +57,7 @@ s.waitForBoot{
 		if(temp == ~last){
 			arr = in;
 			val = arr.remove(temp);
-			arr.postln;
+			// arr.postln;
 			temp = arr.choose;
 			arr = arr.add(val);
 		};
@@ -79,6 +77,7 @@ s.waitForBoot{
 		//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
 		//no sound must exceed 1.5 sec
 		//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
+		sig = LPF.ar(HPF.ar(sig, 80.0), 20000.0).tanh; // output filtering and protection
 		Out.ar(0, [sig, sig]);
 		Out.ar(2, [sig, sig]);
 		Out.ar(4, [sig, sig]);
@@ -93,13 +92,14 @@ s.waitForBoot{
 		sig = LPF.ar(sig, cutoff);
 		sig = sig * Env.perc(deltime + 0.25, curve:8).kr(doneAction:2);
 		sig = sig * amp;
+		sig = LPF.ar(HPF.ar(sig, 80.0), 20000.0).tanh; // output filtering and protection
 		Out.ar(out, sig);
 	}).add;
 
 	v = Voicer.new(5, "sample_player");
 
 	SynthDef(\onsetDetection, {
-		|tbThreshDB=(40.0.neg), fbThreshDB=0.0,  relaxtime=1.0, floorDB=(20.0.neg), mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0|
+		|tbThreshDB=0.0, fbThreshDB=0.0,  relaxtime=1.0, floorDB=(20.0.neg), mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0, cancelDel=1.0|
 
 		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, vel;
 		var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
@@ -115,7 +115,7 @@ s.waitForBoot{
 		sig = sigRaw.sum; // downmix to mono
 
 		//=== TBOD ===
-		sighpf = HPF.ar(sig, hpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
+		sighpf = HPF.ar(LPF.ar(sig, 16000.0), hpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
 		sigsquared = sighpf.squared; // Squaring (get signal energy)
 		lpf1 = Integrator.ar(lpf1CoeffAm*sigsquared, lpf1CoeffA); // Smoothing 1. Turchet2018: 25
 		derivative = Slope.ar(lpf1); // 1st derivative = slope
@@ -125,30 +125,17 @@ s.waitForBoot{
 		// ttrig = Schmidt.ar(tsub, tbThreshDB.dbamp, tbThreshLowDB.dbamp); // thresholding with high and low threshold
 		tbTrig = Trig.ar((tsub-tbThreshDB.dbamp).sign.max(0), tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
 		SendTrig.ar(tbTrig, 1); // send TBOD trigger to language. ID 1 means TBOD.
-		//tbTrigLong = Trig.ar(tbTrig, frameDur); // trigger lasts for one FFT block
-		//SendTrig.ar(tbTrigLong, 1); // send TBOD trigger to language. ID 1 means TBOD.
 
 		//=== FBOD ===
 		chain = FFT(LocalBuf(nfft), sig, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64. Wintype 1 is Hann window.
 		fbTrigKR = Onsets.kr(chain, fbThreshDB.dbamp, \rcomplex, relaxtime: relaxtime, floor: floorDB.dbamp, mingap: mingap, medianspan: medianspan); // rcomplex is best. if it takes up too much cpu, then use power.
 		fbTrigAR = T2A.ar(fbTrigKR, offset: 0);
-		//fbTrigShort = Trig.ar(T2A.ar(fbTrig, offset: 0), sampleDur).sign.max(0); // make sure that fbTrig is audio rate, and only one sample long.
-		//SendTrig.ar(fbTrigShort*(1.0-tbTrigLong), 2); // send FBOD onset trigger to language. ID 2 means new onset (TBOD miss, FBOD hit).
-		//SendTrig.ar(fbTrigShort*tbTrigLong, 4); // send FBOD confirmation trigger to language. ID 4 means onset confirmation (TBOD hit, FBOD hit).
 		SendTrig.ar(fbTrigAR, 2); // send FBOD trigger to language. ID 2 means FBOD.
 
-		/*
 		//=== FAC: false alarm cancellation ===
-		fbTrigLong = Trig.ar(fbTrigShort, frameDur).sign.max(0); // make FBOD triger 6ms long
-		fbTrigLongInv = 1.0 - fbTrigLong; // inverse signal: zero between FBOD and 6ms afterwards, otherwise one.
-		tbTrigDelShort = Trig.ar(1.0-tbTrigLong, sampleDur).sign.max(0); // TBOD trigger, delayed by 6ms, only one sample long.
-		facTrig = tbTrigDelShort * fbTrigLongInv; // triggers 6ms after a TBOD trigger in case of no FBOD trigger within this timeframe.
-		SendTrig.ar(facTrig, 0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
-		*/
-
+		SendTrig.ar(DelayN.ar(tbTrig, 0.1, cancelDel*frameDur), 0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
 
 		//=== VD: velocity detection ===
-
 		vel = RunningMax.ar(sig.abs, DelayN.ar(fbTrigAR, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
 		SendTrig.ar(DelayN.ar(fbTrigAR, 0.1, velDelay), 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
 
@@ -200,6 +187,7 @@ s.waitForBoot{
 			};
 		};
 
+
 		//multiple impacts
 		if((~addsound == true) && (~onset_sum > 5)){
 			if(x.isPlaying == false){
@@ -222,11 +210,10 @@ s.waitForBoot{
 	};
 
 
-	~timeStampOld = 0.0;
-	~frameDur = 1.1*256.0/48000.0; // frame duration + 10% safety
+	// Variables for sound triggering logic
+	// ~timeStampOld = 0.0;
 	~tbodTriggered = false;
-	~fbodTriggered = false;
-
+	~fbodAgrees = false;
 
 
 	// Receive OSC from synth
@@ -234,70 +221,34 @@ s.waitForBoot{
 		var id = msg[2];
 		var val = msg[3];
 		var timeStampNew = time;
-		var timeMsg = ( 1000.0 * (timeStampNew-~timeStampOld) ).round(0.1).asString;
+		// var timeMsg = ( 1000.0 * (timeStampNew-~timeStampOld) ).round(0.1).asString;
+		// ~timeStampOld = timeStampNew;
 
-		~timeStampOld = timeStampNew;
-
-		/*
-		//sound triggering logic
-		switch (id,
-			0, { // FBOD Cancel
-				~lastvoice.set([\gate, 0]);
-				(timeMsg+"ms later: FBOD cancels TBOD.").postln;
-			},
-			1, { // TBOD trigger new
-				~lastvoice = ~voicetrigger.();
-				(timeMsg+"ms later: TBOD triggers new onset.").postln;
-			},
-			2, { // FBOD trigger new
-				~lastvoice = ~voicetrigger.();
-				(timeMsg+"ms later: FBOD triggers new onset.").postln;
-			},
-			4, { // FBOD agree with TBOD
-				(timeMsg+"ms later: FBOD agrees with TBOD.").postln;
-			},
-			3, { // Velocity update
-				~lastvoice.set([\amp, val]);
-				(timeMsg+"ms later: Velocity update:"+val).postln;
-
-				//break glass
-				// IS THIS STILL NECESSARY?
-				if(~outcome == true){
-					if(val > 0.1){
-						~globalvel = val;
-						~sound = ~soundcat_sum;
-					};
-				};
-
-			};
-		);
-		*/
 
 		//sound triggering logic
 		switch (id,
+			0, { // False Alarm Cancellation
+				if(~tbodTriggered&&~fbodAgrees.not, {
+					~lastvoice.set([\gate, 0]);
+					("No confirmation from FBOD. --> Onset cancelled.").postln;
+				});
+				~tbodTriggered = false;
+				~fbodAgrees = false;
+			},
 			1, { // TBOD trigger new
 				~lastvoice = ~voicetrigger.();
 				("TBOD triggers new onset.").postln;
 				~tbodTriggered = true;
-				~fbodTriggered = false;
-				fork{
-					(10*~frameDur).wait;
-					if(~fbodTriggered.not, { // cancel
-						~lastvoice.set([\gate, 0]);
-						("No confirmation from FBOD. --> Onset cancelled.").postln;
-						~tbodTriggered = false;
-					});
-				};
+				~fbodAgrees = false;
 			},
 			2, { // FBOD trigger
 				if( ~tbodTriggered, { // agree
-					~fbodTriggered = true;
+					~fbodAgrees = true;
 					("FBOD agrees with TBOD.").postln;
 				}, { // trigger new
 					~lastvoice = ~voicetrigger.();
 					("FBOD triggers new onset.").postln;
 				});
-				~tbodTriggered = false;
 			},
 			3, { // Velocity update
 				~lastvoice.set([\amp, val]);
@@ -316,54 +267,7 @@ s.waitForBoot{
 		);
 
 
-
-		//fork{
-		//vel = msg[3];
-		//vel.postln;
-
-		//if((msg[2] == 0) && (~trigflag == false)){
-		//~lastvoice = v.trigger(1, 1, [\amp, 0.001, \ampfactor, ~ampfactor, \gate, 1, \bufnum, f.value(~sound)]);
-		//~trigflag = true;
-		//};
-		//if(msg[2] == 2){~lastvoice.set([\amp,msg[3]]); 20.do{[vel, "RMAX MAP TBA"].postln}};
-
-		/*
-		if(msg[2] == 3){~lastvoice.set([\amp,msg[3]]); 20.do{[vel, "RMAX MAP FBA"].postln}};
-		0.006.wait;
-		fb_trigval = 0;
-		if((msg[2] == 1) && (~trigflag == true)){
-		fb_trigval = 1;
-		"FBA_agrees".postln;
-		};
-		*/
-
-		//if((fb_trigval == 0) && (~trigflag == true)){~lastvoice.set([\gate,0]); "FBA_disagrees".postln;};
-
-		//if((msg[2] == 1) && (~trigflag == false)){
-		//~lastvoice = v.trigger(1, 1, [\amp, 0.001, \ampfactor, ~ampfactor, \gate, 1, \bufnum, f.value(~sound)]);
-		//};
-		//}
-
 	},'/tr', s.addr);
-
-	//thresh control
-	/*OSCFunc({ arg msg, time;
-	var val;
-	[time, msg].postln;
-	val = msg[1].dbamp;
-	val.postln;
-	q.set(\tba_hi, val);
-
-	},'/thres/tba_thres_db');
-
-	OSCFunc({ arg msg, time;
-	var val;
-	[time, msg].postln;
-	val = msg[1].dbamp;
-	val.postln;
-	q.set(\fba_thres, val);
-
-	},'/thres/fba_thres_db');*/
 
 
 	// receive OSC from GUI: define function
@@ -408,7 +312,6 @@ s.waitForBoot{
 	// receive OSC from GUI: create receivers
 	~oscSetVar.(\master, '/master/main', {|val| ~ampfactor=val.dbamp});
 	~oscSetVar.(\cat, '/master/cat', {|val| ~ampfactorcat=val.dbamp});
-
 
 
 
