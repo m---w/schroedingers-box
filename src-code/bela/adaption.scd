@@ -43,7 +43,7 @@ s.waitForBoot{
 		};
 
 		//finish
-		if(~button == 20){s.freeAll;
+		if(~button == 666){s.freeAll;
 		};
 
 	},'/soundpick/2');
