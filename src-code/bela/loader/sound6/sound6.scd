@@ -17,4 +17,4 @@
 ~soundcat_sum = [~sound6cat1, ~sound6cat2, ~sound6cat3, ~sound6cat4, ~sound6cat5, ~sound6cat6];
 
 ~addsound = true;
-~outcome = false;
+~outcome = false;~voices = 5;

@@ -15,3 +15,4 @@
 ~addsound = false;
 ~outcome = true;
 
+~voices = 5;

@@ -3,12 +3,13 @@ Schroedinger's Box
 SuperCollider Control Patch for Bela
 2021 Jason Svoronos-Kanavas, Marian Weger
 */
+//Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
 (
 Window.closeAll;
 
-n = NetAddr("192.168.185.50", 57120);
-//n = NetAddr("bela.local", 57120); // set bela remote address
+//n = NetAddr("192.168.185.50", 57120);
+n = NetAddr("bela.local", 57120); // set bela remote address
 
 
 // OSC receiver to get messages from Bela
@@ -200,6 +201,7 @@ e.preset = 0; // sound preset
 			elements.params[key].value = e[key]/sliderDict[key][7];
 		};
 		elements[\samplePicker].value = e[\preset];
+		elements[\participantID].value = e[\participantID];
 		"GUI updated"; // return message
 	};
 
@@ -209,6 +211,7 @@ e.preset = 0; // sound preset
 			elements.params[key].doAction;
 		};
 		elements[\samplePicker].doAction;
+		elements[\participantID].doAction;
 		"settings sent"; // return message
 	};
 
@@ -226,5 +229,10 @@ e.preset = 0; // sound preset
 // if parameters are updated within the settings dictionary e, then call ~gui.upd.() to update the gui
 // to resend the current gui state, call ~gui.resend.()
 
+
+//=============================================================
+//load big red button config
+(Document.current.dir +/+ "/big-red-button.scd").asString.load;
+//=============================================================
 
 )

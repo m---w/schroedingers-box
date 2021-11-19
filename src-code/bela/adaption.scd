@@ -96,7 +96,8 @@ s.waitForBoot{
 		Out.ar(out, sig);
 	}).add;
 
-	v = Voicer.new(5, "sample_player");
+	~voices = 5;
+	v = Voicer.new(~voices, "sample_player");
 
 	SynthDef(\onsetDetection, {
 		|tbThreshDB=0.0, fbThreshDB=0.0,  relaxtime=1.0, floorDB=(20.0.neg), mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0, cancelDel=1.0|
