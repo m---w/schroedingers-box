@@ -155,6 +155,18 @@ s.waitForBoot{
 	// function to trigger voice
 	~voicetrigger = { |amp=0.01|
 		var lastvoice; // variable to store voice that is returned by this function
+
+
+		//break glass
+		if(~outcome == true&&~glassflag == false){
+			if(~globalvel > 0.1){
+				~sound = ~soundcat_sum;
+				v.trigger(1, 1, [\amp, ~globalvel, \gate, 1, \bufnum, f.value(~soundcat_sum), \ampfactor, ~ampfactor]);
+			};
+		};
+
+
+
 		
 		// trigger new voice
 		lastvoice = v.trigger(1, 1, [\amp, amp, \gate, 1, \bufnum, f.value(~sound), \ampfactor, ~ampfactor]);
