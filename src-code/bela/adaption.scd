@@ -155,7 +155,7 @@ s.waitForBoot{
 	// function to trigger voice
 	~voicetrigger = { |amp=0.01|
 		var lastvoice; // variable to store voice that is returned by this function
-
+		
 		// trigger new voice
 		lastvoice = v.trigger(1, 1, [\amp, amp, \gate, 1, \bufnum, f.value(~sound), \ampfactor, ~ampfactor]);
 
@@ -199,12 +199,6 @@ s.waitForBoot{
 			}
 		};
 
-		if(~outcome == true){
-			if(~globalvel > 0.1){
-				~sound = ~soundcat_sum;
-			};
-		};
-
 		// return this when evaluating the function:
 		lastvoice;
 
@@ -215,6 +209,7 @@ s.waitForBoot{
 	// ~timeStampOld = 0.0;
 	~tbodTriggered = false;
 	~fbodAgrees = false;
+	~glassflag = true; //glass broke
 
 
 	// Receive OSC from synth
@@ -225,7 +220,8 @@ s.waitForBoot{
 		// var timeMsg = ( 1000.0 * (timeStampNew-~timeStampOld) ).round(0.1).asString;
 		// ~timeStampOld = timeStampNew;
 
-
+		~globalvel = val;
+		
 		//sound triggering logic
 		switch (id,
 			0, { // False Alarm Cancellation
@@ -254,18 +250,18 @@ s.waitForBoot{
 			3, { // Velocity update
 				~lastvoice.set([\amp, val]);
 				("Velocity update:"+val).postln;
-
-				//break glass
-				// IS THIS STILL NECESSARY?
-				if(~outcome == true){
-					if(val > 0.1){
-						~globalvel = val;
-						~sound = ~soundcat_sum;
-					};
-				};
-
 			};
 		);
+
+		//break glass
+		~globalvel = val;
+		if(~outcome == true&&~glassflag == true){
+			if(~globalvel > 0.1){
+				~sound = ~soundcat_sum;
+				v.trigger(1, 1, [\amp, val, \gate, 1, \bufnum, f.value(~soundcat_sum), \ampfactor, ~ampfactor]);
+				~glassflag = false;
+			};
+		};
 
 
 	},'/tr', s.addr);
