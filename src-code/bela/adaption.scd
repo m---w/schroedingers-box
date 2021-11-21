@@ -142,6 +142,25 @@ s.waitForBoot{
 
 	}).add;
 
+	~oscSet.(~testSynth, \freq, '/test/freq');
+	~oscSet.(~testSynth, \noiseMasterDB, '/test/noiseMasterDB');
+	~oscSet.(~testSynth, \sineMasterDB, '/test/sineMasterDB');
+	~oscSet.(~testSynth, \toggleMaster, '/test/toggleMaster');
+	~oscSet.(~testSynth, \toggle1, '/test/toggle1');
+	~oscSet.(~testSynth, \toggle2, '/test/toggle2');
+	~oscSet.(~testSynth, \toggle3, '/test/toggle3');
+	~oscSet.(~testSynth, \toggle4, '/test/toggle4');
+
+
+	SynthDef(\testTone, {
+		| noiseMasterDB=(40.0.neg), sineMasterDB=(40.0.neg), testFreq=400.0, toggleMaster=0, toggle1=0, toggle2=0, toggle3=0, toggle4=0, flip1=0, flip2=0, flip3=0, flip4=0 |
+		var noise = WhiteNoise.ar(noiseMasterDB.dbamp);
+		var sine = SinOsc.ar(freq, mul: sineMasterDB.dbamp);
+		var sig = (sine + noise) * toggleMaster;
+		var sigArray = [sig*toggle1*flip1.madd(-2,1), sig*toggle2*flip2.madd(-2,1), sig*toggle3*flip3.madd(-2,1), sig*toggle4*flip4.madd(-2,1)];
+		Out.ar(0, sigArray);
+	}).add;
+
 
 
 	//init
@@ -167,7 +186,7 @@ s.waitForBoot{
 
 
 
-		
+
 		// trigger new voice
 		lastvoice = v.trigger(1, 1, [\amp, amp, \gate, 1, \bufnum, f.value(~sound), \ampfactor, ~ampfactor]);
 
@@ -233,7 +252,7 @@ s.waitForBoot{
 		// ~timeStampOld = timeStampNew;
 
 		~globalvel = val;
-		
+
 		//sound triggering logic
 		switch (id,
 			0, { // False Alarm Cancellation
@@ -303,6 +322,18 @@ s.waitForBoot{
 	~oscSet.(x, \lpf1Freq, '/tbod/lpf1Freq');
 	~oscSet.(x, \lpf2Freq, '/tbod/lpf2Freq');
 	~oscSet.(x, \hpfFreq, '/tbod/hpfFreq');
+	~oscSet.(~testSynth, \testFreq, '/test/freq');
+	~oscSet.(~testSynth, \noiseMasterDB, '/test/noiseMasterDB');
+	~oscSet.(~testSynth, \sineMasterDB, '/test/sineMasterDB');
+	~oscSet.(~testSynth, \toggle1, '/test/toggle1');
+	~oscSet.(~testSynth, \toggle2, '/test/toggle2');
+	~oscSet.(~testSynth, \toggle3, '/test/toggle3');
+	~oscSet.(~testSynth, \toggle4, '/test/toggle4');
+	~oscSet.(~testSynth, \flip1, '/test/flip1');
+	~oscSet.(~testSynth, \flip2, '/test/flip2');
+	~oscSet.(~testSynth, \flip3, '/test/flip3');
+	~oscSet.(~testSynth, \flip4, '/test/flip4');
+
 	// put other parameters of gui here...
 
 
@@ -322,6 +353,17 @@ s.waitForBoot{
 	~oscSetVar.(\master, '/master/main', {|val| ~ampfactor=val.dbamp});
 	~oscSetVar.(\cat, '/master/cat', {|val| ~ampfactorcat=val.dbamp});
 
+	~oscSetVar.(\toggleMaster, '/test/toggleMaster', {|val|
+		if(val==1, {
+			if(~testSynth.isPlaying.not, {
+				~testSynth = Synth.new(\test).register;
+			});
+		}, {
+			if(~testSynth.isPlaying, {
+				~testSynth.free;
+			});
+		});
+	});
 
 
 	1.wait;
