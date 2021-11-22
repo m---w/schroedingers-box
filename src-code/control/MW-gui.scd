@@ -63,6 +63,20 @@ e.catDB = 60.neg; // cat volume in dB
 e.participantID = 0; // participant ID
 e.preset = 0; // sound preset
 
+// Test Tone Generator
+e.sineMasterDB = 80.0.neg;
+e.noiseMasterDB = 80.0.neg;
+e.testFreq = 400.0;
+e.toggleMaster = 0;
+e.toggle1 = 0;
+e.toggle2 = 0;
+e.toggle3 = 0;
+e.toggle4 = 0;
+e.flip1 = 0;
+e.flip2 = 0;
+e.flip3 = 0;
+e.flip4 = 0;
+
 
 
 // GUI function definition
@@ -95,6 +109,11 @@ e.preset = 0; // sound preset
 		// Master
 		['/master/cat', -60.0, 10.0, \lin, 0.1, "dB", "Cat Volume", 1.0, \catDB],
 		['/master/main', -60.0, 10.0, \lin, 0.1, "dB", "Master Volume", 1.0, \mainDB],
+
+		// Test Tone Generator
+		['/test/noiseMasterDB', -80.0, 0.0, \lin, 0.1, "dB", "Noise Volume", 1.0, \noiseMasterDB],
+		['/test/sineMasterDB', -80.0, 0.0, \lin, 0.1, "dB", "Sine Volume", 1.0, \sineMasterDB],
+		['/test/freq', 20.0, 20000.0, \exp, 1.0, "Hz", "Sine Frequency", 1.0, \testFreq],
 
 	];
 
@@ -175,6 +194,87 @@ e.preset = 0; // sound preset
 	makeSliders.(elements[\params], sliderDict, [\catDB, \mainDB]);
 	newline.();
 
+	heading.("Test signal generator");
+	newline.();
+	makeSliders.(elements[\params], sliderDict, [\noiseMasterDB, \sineMasterDB, \testFreq]);
+	newline.();
+
+	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,120,30))
+	.states_([["TestTone", Color.white, Color.gray], ["TestTone", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\toggleMaster] = val.asInteger; // update value in settings dictionary
+		n.sendMsg('/test/toggleMaster', \toggleMaster, e[\toggleMaster]); // send updated value via OSC
+		("Test Tone State:"+e[\toggleMaster]).postln; // print message
+	});
+	newline.();
+	elements[\toggle1] = Button(elements[\w], Rect(0,0,120,30))
+	.states_([["Ch.1", Color.white, Color.gray], ["Ch.1", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\toggle1] = val.asInteger; // update value in settings dictionary
+		n.sendMsg('/test/toggle1', \toggle1, e[\toggle1]); // send updated value via OSC
+		("Test Tone State Ch.1:"+e[\toggle1]).postln; // print message
+	});
+	elements[\toggle2] = Button(elements[\w], Rect(0,0,120,30))
+	.states_([["Ch.2", Color.white, Color.gray], ["Ch.2", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\toggle2] = val.asInteger; // update value in settings dictionary
+		n.sendMsg('/test/toggle2', \toggle2, e[\toggle2]); // send updated value via OSC
+		("Test Tone State Ch.2:"+e[\toggle2]).postln; // print message
+	});
+	elements[\toggle3] = Button(elements[\w], Rect(0,0,120,30))
+	.states_([["Ch.3", Color.white, Color.gray], ["Ch.3", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\toggle3] = val.asInteger; // update value in settings dictionary
+		n.sendMsg('/test/toggle3', \toggle3, e[\toggle3]); // send updated value via OSC
+		("Test Tone State Ch.3:"+e[\toggle3]).postln; // print message
+	});
+	elements[\toggle4] = Button(elements[\w], Rect(0,0,120,30))
+	.states_([["Ch.4", Color.white, Color.gray], ["Ch.4", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\toggle4] = val.asInteger; // update value in settings dictionary
+		n.sendMsg('/test/toggle4', \toggle4, e[\toggle4]); // send updated value via OSC
+		("Test Tone State Ch.4:"+e[\toggle4]).postln; // print message
+	});
+	newline.();
+	elements[\flip1] = Button(elements[\w], Rect(0,0,120,30))
+	.states_([["Flip Ch.1", Color.white, Color.gray], ["Flip Ch.1", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\flip1] = val.asInteger; // update value in settings dictionary
+		n.sendMsg('/test/flip1', \flip1, e[\flip1]); // send updated value via OSC
+		("Flip Ch.1:"+e[\flip1]).postln; // print message
+	});
+	elements[\flip2] = Button(elements[\w], Rect(0,0,120,30))
+	.states_([["Flip Ch.2", Color.white, Color.gray], ["Flip Ch.2", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\flip2] = val.asInteger; // update value in settings dictionary
+		n.sendMsg('/test/flip2', \flip2, e[\flip2]); // send updated value via OSC
+		("Flip Ch.2:"+e[\flip2]).postln; // print message
+	});
+	elements[\flip3] = Button(elements[\w], Rect(0,0,120,30))
+	.states_([["Flip Ch.3", Color.white, Color.gray], ["Flip Ch.3", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\flip3] = val.asInteger; // update value in settings dictionary
+		n.sendMsg('/test/flip3', \flip3, e[\flip3]); // send updated value via OSC
+		("Flip Ch.3:"+e[\flip3]).postln; // print message
+	});
+	elements[\flip4] = Button(elements[\w], Rect(0,0,120,30))
+	.states_([["Flip Ch.4", Color.white, Color.gray], ["Flip Ch.4", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\flip4] = val.asInteger; // update value in settings dictionary
+		n.sendMsg('/test/flip4', \flip4, e[\flip4]); // send updated value via OSC
+		("Flip Ch.4:"+e[\flip4]).postln; // print message
+	});
+	newline.();
+
 	heading.("Sound Selection");
 	newline.();
 	elements[\samplePicker] = EZNumber(elements[\w].view, 900@25, "  Preset  ",
@@ -198,7 +298,7 @@ e.preset = 0; // sound preset
 	.action_({ |ez|
 		e[\participantID] = ez.value.asInteger; // update value in settings dictionary
 		n.sendMsg('/experiment', \participantID, e[\participantID]); // send updated value via OSC (DOES BELA NEED TO KNOW IT?)
-		//initialise sample number 
+		//initialise sample number
 		~sample = -1;
 		//send it to the samplePicker
 		elements[\samplePicker].valueAction_(~sample);
