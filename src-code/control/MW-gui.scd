@@ -24,11 +24,11 @@ OSCFunc({|msg, time|
 		},
 		\mainDB, {
 			e.mainDB = value; // master volume (GUI) via each sound config file in Bela
-			//{~gui.upd}.defer(); // then update GUI
+			{~gui.upd}.defer; // then update GUI
 		},
 		\catDB, {
 			e.catDB = valuecat; // Cat volume (GUI) value
-			//{~gui.upd}.defer();
+			{~gui.upd}.defer;
 		},
 	);
 },'/bela');
