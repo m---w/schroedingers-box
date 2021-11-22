@@ -8,17 +8,27 @@ SuperCollider Control Patch for Bela
 (
 Window.closeAll;
 
-//n = NetAddr("192.168.185.50", 57120);
-n = NetAddr("bela.local", 57120); // set bela remote address
+n = NetAddr("192.168.185.50", 57120);
+//n = NetAddr("bela.local", 57120); // set bela remote address
 
 
 // OSC receiver to get messages from Bela
 OSCFunc({|msg, time|
 	var key = msg[1];
+	var value = msg[2];
+	var valuecat = msg[2];
 	("OSC incoming:"+msg).postln;
 	switch(key,
 		\booted, {
 			~gui.resend(); // let GUI resend parameters
+		},
+		\mainDB, {
+			e.mainDB = value; // master volume (GUI) via each sound config file in Bela
+			//{~gui.upd}.defer(); // then update GUI
+		},
+		\catDB, {
+			e.catDB = valuecat; // Cat volume (GUI) value
+			//{~gui.upd}.defer();
 		},
 	);
 },'/bela');
