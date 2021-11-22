@@ -142,23 +142,16 @@ s.waitForBoot{
 
 	}).add;
 
-	~oscSet.(~testSynth, \freq, '/test/freq');
-	~oscSet.(~testSynth, \noiseMasterDB, '/test/noiseMasterDB');
-	~oscSet.(~testSynth, \sineMasterDB, '/test/sineMasterDB');
-	~oscSet.(~testSynth, \toggleMaster, '/test/toggleMaster');
-	~oscSet.(~testSynth, \toggle1, '/test/toggle1');
-	~oscSet.(~testSynth, \toggle2, '/test/toggle2');
-	~oscSet.(~testSynth, \toggle3, '/test/toggle3');
-	~oscSet.(~testSynth, \toggle4, '/test/toggle4');
 
 
 	SynthDef(\testTone, {
-		| noiseMasterDB=(40.0.neg), sineMasterDB=(40.0.neg), testFreq=400.0, toggleMaster=0, toggle1=0, toggle2=0, toggle3=0, toggle4=0, flip1=0, flip2=0, flip3=0, flip4=0 |
-		var noise = WhiteNoise.ar(noiseMasterDB.dbamp);
-		var sine = SinOsc.ar(freq, mul: sineMasterDB.dbamp);
+		| noiseMasterDB=(80.0.neg), sineMasterDB=(80.0.neg), testFreq=400.0, toggleSine=0.0, toggleNoise=0.0, toggleMaster=1.0, toggle1=0.0, toggle2=0.0, toggle3=0.0, toggle4=0.0, flip1=0.0, flip2=0.0, flip3=0.0, flip4=0.0 |
+		var noise = WhiteNoise.ar(noiseMasterDB.dbamp*toggleNoise);
+		var sine = SinOsc.ar(testFreq, mul: sineMasterDB.dbamp*toggleSine);
 		var sig = (sine + noise) * toggleMaster;
-		var sigArray = [sig*toggle1*flip1.madd(-2,1), sig*toggle2*flip2.madd(-2,1), sig*toggle3*flip3.madd(-2,1), sig*toggle4*flip4.madd(-2,1)];
-		Out.ar(0, sigArray);
+		var sigArray = [sig*toggle1*flip1.madd(2.0.neg,1.0), sig*toggle2*flip2.madd(2.0.neg,1.0), sig*toggle3*flip3.madd(2.0.neg,1.0), sig*toggle4*flip4.madd(2.0.neg,1.0)];
+		Out.ar(0, (sigArray!2).flat);
+		//Out.ar(0, (SinOsc.ar(400.0)*0.001)!8);
 	}).add;
 
 
@@ -299,7 +292,7 @@ s.waitForBoot{
 
 
 	// receive OSC from GUI: define function
-	~oscSet = {|synth, key, addr, printflag=true|
+	~oscSet = {|x, key, addr, printflag=true|
 		OSCFunc({|msg, time|
 			var val = msg[1];
 			if(printflag, {
@@ -307,6 +300,19 @@ s.waitForBoot{
 				("OSC incoming:"+key+val).postln;
 			});
 			x.set(key, val);
+		},addr);
+	};
+
+	// receive OSC from GUI: define function
+	~oscSet2 = {|x, key, addr, printflag=true|
+		OSCFunc({|msg, time|
+			var val = msg[1];
+			if(printflag, {
+				// ("OSC incoming:"+time+key+val).postln;
+				("OSC incoming:"+key+val).postln;
+			});
+			e[key] = val;
+			~testSynth.set(key, val);
 		},addr);
 	};
 
@@ -322,17 +328,19 @@ s.waitForBoot{
 	~oscSet.(x, \lpf1Freq, '/tbod/lpf1Freq');
 	~oscSet.(x, \lpf2Freq, '/tbod/lpf2Freq');
 	~oscSet.(x, \hpfFreq, '/tbod/hpfFreq');
-	~oscSet.(~testSynth, \testFreq, '/test/freq');
-	~oscSet.(~testSynth, \noiseMasterDB, '/test/noiseMasterDB');
-	~oscSet.(~testSynth, \sineMasterDB, '/test/sineMasterDB');
-	~oscSet.(~testSynth, \toggle1, '/test/toggle1');
-	~oscSet.(~testSynth, \toggle2, '/test/toggle2');
-	~oscSet.(~testSynth, \toggle3, '/test/toggle3');
-	~oscSet.(~testSynth, \toggle4, '/test/toggle4');
-	~oscSet.(~testSynth, \flip1, '/test/flip1');
-	~oscSet.(~testSynth, \flip2, '/test/flip2');
-	~oscSet.(~testSynth, \flip3, '/test/flip3');
-	~oscSet.(~testSynth, \flip4, '/test/flip4');
+	~oscSet2.(~testSynth, \testFreq, '/test/freq');
+	~oscSet2.(~testSynth, \noiseMasterDB, '/test/noiseMasterDB');
+	~oscSet2.(~testSynth, \sineMasterDB, '/test/sineMasterDB');
+	~oscSet2.(~testSynth, \toggleSine, '/test/toggleSine');
+	~oscSet2.(~testSynth, \toggleNoise, '/test/toggleNoise');
+	~oscSet2.(~testSynth, \toggle1, '/test/toggle1');
+	~oscSet2.(~testSynth, \toggle2, '/test/toggle2');
+	~oscSet2.(~testSynth, \toggle3, '/test/toggle3');
+	~oscSet2.(~testSynth, \toggle4, '/test/toggle4');
+	~oscSet2.(~testSynth, \flip1, '/test/flip1');
+	~oscSet2.(~testSynth, \flip2, '/test/flip2');
+	~oscSet2.(~testSynth, \flip3, '/test/flip3');
+	~oscSet2.(~testSynth, \flip4, '/test/flip4');
 
 	// put other parameters of gui here...
 
@@ -353,10 +361,11 @@ s.waitForBoot{
 	~oscSetVar.(\master, '/master/main', {|val| ~ampfactor=val.dbamp});
 	~oscSetVar.(\cat, '/master/cat', {|val| ~ampfactorcat=val.dbamp});
 
+
 	~oscSetVar.(\toggleMaster, '/test/toggleMaster', {|val|
 		if(val==1, {
 			if(~testSynth.isPlaying.not, {
-				~testSynth = Synth.new(\test).register;
+				~testSynth = Synth.new(\testTone, e.asKeyValuePairs).register;
 			});
 		}, {
 			if(~testSynth.isPlaying, {
@@ -366,11 +375,15 @@ s.waitForBoot{
 	});
 
 
+
 	1.wait;
 
 	x = Synth(\onsetDetection);
 
-	0.5.wait;
+	//~testSynth = Synth(\testTone);
+
+	//0.5.wait;
+
 
 	// request parameters from GUI
 	n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120) ]; // set GUI addresses
