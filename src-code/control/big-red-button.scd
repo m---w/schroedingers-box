@@ -37,7 +37,7 @@ fork{
 	]
 	// -------- end -----------
 	;
-	
+
 
 	//MIDIdef
 	MIDIdef.cc(\bigredbutton, {
@@ -46,7 +46,7 @@ fork{
 		//0-127
 		val = args[0];
 
-		//evaluate: when pressed 
+		//evaluate: when pressed
 		if (val == 0){
 			if (~sample > (~experimentOrder[e.participantID].size -1)){
 				"all samples were completed -- invite next participant".postln;
@@ -56,14 +56,14 @@ fork{
 				//if sample = -1 make it 0 and load it
 				if(~sample == (-1)){~sample = 0};
 				("sample number: "++next).postln;
-				n.sendMsg('/soundpick/2', \sam_num, next);
-				
+				n.sendMsg('/sound/preset', next);
+
 				e[\preset] = next;
-				{~gui.upd;}.defer;		
+				{~gui.upd;}.defer;
 				~sample = ~sample + 1;
 			};
 		};
-		
+
 	}, 16);
 
 	"Big red button initialised".postln;

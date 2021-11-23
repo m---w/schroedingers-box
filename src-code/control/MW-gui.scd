@@ -8,27 +8,26 @@ SuperCollider Control Patch for Bela
 (
 Window.closeAll;
 
-//n = NetAddr("192.168.185.50", 57120);
-n = NetAddr("bela.local", 57120); // set bela remote address
+n = NetAddr("192.168.185.50", 57120);
+//n = NetAddr("bela.local", 57120); // set bela remote address
 
 
 // OSC receiver to get messages from Bela
 OSCFunc({|msg, time|
 	var key = msg[1];
-	var value = msg[2];
-	var valuecat = msg[2];
+	var val = msg[2];
 	("OSC incoming:"+msg).postln;
 	switch(key,
 		\booted, {
 			~gui.resend(); // let GUI resend parameters
 		},
 		\mainDB, {
-			e.mainDB = value; // master volume (GUI) via each sound config file in Bela
-			{~gui.upd}.defer; // then update GUI
+			e.mainDB = val; // master volume (GUI) via each sound config file in Bela
+			{~gui.upd.()}.defer; // then update GUI
 		},
 		\catDB, {
-			e.catDB = valuecat; // Cat volume (GUI) value
-			{~gui.upd}.defer;
+			e.catDB = val; // Cat volume (GUI) value
+			{~gui.upd.()}.defer;
 		},
 	);
 },'/bela');
@@ -40,24 +39,29 @@ e = (); // create empty dictionary
 // TBOD
 e.tbThreshDB = 120.0.neg; // TBOD threshold in dB
 e.tbRefPeriod = 0.05;// specifies a minimum gap (in seconds) between subsequent onset detections
-e.lpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
-e.lpf2Freq = 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
-e.hpfFreq = 4000.0; // frequency of high-pass filter in Hz  (TBOD)
+e.tbLpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
+e.tbLpf2Freq = 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
+e.tbHpfFreq = 4000.0; // frequency of high-pass filter in Hz  (TBOD)
 e.cancelDel = 1.0; // Delay between TBOD trigger and cancel message, in FFT frames.
 
 // FBOD
 e.fbThreshDB = -22.0; // FBOD threshold in dB
-e.relaxtime = 1.0; // specifies the time (in seconds) for the normalisation to "forget" about a recent onset. If you find too much re-triggering (e.g. as a note dies away unevenly) then you might wish to increase this value.
-e.floorDB = 20.0.neg; // is a lower limit, connected to the idea of how quiet the sound is expected to get without becoming indistinguishable from noise. For some cleanly-recorded classical music with wide dynamic variations, I found it helpful to go down as far as 0.000001.
-e.mingap = 40; // specifies a minimum gap (in FFT frames) between onset detections, a brute-force way to prevent too many doubled detections.
-e.medianspan = 11; // specifies the size (in FFT frames) of the median window used for smoothing the detection function before triggering.
+e.fbRelaxtime = 1.0; // specifies the time (in seconds) for the normalisation to "forget" about a recent onset. If you find too much re-triggering (e.g. as a note dies away unevenly) then you might wish to increase this value.
+e.fbFloorDB = 20.0.neg; // is a lower limit, connected to the idea of how quiet the sound is expected to get without becoming indistinguishable from noise. For some cleanly-recorded classical music with wide dynamic variations, I found it helpful to go down as far as 0.000001.
+e.fbMingap = 40; // specifies a minimum gap (in FFT frames) between onset detections, a brute-force way to prevent too many doubled detections.
+e.fbMedianspan = 11; // specifies the size (in FFT frames) of the median window used for smoothing the detection function before triggering.
 
 // Velocity detection
-e.veldelay = 0.006; // delay between FBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
+e.velDelay = 0.006; // delay between FBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
+e.defaultVel = 0.01; // default velocity
+e.velUpdateLag = 0.001;
 
 // Master
 e.mainDB = inf.neg; // main volume in dB
-e.catDB = 60.neg; // cat volume in dB
+e.catDB = inf.neg; // cat volume in dB
+
+e.mainGlobalDB = inf.neg; // main volume in dB
+e.catGlobalDB = inf.neg; // cat volume in dB
 
 // Experiment
 e.participantID = 0; // participant ID
@@ -77,6 +81,17 @@ e.flip2 = 0;
 e.flip3 = 0;
 e.flip4 = 0;
 
+e.combFiltMinFreq = 20.0;
+e.combFiltMaxFreq = 20000.0;
+e.combFiltDryWet = 0.0;
+
+e.playbackRand = 0.1; // percent rate randomization
+
+e.breakingThreshold = 0.1;
+
+e.addMinDel = 0.5;
+e.addMaxDel = 1.0;
+e.addCutoff = 1000.0;
 
 
 // GUI function definition
@@ -85,35 +100,52 @@ e.flip4 = 0;
 	// settings of all the sliders in the GUI
 	// They will appear in this order in the GUI
 	var sliderList = [
-		// oscname min max warp step units label factor name
-		// 0       1   2   3    4    5     6     7      8
+		// min max warp step units label factor name
+		// 0   1   2    3    4     5     6      7
 
 		// TBOD
-		['/tbod/threshDB', -180, 0.0, \lin, 1.0, "dB", "TBOD threshold", 1.0, \tbThreshDB],
-		['/tbod/hpfFreq', 80.0, 8000.0, \exp, 1.0, "Hz", "HPF cutoff", 1.0, \hpfFreq],
-		['/tbod/lpf1Freq', 1.0, 120.0, \lin, 1.0, "Hz", "LPF 1 cutoff", 1.0, \lpf1Freq],
-		['/tbod/lpf2Freq', 1.0, 120.0, \lin, 1.0, "Hz", "LPF 2 cutoff", 1.0, \lpf2Freq],
-		['/tbod/refPeriod', 0.1, 500.0, \exp, 1.0, "ms", "TBOD refractory period", 1.0e-3, \tbRefPeriod],
-		['/fac/cancelDel', 0.0, 32.0, \lin, 1.0, "FFT frames", "False Alarm Cancellation delay", 1.0, \cancelDel],
+		[-180, 0.0, \lin, 1.0, "dB", "TBOD threshold", 1.0, \tbThreshDB],
+		[80.0, 8000.0, \exp, 1.0, "Hz", "HPF cutoff", 1.0, \tbHpfFreq],
+		[1.0, 120.0, \lin, 1.0, "Hz", "LPF 1 cutoff", 1.0, \tbLpf1Freq],
+		[1.0, 120.0, \lin, 1.0, "Hz", "LPF 2 cutoff", 1.0, \tbLpf2Freq],
+		[0.1, 500.0, \exp, 1.0, "ms", "TBOD refractory period", 1.0e-3, \tbRefPeriod],
+		[0.0, 32.0, \lin, 1.0, "FFT frames", "False Alarm Cancellation delay", 1.0, \cancelDel],
 
 		// FBOD
-		['/fbod/threshDB', -40, 40.0, \lin, 1.0, "dB", "FBOD threshold", 1.0, \fbThreshDB],
-		['/fbod/relaxtime', 0.1, 10.0, \exp, 0.1, "s", "Relax Time", 1.0, \relaxtime],
-		['/fbod/floorDB', 140.0.neg, 0.0, \exp, 1.0, "dB", "Floor", 1.0, \floorDB],
-		['/fbod/mingap', 0.0, 100.0, \lin, 1.0, "FFT frames", "MinGap", 1.0, \mingap],
-		['/fbod/medianspan', 0.0, 30.0, \lin, 1.0, "FFT frames", "MedianSpan", 1.0, \medianspan],
+		[-40, 40.0, \lin, 1.0, "dB", "FBOD threshold", 1.0, \fbThreshDB],
+		[0.1, 10.0, \exp, 0.1, "s", "Relax Time", 1.0, \fbRelaxtime],
+		[140.0.neg, 0.0, \exp, 1.0, "dB", "Floor", 1.0, \fbFloorDB],
+		[0.0, 100.0, \lin, 1.0, "FFT frames", "MinGap", 1.0, \fbMingap],
+		[0.0, 30.0, \lin, 1.0, "FFT frames", "MedianSpan", 1.0, \fbMedianspan],
 
 		// Velocity Detection
-		['/vel/delay', 0.1, 50.0, \exp, 0.1, "ms", "Velocity Delay", 1.0e-3, \veldelay],
+		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Delay", 1.0e-3, \velDelay],
+		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Update Lag", 1.0e-3, \velUpdateLag],
+		[0.0001, 1.0, \exp, 0.0, "", "Default Velocity", 1.0, \defaultVel],
 
-		// Master
-		['/master/cat', -60.0, 30.0, \lin, 0.1, "dB", "Cat Volume", 1.0, \catDB],
-		['/master/main', -60.0, 30.0, \lin, 0.1, "dB", "Master Volume", 1.0, \mainDB],
+		// Levels (current preset)
+		[-60.0, 30.0, \lin, 0.1, "dB", "Secondary sound level", 1.0, \catDB],
+		[-60.0, 30.0, \lin, 0.1, "dB", "Primary sound level", 1.0, \mainDB],
+
+		// Master Levels
+		[-60.0, 30.0, \lin, 0.1, "dB", "Global secondary sound level", 1.0, \catGlobalDB],
+		[-60.0, 30.0, \lin, 0.1, "dB", "Global primary sound level", 1.0, \mainGlobalDB],
 
 		// Test Tone Generator
-		['/test/noiseMasterDB', -80.0, 0.0, \lin, 0.1, "dB", "Noise Volume", 1.0, \noiseMasterDB],
-		['/test/sineMasterDB', -80.0, 0.0, \lin, 0.1, "dB", "Sine Volume", 1.0, \sineMasterDB],
-		['/test/freq', 20.0, 20000.0, \exp, 1.0, "Hz", "Sine Frequency", 1.0, \testFreq],
+		[-80.0, 0.0, \lin, 0.1, "dB", "Noise Volume", 1.0, \noiseMasterDB],
+		[-80.0, 0.0, \lin, 0.1, "dB", "Sine Volume", 1.0, \sineMasterDB],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Sine Frequency", 1.0, \testFreq],
+
+		// Sound
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Min Frequency", 1.0, \combFiltMinFreq],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Max Frequency", 1.0, \combFiltMaxFreq],
+		[-1.0, 1.0, \lin, 0.0, "", "Comb Filter Dry/Wet", 1.0, \combFiltDryWet],
+		[0.0, 10.0, \lin, 0.1, "%", "Playback Rate Randomization", 1.0e-3, \playbackRand],
+		[0.001, 1.0, \exp, 0.0, "", "Breaking Threshold", 1.0, \breakingThreshold],
+		[0.0, 5.0, \exp, 0.1, "s", "Min Delay for Secondary Sound", 1.0, \addMinDel],
+		[0.0, 5.0, \exp, 0.1, "s", "Max Delay for Secondary Sound", 1.0, \addMaxDel],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Secondary Sound Upper Cutoff", 1.0, \addCutoff],
+
 
 	];
 
@@ -122,15 +154,15 @@ e.flip4 = 0;
 
 	// slider creation function
 	var makeSlider = { |item|
-		EZSlider(elements[\w].view, 900@25, "  "++item[6]++"  ",
-			ControlSpec(minval: item[1], maxval: item[2], warp: item[3], step: item[4], default: e[item[8]]/item[7], units: item[5]),
-			labelWidth: 280, unitWidth: 100, initVal: e[item[8]]/item[7], numberWidth: 60, layout: \horz, initAction: true)
+		EZSlider(elements[\w].view, 900@20, "  "++item[5]++"  ",
+			ControlSpec(minval: item[0], maxval: item[1], warp: item[2], step: item[3], default: e[item[7]]/item[6], units: item[4]),
+			labelWidth: 280, unitWidth: 100, initVal: e[item[7]]/item[6], numberWidth: 60, layout: \horz, initAction: true)
 		.setColors(Color.grey, Color.white)
-		.font_(Font("Helvetica", 14))
+		.font_(Font("Helvetica", 12))
 		.action_({ |ez|
-			e[item[8]] = ez.value*item[7]; // update value in settings dictionary
-			n.sendMsg(item[0], e[item[8]]); // send updated value via OSC
-			(item[8]++":"+e[item[8]]).postln; // print message
+			e[item[7]] = ez.value*item[6]; // update value in settings dictionary
+			n.sendMsg('/'++item[7], e[item[7]]); // send updated value via OSC
+			(item[7]++":"+e[item[7]]).postln; // print message
 		});
 	};
 
@@ -143,7 +175,7 @@ e.flip4 = 0;
 
 	// function to create a heading
 	var heading = { |text|
-		StaticText(elements[\w].view, 900@26)
+		StaticText(elements[\w].view, 900@24)
 		.string_(text++":")
 		.font_(Font("Helvetica", 18))
 		.stringColor_(Color.white)
@@ -176,35 +208,45 @@ e.flip4 = 0;
 
 	heading.("TBOD");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\tbThreshDB, \hpfFreq, \lpf1Freq, \lpf2Freq, \tbRefPeriod, \cancelDel]);
+	makeSliders.(elements[\params], sliderDict, [\tbThreshDB, \tbHpfFreq, \tbLpf1Freq, \tbLpf2Freq, \tbRefPeriod, \cancelDel]);
 	newline.();
 
 	heading.("FBOD");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\fbThreshDB, \relaxtime, \floorDB, \mingap, \medianspan]);
+	makeSliders.(elements[\params], sliderDict, [\fbThreshDB, \fbRelaxtime, \fbFloorDB, \fbMingap, \fbMedianspan]);
 	newline.();
 
 	heading.("Velocity detection");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\veldelay]);
+	makeSliders.(elements[\params], sliderDict, [\velDelay, \velUpdateLag, \defaultVel]);
 	newline.();
 
-	heading.("Master");
+	heading.("Levels (current preset)");
 	newline.();
 	makeSliders.(elements[\params], sliderDict, [\catDB, \mainDB]);
+	newline.();
+
+	heading.("Master Levels");
+	newline.();
+	makeSliders.(elements[\params], sliderDict, [\catGlobalDB, \mainGlobalDB]);
+	newline.();
+
+	heading.("Sound");
+	newline.();
+	makeSliders.(elements[\params], sliderDict, [\combFiltMinFreq, \combFiltMaxFreq, \combFiltDryWet, \playbackRand, \breakingThreshold, \addMinDel, \addMaxDel, \addCutoff]);
 	newline.();
 
 	heading.("Test signal generator");
 	newline.();
 	makeSliders.(elements[\params], sliderDict, [\noiseMasterDB, \sineMasterDB, \testFreq]);
-	newline.();
+	newline.();¸
 
 	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["TestTone", Color.white, Color.gray], ["TestTone", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggleMaster] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/toggleMaster', e[\toggleMaster].asFloat); // send updated value via OSC
+		n.sendMsg('/toggleMaster', e[\toggleMaster].asFloat); // send updated value via OSC
 		("Test Tone State:"+e[\toggleMaster]).postln; // print message
 	});
 	elements[\toggleSine] = Button(elements[\w], Rect(0,0,120,30))
@@ -212,7 +254,7 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggleSine] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/toggleSine', e[\toggleSine].asFloat); // send updated value via OSC
+		n.sendMsg('/toggleSine', e[\toggleSine].asFloat); // send updated value via OSC
 		("Sine State:"+e[\toggleSine]).postln; // print message
 	});
 	elements[\toggleNoise] = Button(elements[\w], Rect(0,0,120,30))
@@ -220,7 +262,7 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggleNoise] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/toggleNoise', e[\toggleNoise].asFloat); // send updated value via OSC
+		n.sendMsg('/toggleNoise', e[\toggleNoise].asFloat); // send updated value via OSC
 		("Noise State:"+e[\toggleNoise]).postln; // print message
 	});
 	newline.();
@@ -229,7 +271,7 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggle1] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/toggle1', e[\toggle1].asFloat); // send updated value via OSC
+		n.sendMsg('/toggle1', e[\toggle1].asFloat); // send updated value via OSC
 		("Test Tone State Ch.1:"+e[\toggle1]).postln; // print message
 	});
 	elements[\toggle2] = Button(elements[\w], Rect(0,0,120,30))
@@ -237,7 +279,7 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggle2] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/toggle2', e[\toggle2].asFloat); // send updated value via OSC
+		n.sendMsg('/toggle2', e[\toggle2].asFloat); // send updated value via OSC
 		("Test Tone State Ch.2:"+e[\toggle2]).postln; // print message
 	});
 	elements[\toggle3] = Button(elements[\w], Rect(0,0,120,30))
@@ -245,7 +287,7 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggle3] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/toggle3', e[\toggle3].asFloat); // send updated value via OSC
+		n.sendMsg('/toggle3', e[\toggle3].asFloat); // send updated value via OSC
 		("Test Tone State Ch.3:"+e[\toggle3]).postln; // print message
 	});
 	elements[\toggle4] = Button(elements[\w], Rect(0,0,120,30))
@@ -253,7 +295,7 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggle4] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/toggle4', e[\toggle4].asFloat); // send updated value via OSC
+		n.sendMsg('/toggle4', e[\toggle4].asFloat); // send updated value via OSC
 		("Test Tone State Ch.4:"+e[\toggle4]).postln; // print message
 	});
 	newline.();
@@ -262,7 +304,7 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\flip1] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/flip1', e[\flip1].asFloat); // send updated value via OSC
+		n.sendMsg('/flip1', e[\flip1].asFloat); // send updated value via OSC
 		("Flip Ch.1:"+e[\flip1]).postln; // print message
 	});
 	elements[\flip2] = Button(elements[\w], Rect(0,0,120,30))
@@ -270,7 +312,7 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\flip2] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/flip2', e[\flip2].asFloat); // send updated value via OSC
+		n.sendMsg('/flip2', e[\flip2].asFloat); // send updated value via OSC
 		("Flip Ch.2:"+e[\flip2]).postln; // print message
 	});
 	elements[\flip3] = Button(elements[\w], Rect(0,0,120,30))
@@ -278,7 +320,7 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\flip3] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/flip3', e[\flip3].asFloat); // send updated value via OSC
+		n.sendMsg('/flip3', e[\flip3].asFloat); // send updated value via OSC
 		("Flip Ch.3:"+e[\flip3]).postln; // print message
 	});
 	elements[\flip4] = Button(elements[\w], Rect(0,0,120,30))
@@ -286,22 +328,22 @@ e.flip4 = 0;
 	.action_({|obj|
 		var val = obj.value;
 		e[\flip4] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/test/flip4', e[\flip4].asFloat); // send updated value via OSC
+		n.sendMsg('/flip4', e[\flip4].asFloat); // send updated value via OSC
 		("Flip Ch.4:"+e[\flip4]).postln; // print message
 	});
 	newline.();
 
 	heading.("Sound Selection");
 	newline.();
-	elements[\samplePicker] = EZNumber(elements[\w].view, 900@25, "  Preset  ",
+	elements[\preset] = EZNumber(elements[\w].view, 900@25, "  Preset  ",
 		ControlSpec(minval: -1, maxval: 99, step: 1, default: e[\preset]),
 		labelWidth: 280, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
 	.font_(Font("Helvetica", 14))
 	.action_({ |ez|
 		e[\preset] = ez.value.asInteger; // update value in settings dictionary
-		n.sendMsg('/soundpick/2', \sam_num, e[\preset]); // send updated value via OSC
-		("samplePicker:"+e[\preset]).postln; // print message
+		n.sendMsg('/preset', e[\preset]); // send updated value via OSC
+		("Preset:"+e[\preset]).postln; // print message
 	});
 
 	heading.("Experiment");
@@ -313,11 +355,9 @@ e.flip4 = 0;
 	.font_(Font("Helvetica", 14))
 	.action_({ |ez|
 		e[\participantID] = ez.value.asInteger; // update value in settings dictionary
-		n.sendMsg('/experiment', \participantID, e[\participantID]); // send updated value via OSC (DOES BELA NEED TO KNOW IT?)
-		//initialise sample number
-		~sample = -1;
-		//send it to the samplePicker
-		elements[\samplePicker].valueAction_(~sample);
+		n.sendMsg('/participantID', e[\participantID]); // send updated value via OSC
+		~sample = -1; // init sample number
+		elements[\preset].valueAction_(~sample);
 		("Participant ID:"+e[\participantID]).postln; // print message
 	});
 
@@ -326,8 +366,19 @@ e.flip4 = 0;
 		elements[\params].keysValuesDo{|key,item|
 			elements.params[key].value = e[key]/sliderDict[key][7];
 		};
-		elements[\samplePicker].value = e[\preset];
+		elements[\preset].value = e[\preset];
 		elements[\participantID].value = e[\participantID];
+		elements[\toggleMaster].value = e[\toggleMaster];
+		elements[\toggleNoise].value = e[\toggleNoise];
+		elements[\toggleSine].value = e[\toggleSine];
+		elements[\toggle1].value = e[\toggle1];
+		elements[\toggle2].value = e[\toggle2];
+		elements[\toggle3].value = e[\toggle3];
+		elements[\toggle4].value = e[\toggle4];
+		elements[\flip1].value = e[[\flip1]];
+		elements[\flip2].value = e[\flip2];
+		elements[\flip3].value = e[\flip3];
+		elements[\flip4].value = e[\flip4];
 		"GUI updated"; // return message
 	};
 
@@ -336,8 +387,19 @@ e.flip4 = 0;
 		elements[\params].keysValuesDo{|key,item|
 			elements.params[key].doAction;
 		};
-		elements[\samplePicker].doAction;
+		elements[\preset].doAction;
 		elements[\participantID].doAction;
+		elements[\toggleMaster].doAction;
+		elements[\toggleNoise].doAction;
+		elements[\toggleSine].doAction;
+		elements[\toggle1].doAction;
+		elements[\toggle2].doAction;
+		elements[\toggle3].doAction;
+		elements[\toggle4].doAction;
+		elements[\flip1].doAction;
+		elements[\flip2].doAction;
+		elements[\flip3].doAction;
+		elements[\flip4].doAction;
 		"settings sent"; // return message
 	};
 
@@ -358,7 +420,7 @@ e.flip4 = 0;
 
 //=============================================================
 //load big red button config
-(Document.current.dir +/+ "/big-red-button.scd").asString.load;
+(Document.current.dir +/+ "/big-red-button.scd").asString.standardizePath.load;
 //=============================================================
 
 )

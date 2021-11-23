@@ -4,9 +4,11 @@ SuperCollider Patch for Bela
 2021 Jason Svoronos-Kanavas, Marian Weger
 */
 
+/*===================== BELA SETUP =====================*/
 
 s = Server.default;
 
+/*
 // Set up options for the Bela
 s.options.numAnalogInChannels = 4;
 s.options.numAnalogOutChannels = 4;
@@ -15,100 +17,412 @@ s.options.maxLogins = 4;
 s.options.blockSize = 64;
 s.options.numInputBusChannels = 4;
 s.options.numOutputBusChannels = 8;
+*/
 
+/*===================== VARIABLE INITIALIZATIONS =====================*/
+
+x = (); // synth dictionary
+e = (); // parameter dictionary
+
+e[\testTone] = (); // test tone parameters
+e[\sound] = (); // sound parameters
+
+n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr("192.168.0.103", 57120) ]; // set GUI addresses
+
+~tbodTriggered = false; // flag to store if TBOD has triggered
+~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
+~glassflag = true; //glass already broke or cannot break
+~globalvel = 0.0; // init velocity
+~preset = 0; // init preset
+~voices = 5; // init number of voices
+~addsound = false; // secondary sound on/off
+~outcome = false; // breaking sound on/off
+~ampfactor = 0.0; // primary sound level
+~ampfactorcat = inf.neg; // secondary sound level
+~ampfactorGlobal = 0.0; // master volume initial value (can be set from GUI) GLOBAL
+~ampfactorcatGlobal = 0.0; // cat volume initial value (can be set from GUI) GLOBAL
+~onset_sum = 0;
+~debugOnsets = true; // debug printing for onset detection
+~defaultVel = 0.01; // default velocity when new voice is triggered
+~breakingThreshold = 0.1; // threshold for breaking glass
+~velUpdateLag = 0.001;
+~combFiltMinFreq = 20.0;
+~combFiltMaxFreq = 20000.0;
+~combFiltDryWet = 0.0;
+~addCutoff = 500.0;
+~addMinDel = 0.5;
+~addMaxDel = 1.0;
+
+
+/*===================== GUI CONTROLS =====================*/
+
+
+// receive OSC from GUI: define function for Onset Detection
+~oscSetOD = {|addr, printflag=true|
+	OSCFunc({|msg, time|
+		var val = msg[1];
+		if(printflag, {
+			// ("OSC incoming:"+time+key+val).postln;
+			("OSC incoming:"+addr+val).postln;
+		});
+		if(x[\onsetDetection].isPlaying, {
+			x[\onsetDetection].set(addr, val);
+		});
+	}, addr);
+};
+
+// receive OSC from GUI: create receivers
+~oscSetOD.(\tbThreshDB);
+~oscSetOD.(\fbThreshDB);
+~oscSetOD.(\fbRelaxtime);
+~oscSetOD.(\fbFloorDB);
+~oscSetOD.(\fbMingap);
+~oscSetOD.(\fbMedianspan);
+~oscSetOD.(\velDelay);
+~oscSetOD.(\tbRefPeriod);
+~oscSetOD.(\tbLpf1Freq);
+~oscSetOD.(\tbLpf2Freq);
+~oscSetOD.(\tbHpfFreq);
+
+
+// receive OSC from GUI: define function for Test Tone Generator
+~oscSetTT = {|addr, printflag=true|
+	OSCFunc({|msg, time|
+		var val = msg[1];
+		if(printflag, {
+			// ("OSC incoming:"+time+key+val).postln;
+			("OSC incoming:"+addr+val).postln;
+		});
+		e[\testTone][addr] = val;
+		if(x[\testTone].isPlaying, {
+			x[\testTone].set(addr, val.asFloat);
+		});
+	}, addr);
+};
+
+// define OSC receivers for Test Tone Generator
+~oscSetTT.(\testFreq);
+~oscSetTT.(\noiseMasterDB);
+~oscSetTT.(\sineMasterDB);
+~oscSetTT.(\toggleSine);
+~oscSetTT.(\toggleNoise);
+~oscSetTT.(\toggle1);
+~oscSetTT.(\toggle2);
+~oscSetTT.(\toggle3);
+~oscSetTT.(\toggle4);
+~oscSetTT.(\flip1);
+~oscSetTT.(\flip2);
+~oscSetTT.(\flip3);
+~oscSetTT.(\flip4);
+
+
+// receive OSC from GUI: define function
+~oscSetFunc = { |addr, func, printflag=true|
+	OSCFunc({|msg, time|
+		var val = msg[1];
+		if(printflag, {
+			// ("OSC incoming:"+time+key+val).postln;
+			("OSC incoming:"+addr+val).postln;
+		});
+		func.(val);
+	}, addr);
+};
+
+// receive OSC from GUI: create receivers
+~oscSetFunc.(\mainDB, {|val| ~ampfactor=val.dbamp});
+~oscSetFunc.(\catDB, {|val| ~ampfactorcat=val.dbamp});
+~oscSetFunc.(\mainGlobalDB, {|val| ~ampfactorGlobal=val.dbamp});
+~oscSetFunc.(\catGlobalDB, {|val| ~ampfactorcatGlobal=val.dbamp});
+~oscSetFunc.(\playbackRand, {|val| ~playbackRand=val});
+~oscSetFunc.(\defaultVel, {|val| ~defaultVel=val});
+~oscSetFunc.(\velUpdateLag, {|val| ~velUpdateLag=val});
+~oscSetFunc.(\combFiltMinFreq, {|val| ~combFiltMinFreq=val});
+~oscSetFunc.(\combFiltMaxFreq, {|val| ~combFiltMaxFreq=val});
+~oscSetFunc.(\combFiltDryWet, {|val| ~combFiltDryWet=val});
+~oscSetFunc.(\breakingThreshold, {|val| ~breakingThreshold=val});
+~oscSetFunc.(\addMinDel, {|val| ~addMinDel=val});
+~oscSetFunc.(\addMaxDel, {|val| ~addMaxDel=val});
+~oscSetFunc.(\addCutoff, {|val| ~addCutoff=val});
+
+
+
+~oscSetFunc.(\toggleMaster, {|val|
+	if(val==1, {
+		if(x[\testTone].isPlaying.not, {
+			x[\testTone] = Synth.new(\testTone, e.asKeyValuePairs).register;
+		});
+	}, {
+		if(x[\testTone].isPlaying, {
+			x[\testTone].free;
+		});
+	});
+});
+
+
+/*===================== SOUND SELECTION =====================*/
+
+
+OSCdef(\next_sound, { | msg, time |
+	~preset = msg[1].asInteger;
+	("New sound selected:"+~preset).postln;
+
+	// load default settings
+	~addsound = false;
+	~outcome = false;
+	~voices = 5;
+	~ampfactor = 0.0;
+	~ampfactorcat = inf.neg;
+	~glassflag = true; //glass already broke or cannot break
+	~breakingThreshold = 0.1; // threshold for breaking glass
+
+
+	if(~preset==0){
+		"press the button to start".postln;
+		n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB to GUI
+		n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB to GUI
+	};
+
+	// load preset
+	if(~preset > 0){
+		var path = ("./loader/sound"++~preset.asInteger ++"/sound"++~preset.asInteger ++".scd").standardizePath; // path to preset file
+		~sound.do{|item| item.free}; // free buffers of primary sounds
+		~soundcat_sum.do{|item| item.free}; // free buffers of secondary sounds
+		path.load; // load preset file
+	};
+
+	// init primary sound selection
+	~soundSize = ~sound.size; // number of primary sounds in this preset
+	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
+	~lastSoundID = ~soundIndArray.choose; // choose a random start index
+
+	// init secondary sound selection
+	if(~addsound, {
+		~addSoundSize = ~soundcat_sum.size; // number of secondary sounds in this preset
+		~addSoundIndArray = (0..(~addSoundSize-1)); // array of secondary sound indices
+		~lastAddSoundID = ~addSoundIndArray.choose; // choose a random start index
+	});
+
+	//finish
+	if(~preset>=666){s.freeAll};
+
+},'/sound/preset');
+
+
+/*===================== RANDOMIZATION =====================*/
+
+
+~chooseSound = {
+	// set new sample ID (random from array, but not same as previous)
+	~lastSoundID = ~soundIndArray[~soundIndArray.rejectIndices({|i| i==~lastSoundID})].choose;
+};
+
+~chooseAddSound = {
+	// set new sample ID (random from array, but not same as previous)
+	~lastAddSoundID = ~addSoundIndArray[~addSoundIndArray.rejectIndices({|i| i==~lastAddSoundID})].choose;
+};
+
+~randRate = {
+	1.0*bilinrand(~playbackRand); // +-random percent playback rate
+};
+
+~randCombFreq = {
+	rrand(~combFiltMinFreq, ~combFiltMaxFreq);
+};
+
+~randAddDelay = {
+	rrand(~addMinDel, ~addMaxDel);
+};
+
+
+/*===================== NEW VOICE TRIGGER =====================*/
+
+
+~triggerSecondary = {
+	if(x[\addSound].isPlaying.not, {
+		x[\addSound] = Synth.new(\addsound, [\bufnum, ~soundcat_sum[~chooseAddSound.()].bufnum, \amp, ~ampfactorcat*~ampfactorcatGlobal, \rate, ~randRate.()]).register;
+		if(~debugSound, {
+			"Secondary sound started.".postln;
+		});
+		~onset_sum = 0; // reset onset counter
+	});
+};
+
+
+// function to trigger new voice
+~voicetrigger = {
+	var lastvoice; // variable to store voice that is returned by this function
+
+	// Primary sound
+	lastvoice = v.trigger(1, 1, [\amp, ~defaultVel, \gate, 1, \bufnum, ~sound[~chooseSound.()].bufnum, \ampfactor, ~ampfactor*~ampfactorGlobal, \rate, ~randRate.(), \combFiltFreq, ~randCombFreq.(), \combFiltDryWet, ~combFiltDryWet, \velUpdateLag, ~velUpdateLag]);
+
+	// Secondary sound
+	if(x[\addSound].isPlaying.not&&~addsound){
+		~onset_sum = ~onset_sum + 1; // increment onset counter
+
+		// Random decision (tune inMin and inMax to set minimum and maximum number of hits for 0% and 100% chance, respectively)
+		if( ~onset_sum.linlin(inMin: 1, inMax: 7, outMin: 0.0, outMax: 1.0, clip: 'minmax').coin ) {
+			// Trigger new secondary sound
+			x[\addSound] = Synth(\addsound, [\bufnum, ~soundcat_sum[~chooseAddSound.()].bufnum, \amp, ~ampfactorcat*~ampfactorcatGlobal, \rate, ~randRate.(), \deltime, ~randAddDelay.(), \cutoff, ~addCutoff]);
+			if(~debugSound, {
+				"Secondary sound started.".postln;
+			});
+			~onset_sum = 1; // reset onset counter to 1 (so that there is already some small chance to directly trigger secondary sound again next time
+		};
+	};
+
+	// Teturn this when evaluating the function:
+	lastvoice;
+};
+
+
+
+/*===================== TRIGGERING =====================*/
+
+// ONSET DETECTION
+~oscReceiverOD = OSCFunc({ |msg, time|
+	var id = msg[2];
+	var val = msg[3];
+
+	// trigger only if preset other than 0!
+	if(~preset>0, {
+
+		// Triggering, Cancelling, and Velocity update LOGIC
+		switch (id,
+			0, { // False Alarm Cancellation
+				if(~tbodTriggered&&~fbodAgrees.not, {
+					~lastvoice.set([\gate, 0]);
+					if(~debugOnsets, {
+						("No confirmation from FBOD. --> Onset cancelled.").postln;
+					});
+				});
+				~tbodTriggered = false;
+				~fbodAgrees = false;
+			},
+			1, { // TBOD trigger new
+				~lastvoice = ~voicetrigger.();
+				if(~debugOnsets, {
+					("TBOD triggers new onset.").postln;
+				});
+				~tbodTriggered = true;
+				~fbodAgrees = false;
+			},
+			2, { // FBOD trigger
+				if( ~tbodTriggered, { // agree
+					~fbodAgrees = true;
+					if(~debugOnsets, {
+						("FBOD agrees with TBOD.").postln;
+					});
+				}, { // trigger new
+					~lastvoice = ~voicetrigger.();
+					if(~debugOnsets, {
+						("FBOD triggers new onset.").postln;
+					});
+				});
+			},
+			3, { // Velocity update
+				~globalvel = val;
+				~lastvoice.set([\amp, val]);
+				if(~debugOnsets, {
+					("Velocity update:"+val).postln;
+				});
+			};
+		);
+
+		// Break glass
+		if(~outcome&&~glassflag){
+			if(~globalvel>~breakingThreshold){
+				x[\breakingSound] = Synth(\sample_player, [\amp, val, \gate, 1, \bufnum, ~soundcat_sum[~chooseAddSound.()].bufnum, \ampfactor, ~ampfactor*~ampfactorGlobal, \rate, ~randRate.()]);
+				~glassflag = false;
+			};
+		};
+
+	});
+
+},'/tr', s.addr);
+
+
+
+/*===================== WAIT FOR SERVER =====================*/
 
 s.waitForBoot{
 
-	~button = 0;
+	/*===================== SYNTHDEFS =====================*/
 
-	OSCdef(\next_sound, { | msg, time |
-		var num = msg[2];
-
-
-		//direct sample choosing via numberbox
-		if(msg[1] == 'sam_num'){
-			~button = num;
-			("New sound selected:"+num).postln;
-		};
-
-		//button counter
-		if(msg[1] == 1.0){
-			~button = ~button + 1;
-		};
-
-		if(~button == 0){"press the button to start".postln;
-		};
-
-		if(~button > 0){var path = "./loader/sound"++~button.asInt ++"/sound"++~button.asInt ++".scd"; path.load;
-		};
-
-		//finish
-		if(~button == 666){s.freeAll;
-		};
-
-	},'/soundpick/2');
+	// VOICE ALLOCATION
+	v = Voicer.new(~voices, \sample_player);
 
 
-	f = { | in = 0 |
-		var temp, arr, val, suf;
-		arr = in;
-		suf = Pn(Pshuf(in, 1), inf).asStream;
-		temp = suf.next;
-		if(temp == ~last){
-			arr = in;
-			val = arr.remove(temp);
-			// arr.postln;
-			temp = arr.choose;
-			arr = arr.add(val);
-		};
-		~last = temp;
-		temp;
-	};
-
+	// PRIMARY SOUND
 	SynthDef(\sample_player,{
-		| gate = 1, amp = 0.1, bufnum = 0, ampfactor = 1 |
-		var sig, env, out;
-		sig = PlayBuf.ar(numChannels:1, bufnum:bufnum, rate: Rand(0.9, 1.1), trigger: gate);
-		p=1.0.linrand;
-		sig = sig - DelayN.ar(sig, maxdelaytime: 0.01, delaytime: (p*0.01)+(0.5/48000));
-		sig = sig * EnvGen.ar(Env.adsr(0.0, 0.3, 0.666, 0.005), gate: gate, doneAction:2);
-		//amp = Latch.kr(gate, gate) * amp;
-		sig = amp.lag(0.001) * sig * 4 * ampfactor;
-		//sig = sig * EnvGen.ar(Env.adsr(0.0, 0.0, 0.666, 1.0), gate: gate);
-		//no sound must exceed 1.5 sec
-		//sig = sig * amp * Env.perc(attackTime:0.0,releaseTime:1).kr(doneAction:2);
+
+		arg
+		gate = 1.0,
+		amp = 0.1,
+		bufnum = 0,
+		ampfactor = 1.0 ,
+		rate = 1.0,
+		combFiltDryWet = -1.0,
+		combFiltFreq = 1000.0,
+		velUpdateLag = 0.001;
+
+		var sig, comb;
+
+		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate, trigger: gate, doneAction: 2); // play sample
+		comb = sig - DelayN.ar(sig, maxdelaytime: 0.1, delaytime: combFiltFreq.reciprocal); // comb filter
+		sig = XFade2.ar(sig, comb, combFiltDryWet); // crossfade between dry and comb-filtered
+		sig = sig * EnvGen.ar(Env.asr(0.0, 1.0, 0.005), gate: gate, doneAction:2); // apply release envelope
+		sig = amp.lag(velUpdateLag) * sig * ampfactor; // apply velocity and master level
 		sig = LPF.ar(HPF.ar(sig, 80.0), 20000.0).tanh; // output filtering and protection
-		Out.ar(0, [sig, sig]);
-		Out.ar(2, [sig, sig]);
-		Out.ar(4, [sig, sig]);
-		Out.ar(6, [sig, sig]);
+		Out.ar(0, sig!8); // play same signal to all outputs
+
 	}).add;
 
+
+	// SECONDARY SOUND
 	SynthDef(\addsound, {
-		| out = 0, bufnum, amp = 0.5, minwaittime = 0.5, maxwaittime = 1.5, cutoff = 500 |
-		var sig, deltime;
-		deltime = Rand(minwaittime, maxwaittime);
-		sig = DelayN.ar(PlayBuf.ar(1, bufnum, doneAction:0)!2, deltime, deltime);
-		sig = LPF.ar(sig, cutoff);
-		sig = sig * Env.perc(deltime + 0.25, curve:8).kr(doneAction:2);
-		sig = sig * amp;
+
+		arg
+		bufnum = 0,
+		amp = 0.5,
+		deltime = 0.5,
+		rate = 1.0,
+		cutoff = 500;
+
+		var sig, trigger;
+
+		trigger = DelayN.ar(Trig.ar(1.0), deltime, deltime); // trigger after specified time
+		sig = PlayBuf.ar(1, bufnum, rate, trigger, doneAction: 2); // play sample
+		sig = LPF.ar(sig, cutoff); // low-pass filter to simulate damping through box
+		sig = sig * amp; // apply amplitude
 		sig = LPF.ar(HPF.ar(sig, 80.0), 20000.0).tanh; // output filtering and protection
-		Out.ar(out, sig);
+		Out.ar(0, sig!8);
+
 	}).add;
 
-	~voices = 5;
-	v = Voicer.new(~voices, "sample_player");
 
+	// ONSET DETECTION
 	SynthDef(\onsetDetection, {
-		|tbThreshDB=0.0, fbThreshDB=0.0,  relaxtime=1.0, floorDB=(20.0.neg), mingap=22, medianspan=22, velDelay=0.006, tbRefPeriod=0.03, lpf1Freq=25.0, lpf2Freq=25.0, hpfFreq=4000.0, cancelDel=1.0|
+		arg
+		tbThreshDB = 0.0,
+		fbThreshDB = 0.0,
+		fbRelaxtime = 1.0,
+		fbFloorDB = -20.0,
+		fbMingap = 22,
+		fbMedianspan = 22,
+		velDelay = 0.006,
+		tbRefPeriod = 0.03,
+		tbLpf1Freq = 25.0,
+		tbLpf2Freq = 25.0,
+		tbHpfFreq = 4000.0,
+		cancelDel = 1.0;
 
 		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, vel;
 		var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
 		var nfft = 256; // FFT size in samples
 		var frameDur = (nfft/SampleRate.ir)*1.1; // duration of one fft frame in seconds, plus safety of 10 percent. 5.4ms at 48kHz and 256samp fft size.
 		var minusTwoPiT = 2.0.neg*pi/SampleRate.ir; // pre-computation
-		var lpf1CoeffA = exp(lpf1Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf1)
-		var lpf2CoeffA = exp(lpf2Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf2)
+		var lpf1CoeffA = exp(tbLpf1Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf1)
+		var lpf2CoeffA = exp(tbLpf2Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf2)
 		var lpf1CoeffAm = 1.0-lpf1CoeffA; // pre-computation
 		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
 
@@ -116,7 +430,7 @@ s.waitForBoot{
 		sig = sigRaw.sum; // downmix to mono
 
 		//=== TBOD ===
-		sighpf = HPF.ar(LPF.ar(sig, 16000.0), hpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
+		sighpf = HPF.ar(LPF.ar(sig, 16000.0), tbHpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
 		sigsquared = sighpf.squared; // Squaring (get signal energy)
 		lpf1 = Integrator.ar(lpf1CoeffAm*sigsquared, lpf1CoeffA); // Smoothing 1. Turchet2018: 25
 		derivative = Slope.ar(lpf1); // 1st derivative = slope
@@ -129,7 +443,7 @@ s.waitForBoot{
 
 		//=== FBOD ===
 		chain = FFT(LocalBuf(nfft), sig, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64. Wintype 1 is Hann window.
-		fbTrigKR = Onsets.kr(chain, fbThreshDB.dbamp, \rcomplex, relaxtime: relaxtime, floor: floorDB.dbamp, mingap: mingap, medianspan: medianspan); // rcomplex is best. if it takes up too much cpu, then use power.
+		fbTrigKR = Onsets.kr(chain, fbThreshDB.dbamp, \rcomplex, relaxtime: fbRelaxtime, floor: fbFloorDB.dbamp, mingap: fbMingap, medianspan: fbMedianspan); // rcomplex is best. if it takes up too much cpu, then use power.
 		fbTrigAR = T2A.ar(fbTrigKR, offset: 0);
 		SendTrig.ar(fbTrigAR, 2); // send FBOD trigger to language. ID 2 means FBOD.
 
@@ -143,255 +457,48 @@ s.waitForBoot{
 	}).add;
 
 
-
+	// TEST TONE GENERATOR
 	SynthDef(\testTone, {
-		| noiseMasterDB=(80.0.neg), sineMasterDB=(80.0.neg), testFreq=400.0, toggleSine=0.0, toggleNoise=0.0, toggleMaster=1.0, toggle1=0.0, toggle2=0.0, toggle3=0.0, toggle4=0.0, flip1=0.0, flip2=0.0, flip3=0.0, flip4=0.0 |
-		var noise = WhiteNoise.ar(noiseMasterDB.dbamp*toggleNoise);
-		var sine = SinOsc.ar(testFreq, mul: sineMasterDB.dbamp*toggleSine);
-		var sig = (sine + noise) * toggleMaster;
-		var sigArray = [sig*toggle1*flip1.madd(2.0.neg,1.0), sig*toggle2*flip2.madd(2.0.neg,1.0), sig*toggle3*flip3.madd(2.0.neg,1.0), sig*toggle4*flip4.madd(2.0.neg,1.0)];
-		Out.ar(0, (sigArray!2).flat);
-		//Out.ar(0, (SinOsc.ar(400.0)*0.001)!8);
+		arg
+		noiseMasterDB = -80.0,
+		sineMasterDB = -80.0,
+		testFreq = 400.0,
+		toggleSine = 0.0,
+		toggleNoise = 0.0,
+		toggleMaster = 1.0,
+		toggle1 = 0.0,
+		toggle2 = 0.0,
+		toggle3 = 0.0,
+		toggle4 = 0.0,
+		flip1 = 0.0,
+		flip2 = 0.0,
+		flip3 = 0.0,
+		flip4 = 0.0;
+
+		var noise = WhiteNoise.ar(noiseMasterDB.dbamp*toggleNoise); // white noise generator
+		var sine = SinOsc.ar(testFreq, mul: sineMasterDB.dbamp*toggleSine); // sine tone generator
+		var sig = (sine + noise) * toggleMaster; // monophonic test signal
+		var flipToggles = [flip1, flip2, flip3, flip4].madd(2.0.neg,1.0); // flip phase switches
+		var toggles = [toggle1, toggle2, toggle3, toggle4]; // channel state switches
+		var sigArray = toggles*flipToggles*sig; // 4ch test signal
+		Out.ar(0, (sigArray!2).flat); // play same signal to 1-4 and 5-8
 	}).add;
 
 
 
-	//init
-	//~trigflag = false;
-	~ampfactor = 60.0.neg.dbamp; // master volume initial value (can be set from GUI)
-	~ampfactorcat = 60.0.neg.dbamp; // cat volume initial value (can be set from GUI)
-	~onset_sum = 0;
-	~globalvel = 0.0;
+	/*===================== MAIN =====================*/
 
 
-	// function to trigger voice
-	~voicetrigger = { |amp=0.01|
-		var lastvoice; // variable to store voice that is returned by this function
-
-
-		//break glass
-		if(~outcome == true&&~glassflag == false){
-			if(~globalvel > 0.1){
-				~sound = ~soundcat_sum;
-				v.trigger(1, 1, [\amp, ~globalvel, \gate, 1, \bufnum, f.value(~soundcat_sum), \ampfactor, ~ampfactor]);
-			};
-		};
-
-
-
-
-		// trigger new voice
-		lastvoice = v.trigger(1, 1, [\amp, amp, \gate, 1, \bufnum, f.value(~sound), \ampfactor, ~ampfactor]);
-
-		//~lastvoice =
-		// v.trigger(1, 1, [\amp, amp, \ampfactor, ~ampfactor, \gate, 1, \bufnum, f.value(~sound)]);
-		//~trigflag = true;
-
-		//cat sounds
-		if(~addsound == true){
-			"cat".postln;
-			~onset_sum = ~onset_sum + 1;
-
-			//conitinuous impacts
-			fork{
-				5.wait;
-				~onset_sum = 0;
-			};
-
-			if((~soundstopped == 0) && (~onset_sum < 5)){
-				~soundstopped = 1;
-				if(x.isPlaying == false){
-					fork{
-						if(0.5.coin == true){
-							x = Synth(\addsound, [\bufnum, f.value(~soundcat_sum), \amp, ~ampfactorcat]);
-						};
-						rrand(5,8).wait;
-						~soundstopped = 0;
-					}
-				};
-			};
-		};
-
-
-		//multiple impacts
-		if((~addsound == true) && (~onset_sum > 5)){
-			if(x.isPlaying == false){
-				10.do{~onset_sum.postln};
-				~onset_sum = 0;
-				x = Synth(\addsound, [\bufnum, f.value(~soundcat_sum), \amp, ~ampfactorcat]);
-				~onset_sum = 0;
-			}
-		};
-
-		// return this when evaluating the function:
-		lastvoice;
-
-	};
-
-
-	// Variables for sound triggering logic
-	// ~timeStampOld = 0.0;
-	~tbodTriggered = false;
-	~fbodAgrees = false;
-	~glassflag = true; //glass broke
-
-
-	// Receive OSC from synth
-	a = OSCFunc({ |msg, time|
-		var id = msg[2];
-		var val = msg[3];
-		var timeStampNew = time;
-		// var timeMsg = ( 1000.0 * (timeStampNew-~timeStampOld) ).round(0.1).asString;
-		// ~timeStampOld = timeStampNew;
-
-		~globalvel = val;
-
-		//sound triggering logic
-		switch (id,
-			0, { // False Alarm Cancellation
-				if(~tbodTriggered&&~fbodAgrees.not, {
-					~lastvoice.set([\gate, 0]);
-					("No confirmation from FBOD. --> Onset cancelled.").postln;
-				});
-				~tbodTriggered = false;
-				~fbodAgrees = false;
-			},
-			1, { // TBOD trigger new
-				~lastvoice = ~voicetrigger.();
-				("TBOD triggers new onset.").postln;
-				~tbodTriggered = true;
-				~fbodAgrees = false;
-			},
-			2, { // FBOD trigger
-				if( ~tbodTriggered, { // agree
-					~fbodAgrees = true;
-					("FBOD agrees with TBOD.").postln;
-				}, { // trigger new
-					~lastvoice = ~voicetrigger.();
-					("FBOD triggers new onset.").postln;
-				});
-			},
-			3, { // Velocity update
-				~lastvoice.set([\amp, val]);
-				("Velocity update:"+val).postln;
-			};
-		);
-
-		//break glass
-		~globalvel = val;
-		if(~outcome == true&&~glassflag == true){
-			if(~globalvel > 0.1){
-				~sound = ~soundcat_sum;
-				v.trigger(1, 1, [\amp, val, \gate, 1, \bufnum, f.value(~soundcat_sum), \ampfactor, ~ampfactor]);
-				~glassflag = false;
-			};
-		};
-
-
-	},'/tr', s.addr);
-
-
-	// receive OSC from GUI: define function
-	~oscSet = {|x, key, addr, printflag=true|
-		OSCFunc({|msg, time|
-			var val = msg[1];
-			if(printflag, {
-				// ("OSC incoming:"+time+key+val).postln;
-				("OSC incoming:"+key+val).postln;
-			});
-			x.set(key, val);
-		},addr);
-	};
-
-	// receive OSC from GUI: define function
-	~oscSet2 = {|x, key, addr, printflag=true|
-		OSCFunc({|msg, time|
-			var val = msg[1];
-			if(printflag, {
-				// ("OSC incoming:"+time+key+val).postln;
-				("OSC incoming:"+key+val).postln;
-			});
-			e[key] = val;
-			~testSynth.set(key, val);
-		},addr);
-	};
-
-	// receive OSC from GUI: create receivers
-	~oscSet.(x, \tbThreshDB, '/tbod/threshDB');
-	~oscSet.(x, \fbThreshDB, '/fbod/threshDB');
-	~oscSet.(x, \relaxtime, '/fbod/relaxtime');
-	~oscSet.(x, \floorDB, '/fbod/floorDB');
-	~oscSet.(x, \mingap, '/fbod/mingap');
-	~oscSet.(x, \medianspan, '/fbod/medianspan');
-	~oscSet.(x, \velDelay, '/vel/delay');
-	~oscSet.(x, \tbRefPeriod, '/tbod/refPeriod');
-	~oscSet.(x, \lpf1Freq, '/tbod/lpf1Freq');
-	~oscSet.(x, \lpf2Freq, '/tbod/lpf2Freq');
-	~oscSet.(x, \hpfFreq, '/tbod/hpfFreq');
-	~oscSet2.(~testSynth, \testFreq, '/test/freq');
-	~oscSet2.(~testSynth, \noiseMasterDB, '/test/noiseMasterDB');
-	~oscSet2.(~testSynth, \sineMasterDB, '/test/sineMasterDB');
-	~oscSet2.(~testSynth, \toggleSine, '/test/toggleSine');
-	~oscSet2.(~testSynth, \toggleNoise, '/test/toggleNoise');
-	~oscSet2.(~testSynth, \toggle1, '/test/toggle1');
-	~oscSet2.(~testSynth, \toggle2, '/test/toggle2');
-	~oscSet2.(~testSynth, \toggle3, '/test/toggle3');
-	~oscSet2.(~testSynth, \toggle4, '/test/toggle4');
-	~oscSet2.(~testSynth, \flip1, '/test/flip1');
-	~oscSet2.(~testSynth, \flip2, '/test/flip2');
-	~oscSet2.(~testSynth, \flip3, '/test/flip3');
-	~oscSet2.(~testSynth, \flip4, '/test/flip4');
-
-	// put other parameters of gui here...
-
-
-	// receive OSC from GUI: define function
-	~oscSetVar = { |key, addr, func, printflag=true|
-		OSCFunc({|msg, time|
-			var val = msg[1];
-			if(printflag, {
-				// ("OSC incoming:"+time+key+val).postln;
-				("OSC incoming:"+key+val).postln;
-			});
-			func.(val);
-		},addr);
-	};
-
-	// receive OSC from GUI: create receivers
-	~oscSetVar.(\master, '/master/main', {|val| ~ampfactor=val.dbamp});
-	~oscSetVar.(\cat, '/master/cat', {|val| ~ampfactorcat=val.dbamp});
-
-
-	~oscSetVar.(\toggleMaster, '/test/toggleMaster', {|val|
-		if(val==1, {
-			if(~testSynth.isPlaying.not, {
-				~testSynth = Synth.new(\testTone, e.asKeyValuePairs).register;
-			});
-		}, {
-			if(~testSynth.isPlaying, {
-				~testSynth.free;
-			});
-		});
-	});
-
-
-
-	1.wait;
-
-	x = Synth(\onsetDetection);
-
-	//~testSynth = Synth(\testTone);
-
-	//0.5.wait;
-
+	1.wait; // wait a second
+	x[\onsetDetection] = Synth.new(\onsetDetection).register; // start onset detection synth
 
 	// request parameters from GUI
-	n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120) ]; // set GUI addresses
 	n.do{|item| item.sendMsg(\bela, \booted) }; // send request via OSC to all addresses
-
-
 
 };
 
+
+
+/*===================== QUIT =====================*/
 
 ServerQuit.add({ 0.exit }); // quit if the button is pressed
