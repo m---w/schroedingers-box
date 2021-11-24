@@ -9,8 +9,8 @@ SuperCollider Patch for Bela
 s = Server.default;
 ~hostname = "hostname".unixCmdGetStdOut.replace("\n","").asSymbol; // get system hostname
 
-// Set up options for the Bela
-if(~hostname==\bela, {
+// Set up options
+if(~hostname==\bela, { // If running on Bela
 	s.options.numAnalogInChannels = 4;
 	s.options.numAnalogOutChannels = 4;
 	s.options.numDigitalChannels = 0;
@@ -18,18 +18,22 @@ if(~hostname==\bela, {
 	s.options.blockSize = 64;
 	s.options.numInputBusChannels = 4;
 	s.options.numOutputBusChannels = 8;
+	n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr("192.168.0.103", 57120) ]; // set GUI addresses
+}, { // If running elsewhere (debug)
+	n = [ NetAddr("localhost", 57120) ];
 });
 
 
 /*===================== VARIABLE INITIALIZATIONS =====================*/
 
 x = (); // synth dictionary
-e = (); // parameter dictionary
+p = (); // parameter dictionary
+p[\testTone] = (); // test tone parameters
+p[\sound] = (); // sound parameters
+p[\onsetDetection] = (); // onset detection parameters
 
-e[\testTone] = (); // test tone parameters
-e[\sound] = (); // sound parameters
 
-n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr("192.168.0.103", 57120) ]; // set GUI addresses
+
 
 ~tbodTriggered = false; // flag to store if TBOD has triggered
 ~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
@@ -67,6 +71,7 @@ n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr(
 			// ("OSC incoming:"+time+key+val).postln;
 			("OSC incoming:"+addr+val).postln;
 		});
+		p[\onsetDetection][addr] = val;
 		if(x[\onsetDetection].isPlaying, {
 			x[\onsetDetection].set(addr, val);
 		});
@@ -85,6 +90,7 @@ n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr(
 ~oscSetOD.(\tbLpf1Freq);
 ~oscSetOD.(\tbLpf2Freq);
 ~oscSetOD.(\tbHpfFreq);
+~oscSetOD.(\cancelDel);
 
 
 // receive OSC from GUI: define function for Test Tone Generator
@@ -95,7 +101,7 @@ n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr(
 			// ("OSC incoming:"+time+key+val).postln;
 			("OSC incoming:"+addr+val).postln;
 		});
-		e[\testTone][addr] = val;
+		p[\testTone][addr] = val;
 		if(x[\testTone].isPlaying, {
 			x[\testTone].set(addr, val.asFloat);
 		});
@@ -119,39 +125,40 @@ n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr(
 
 
 // receive OSC from GUI: define function
-~oscSetFunc = { |addr, func, printflag=true|
+~oscSetFunc = { |dict, addr, func, printflag=true|
 	OSCFunc({|msg, time|
 		var val = msg[1];
 		if(printflag, {
 			// ("OSC incoming:"+time+key+val).postln;
 			("OSC incoming:"+addr+val).postln;
 		});
+		p[dict][addr] = val;
 		func.(val);
 	}, addr);
 };
 
 // receive OSC from GUI: create receivers
-~oscSetFunc.(\mainDB, {|val| ~ampfactor=val.dbamp});
-~oscSetFunc.(\catDB, {|val| ~ampfactorcat=val.dbamp});
-~oscSetFunc.(\mainGlobalDB, {|val| ~ampfactorGlobal=val.dbamp});
-~oscSetFunc.(\catGlobalDB, {|val| ~ampfactorcatGlobal=val.dbamp});
-~oscSetFunc.(\playbackRand, {|val| ~playbackRand=val});
-~oscSetFunc.(\defaultVel, {|val| ~defaultVel=val});
-~oscSetFunc.(\velUpdateLag, {|val| ~velUpdateLag=val});
-~oscSetFunc.(\combFiltMinFreq, {|val| ~combFiltMinFreq=val});
-~oscSetFunc.(\combFiltMaxFreq, {|val| ~combFiltMaxFreq=val});
-~oscSetFunc.(\combFiltDryWet, {|val| ~combFiltDryWet=val});
-~oscSetFunc.(\breakingThreshold, {|val| ~breakingThreshold=val});
-~oscSetFunc.(\addMinDel, {|val| ~addMinDel=val});
-~oscSetFunc.(\addMaxDel, {|val| ~addMaxDel=val});
-~oscSetFunc.(\addCutoff, {|val| ~addCutoff=val});
+~oscSetFunc.(\sound, \mainDB, {|val| ~ampfactor=val.dbamp});
+~oscSetFunc.(\sound, \catDB, {|val| ~ampfactorcat=val.dbamp});
+~oscSetFunc.(\sound, \mainGlobalDB, {|val| ~ampfactorGlobal=val.dbamp});
+~oscSetFunc.(\sound, \catGlobalDB, {|val| ~ampfactorcatGlobal=val.dbamp});
+~oscSetFunc.(\sound, \playbackRand, {|val| ~playbackRand=val});
+~oscSetFunc.(\sound, \defaultVel, {|val| ~defaultVel=val});
+~oscSetFunc.(\sound, \velUpdateLag, {|val| ~velUpdateLag=val});
+~oscSetFunc.(\sound, \combFiltMinFreq, {|val| ~combFiltMinFreq=val});
+~oscSetFunc.(\sound, \combFiltMaxFreq, {|val| ~combFiltMaxFreq=val});
+~oscSetFunc.(\sound, \combFiltDryWet, {|val| ~combFiltDryWet=val});
+~oscSetFunc.(\sound, \breakingThreshold, {|val| ~breakingThreshold=val});
+~oscSetFunc.(\sound, \addMinDel, {|val| ~addMinDel=val});
+~oscSetFunc.(\sound, \addMaxDel, {|val| ~addMaxDel=val});
+~oscSetFunc.(\sound, \addCutoff, {|val| ~addCutoff=val});
 
 
 
-~oscSetFunc.(\toggleMaster, {|val|
+~oscSetFunc.(\testTone, \toggleMaster, {|val|
 	if(val==1, {
 		if(x[\testTone].isPlaying.not, {
-			x[\testTone] = Synth.new(\testTone, e.asKeyValuePairs).register;
+			x[\testTone] = Synth.new(\testTone, p[\testTone].asKeyValuePairs).register;
 		});
 	}, {
 		if(x[\testTone].isPlaying, {
@@ -503,4 +510,6 @@ s.waitForBoot{
 
 /*===================== QUIT =====================*/
 
-ServerQuit.add({ 0.exit }); // quit if the button is pressed
+if(~hostname==\bela, { // If running on Bela
+	ServerQuit.add({ 0.exit }); // quit if the button is pressed
+});

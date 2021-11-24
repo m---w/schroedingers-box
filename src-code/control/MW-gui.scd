@@ -6,10 +6,15 @@ SuperCollider Control Patch for Bela
 //Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
 (
-Window.closeAll;
+~localMode = true; // SET CORRECT MODE HERE! (false=Bela, true=local)
 
-n = NetAddr("192.168.185.50", 57120);
-//n = NetAddr("bela.local", 57120); // set bela remote address
+if(~localMode, {
+	o = NetAddr("localhost", 57120); // set local address
+}, {
+	o = NetAddr("bela.local", 57120); // set bela remote address
+});
+
+Window.closeAll;
 
 
 // OSC receiver to get messages from Bela
@@ -114,7 +119,7 @@ e.addCutoff = 1000.0;
 		// FBOD
 		[-40, 40.0, \lin, 1.0, "dB", "FBOD threshold", 1.0, \fbThreshDB],
 		[0.1, 10.0, \exp, 0.1, "s", "Relax Time", 1.0, \fbRelaxtime],
-		[140.0.neg, 0.0, \exp, 1.0, "dB", "Floor", 1.0, \fbFloorDB],
+		[140.0.neg, 0.0, \lin, 1.0, "dB", "Floor", 1.0, \fbFloorDB],
 		[0.0, 100.0, \lin, 1.0, "FFT frames", "MinGap", 1.0, \fbMingap],
 		[0.0, 30.0, \lin, 1.0, "FFT frames", "MedianSpan", 1.0, \fbMedianspan],
 
@@ -140,10 +145,10 @@ e.addCutoff = 1000.0;
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Min Frequency", 1.0, \combFiltMinFreq],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Max Frequency", 1.0, \combFiltMaxFreq],
 		[-1.0, 1.0, \lin, 0.0, "", "Comb Filter Dry/Wet", 1.0, \combFiltDryWet],
-		[0.0, 10.0, \lin, 0.1, "%", "Playback Rate Randomization", 1.0e-3, \playbackRand],
+		[0.0, 10.0, \lin, 0.1, "%", "Playback Rate Randomization", 1.0e-2, \playbackRand],
 		[0.001, 1.0, \exp, 0.0, "", "Breaking Threshold", 1.0, \breakingThreshold],
-		[0.0, 5.0, \exp, 0.1, "s", "Min Delay for Secondary Sound", 1.0, \addMinDel],
-		[0.0, 5.0, \exp, 0.1, "s", "Max Delay for Secondary Sound", 1.0, \addMaxDel],
+		[0.0, 5.0, \lin, 0.1, "s", "Min Delay for Secondary Sound", 1.0, \addMinDel],
+		[0.0, 5.0, \lin, 0.1, "s", "Max Delay for Secondary Sound", 1.0, \addMaxDel],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Secondary Sound Upper Cutoff", 1.0, \addCutoff],
 
 
@@ -154,14 +159,14 @@ e.addCutoff = 1000.0;
 
 	// slider creation function
 	var makeSlider = { |item|
-		EZSlider(elements[\w].view, 900@20, "  "++item[5]++"  ",
+		EZSlider(elements[\w].view, 900@18, "  "++item[5]++"  ",
 			ControlSpec(minval: item[0], maxval: item[1], warp: item[2], step: item[3], default: e[item[7]]/item[6], units: item[4]),
 			labelWidth: 280, unitWidth: 100, initVal: e[item[7]]/item[6], numberWidth: 60, layout: \horz, initAction: true)
 		.setColors(Color.grey, Color.white)
 		.font_(Font("Helvetica", 12))
 		.action_({ |ez|
 			e[item[7]] = ez.value*item[6]; // update value in settings dictionary
-			n.sendMsg('/'++item[7], e[item[7]]); // send updated value via OSC
+			o.sendMsg('/'++item[7], e[item[7]]); // send updated value via OSC
 			(item[7]++":"+e[item[7]]).postln; // print message
 		});
 	};
@@ -177,7 +182,7 @@ e.addCutoff = 1000.0;
 	var heading = { |text|
 		StaticText(elements[\w].view, 900@24)
 		.string_(text++":")
-		.font_(Font("Helvetica", 18))
+		.font_(Font("Helvetica", 14))
 		.stringColor_(Color.white)
 		;
 	};
@@ -192,7 +197,7 @@ e.addCutoff = 1000.0;
 	elements[\params] = ();
 
 	// Window
-	elements[\w] = Window("Schroedinger's GUI", Rect(400,400,910,700))
+	elements[\w] = Window("Schroedinger's GUI", Rect(400,400,910,900))
 	.alwaysOnTop_(true)
 	.visible_(true)
 	.front;
@@ -241,121 +246,119 @@ e.addCutoff = 1000.0;
 	makeSliders.(elements[\params], sliderDict, [\noiseMasterDB, \sineMasterDB, \testFreq]);
 	newline.();¸
 
-	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["TestTone", Color.white, Color.gray], ["TestTone", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggleMaster] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/toggleMaster', e[\toggleMaster].asFloat); // send updated value via OSC
+		o.sendMsg('/toggleMaster', e[\toggleMaster].asFloat); // send updated value via OSC
 		("Test Tone State:"+e[\toggleMaster]).postln; // print message
 	});
-	elements[\toggleSine] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\toggleSine] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Sine", Color.white, Color.gray], ["Sine", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggleSine] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/toggleSine', e[\toggleSine].asFloat); // send updated value via OSC
+		o.sendMsg('/toggleSine', e[\toggleSine].asFloat); // send updated value via OSC
 		("Sine State:"+e[\toggleSine]).postln; // print message
 	});
-	elements[\toggleNoise] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\toggleNoise] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Noise", Color.white, Color.gray], ["Noise", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggleNoise] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/toggleNoise', e[\toggleNoise].asFloat); // send updated value via OSC
+		o.sendMsg('/toggleNoise', e[\toggleNoise].asFloat); // send updated value via OSC
 		("Noise State:"+e[\toggleNoise]).postln; // print message
 	});
-	newline.();
-	elements[\toggle1] = Button(elements[\w], Rect(0,0,120,30))
+
+	elements[\toggle1] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Ch.1", Color.white, Color.gray], ["Ch.1", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggle1] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/toggle1', e[\toggle1].asFloat); // send updated value via OSC
+		o.sendMsg('/toggle1', e[\toggle1].asFloat); // send updated value via OSC
 		("Test Tone State Ch.1:"+e[\toggle1]).postln; // print message
 	});
-	elements[\toggle2] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\toggle2] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Ch.2", Color.white, Color.gray], ["Ch.2", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggle2] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/toggle2', e[\toggle2].asFloat); // send updated value via OSC
+		o.sendMsg('/toggle2', e[\toggle2].asFloat); // send updated value via OSC
 		("Test Tone State Ch.2:"+e[\toggle2]).postln; // print message
 	});
-	elements[\toggle3] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\toggle3] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Ch.3", Color.white, Color.gray], ["Ch.3", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggle3] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/toggle3', e[\toggle3].asFloat); // send updated value via OSC
+		o.sendMsg('/toggle3', e[\toggle3].asFloat); // send updated value via OSC
 		("Test Tone State Ch.3:"+e[\toggle3]).postln; // print message
 	});
-	elements[\toggle4] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\toggle4] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Ch.4", Color.white, Color.gray], ["Ch.4", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggle4] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/toggle4', e[\toggle4].asFloat); // send updated value via OSC
+		o.sendMsg('/toggle4', e[\toggle4].asFloat); // send updated value via OSC
 		("Test Tone State Ch.4:"+e[\toggle4]).postln; // print message
 	});
-	newline.();
-	elements[\flip1] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\flip1] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Flip Ch.1", Color.white, Color.gray], ["Flip Ch.1", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\flip1] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/flip1', e[\flip1].asFloat); // send updated value via OSC
+		o.sendMsg('/flip1', e[\flip1].asFloat); // send updated value via OSC
 		("Flip Ch.1:"+e[\flip1]).postln; // print message
 	});
-	elements[\flip2] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\flip2] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Flip Ch.2", Color.white, Color.gray], ["Flip Ch.2", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\flip2] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/flip2', e[\flip2].asFloat); // send updated value via OSC
+		o.sendMsg('/flip2', e[\flip2].asFloat); // send updated value via OSC
 		("Flip Ch.2:"+e[\flip2]).postln; // print message
 	});
-	elements[\flip3] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\flip3] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Flip Ch.3", Color.white, Color.gray], ["Flip Ch.3", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\flip3] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/flip3', e[\flip3].asFloat); // send updated value via OSC
+		o.sendMsg('/flip3', e[\flip3].asFloat); // send updated value via OSC
 		("Flip Ch.3:"+e[\flip3]).postln; // print message
 	});
-	elements[\flip4] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\flip4] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["Flip Ch.4", Color.white, Color.gray], ["Flip Ch.4", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
 		e[\flip4] = val.asInteger; // update value in settings dictionary
-		n.sendMsg('/flip4', e[\flip4].asFloat); // send updated value via OSC
+		o.sendMsg('/flip4', e[\flip4].asFloat); // send updated value via OSC
 		("Flip Ch.4:"+e[\flip4]).postln; // print message
 	});
 	newline.();
 
-	heading.("Sound Selection");
+	heading.("Participant and Sound Selection");
 	newline.();
-	elements[\preset] = EZNumber(elements[\w].view, 900@25, "  Preset  ",
+	elements[\preset] = EZNumber(elements[\w].view, 900@18, "  Preset  ",
 		ControlSpec(minval: -1, maxval: 99, step: 1, default: e[\preset]),
 		labelWidth: 280, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
-	.font_(Font("Helvetica", 14))
+	.font_(Font("Helvetica", 12))
 	.action_({ |ez|
 		e[\preset] = ez.value.asInteger; // update value in settings dictionary
-		n.sendMsg('/preset', e[\preset]); // send updated value via OSC
+		o.sendMsg('/preset', e[\preset]); // send updated value via OSC
 		("Preset:"+e[\preset]).postln; // print message
 	});
 
-	heading.("Experiment");
 	newline.();
-	elements[\participantID] = EZNumber(elements[\w].view, 900@25, "  Participant ID  ",
+	elements[\participantID] = EZNumber(elements[\w].view, 900@18, "  Participant ID  ",
 		ControlSpec(minval: 0, maxval: 99, step: 1, default: e[\participantID]),
 		labelWidth: 280, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
-	.font_(Font("Helvetica", 14))
+	.font_(Font("Helvetica", 12))
 	.action_({ |ez|
 		e[\participantID] = ez.value.asInteger; // update value in settings dictionary
-		n.sendMsg('/participantID', e[\participantID]); // send updated value via OSC
+		o.sendMsg('/participantID', e[\participantID]); // send updated value via OSC
 		~sample = -1; // init sample number
 		elements[\preset].valueAction_(~sample);
 		("Participant ID:"+e[\participantID]).postln; // print message
