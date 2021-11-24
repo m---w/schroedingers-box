@@ -7,17 +7,19 @@ SuperCollider Patch for Bela
 /*===================== BELA SETUP =====================*/
 
 s = Server.default;
+~hostname = "hostname".unixCmdGetStdOut.replace("\n","").asSymbol; // get system hostname
 
-/*
 // Set up options for the Bela
-s.options.numAnalogInChannels = 4;
-s.options.numAnalogOutChannels = 4;
-s.options.numDigitalChannels = 0;
-s.options.maxLogins = 4;
-s.options.blockSize = 64;
-s.options.numInputBusChannels = 4;
-s.options.numOutputBusChannels = 8;
-*/
+if(~hostname==\bela, {
+	s.options.numAnalogInChannels = 4;
+	s.options.numAnalogOutChannels = 4;
+	s.options.numDigitalChannels = 0;
+	s.options.maxLogins = 4;
+	s.options.blockSize = 64;
+	s.options.numInputBusChannels = 4;
+	s.options.numOutputBusChannels = 8;
+});
+
 
 /*===================== VARIABLE INITIALIZATIONS =====================*/
 
