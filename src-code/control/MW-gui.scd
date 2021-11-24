@@ -159,7 +159,7 @@ e.addCutoff = 1000.0;
 
 	// slider creation function
 	var makeSlider = { |item|
-		EZSlider(elements[\w].view, 900@18, "  "++item[5]++"  ",
+		EZSlider(elements[\w].view, 900@20, "  "++item[5]++"  ",
 			ControlSpec(minval: item[0], maxval: item[1], warp: item[2], step: item[3], default: e[item[7]]/item[6], units: item[4]),
 			labelWidth: 280, unitWidth: 100, initVal: e[item[7]]/item[6], numberWidth: 60, layout: \horz, initAction: true)
 		.setColors(Color.grey, Color.white)
@@ -182,7 +182,7 @@ e.addCutoff = 1000.0;
 	var heading = { |text|
 		StaticText(elements[\w].view, 900@24)
 		.string_(text++":")
-		.font_(Font("Helvetica", 14))
+		.font_(Font("Helvetica", 18))
 		.stringColor_(Color.white)
 		;
 	};
@@ -197,7 +197,7 @@ e.addCutoff = 1000.0;
 	elements[\params] = ();
 
 	// Window
-	elements[\w] = Window("Schroedinger's GUI", Rect(400,400,910,900))
+	elements[\w] = Window("Schroedinger's GUI", Rect(400,400,910,900), scroll: true)
 	.alwaysOnTop_(true)
 	.visible_(true)
 	.front;
@@ -246,7 +246,7 @@ e.addCutoff = 1000.0;
 	makeSliders.(elements[\params], sliderDict, [\noiseMasterDB, \sineMasterDB, \testFreq]);
 	newline.();¸
 
-	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["TestTone", Color.white, Color.gray], ["TestTone", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -254,7 +254,7 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/toggleMaster', e[\toggleMaster].asFloat); // send updated value via OSC
 		("Test Tone State:"+e[\toggleMaster]).postln; // print message
 	});
-	elements[\toggleSine] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\toggleSine] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Sine", Color.white, Color.gray], ["Sine", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -262,7 +262,7 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/toggleSine', e[\toggleSine].asFloat); // send updated value via OSC
 		("Sine State:"+e[\toggleSine]).postln; // print message
 	});
-	elements[\toggleNoise] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\toggleNoise] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Noise", Color.white, Color.gray], ["Noise", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -271,7 +271,7 @@ e.addCutoff = 1000.0;
 		("Noise State:"+e[\toggleNoise]).postln; // print message
 	});
 
-	elements[\toggle1] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\toggle1] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Ch.1", Color.white, Color.gray], ["Ch.1", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -279,7 +279,7 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/toggle1', e[\toggle1].asFloat); // send updated value via OSC
 		("Test Tone State Ch.1:"+e[\toggle1]).postln; // print message
 	});
-	elements[\toggle2] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\toggle2] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Ch.2", Color.white, Color.gray], ["Ch.2", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -287,7 +287,7 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/toggle2', e[\toggle2].asFloat); // send updated value via OSC
 		("Test Tone State Ch.2:"+e[\toggle2]).postln; // print message
 	});
-	elements[\toggle3] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\toggle3] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Ch.3", Color.white, Color.gray], ["Ch.3", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -295,7 +295,7 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/toggle3', e[\toggle3].asFloat); // send updated value via OSC
 		("Test Tone State Ch.3:"+e[\toggle3]).postln; // print message
 	});
-	elements[\toggle4] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\toggle4] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Ch.4", Color.white, Color.gray], ["Ch.4", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -303,7 +303,7 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/toggle4', e[\toggle4].asFloat); // send updated value via OSC
 		("Test Tone State Ch.4:"+e[\toggle4]).postln; // print message
 	});
-	elements[\flip1] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\flip1] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Flip Ch.1", Color.white, Color.gray], ["Flip Ch.1", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -311,7 +311,7 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/flip1', e[\flip1].asFloat); // send updated value via OSC
 		("Flip Ch.1:"+e[\flip1]).postln; // print message
 	});
-	elements[\flip2] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\flip2] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Flip Ch.2", Color.white, Color.gray], ["Flip Ch.2", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -319,7 +319,7 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/flip2', e[\flip2].asFloat); // send updated value via OSC
 		("Flip Ch.2:"+e[\flip2]).postln; // print message
 	});
-	elements[\flip3] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\flip3] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Flip Ch.3", Color.white, Color.gray], ["Flip Ch.3", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -327,7 +327,7 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/flip3', e[\flip3].asFloat); // send updated value via OSC
 		("Flip Ch.3:"+e[\flip3]).postln; // print message
 	});
-	elements[\flip4] = Button(elements[\w], Rect(0,0,80,20))
+	elements[\flip4] = Button(elements[\w], Rect(0,0,120,30))
 	.states_([["Flip Ch.4", Color.white, Color.gray], ["Flip Ch.4", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -339,11 +339,11 @@ e.addCutoff = 1000.0;
 
 	heading.("Participant and Sound Selection");
 	newline.();
-	elements[\preset] = EZNumber(elements[\w].view, 900@18, "  Preset  ",
+	elements[\preset] = EZNumber(elements[\w].view, 900@25, "  Preset  ",
 		ControlSpec(minval: -1, maxval: 99, step: 1, default: e[\preset]),
 		labelWidth: 280, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
-	.font_(Font("Helvetica", 12))
+	.font_(Font("Helvetica", 14))
 	.action_({ |ez|
 		e[\preset] = ez.value.asInteger; // update value in settings dictionary
 		o.sendMsg('/preset', e[\preset]); // send updated value via OSC
@@ -351,11 +351,11 @@ e.addCutoff = 1000.0;
 	});
 
 	newline.();
-	elements[\participantID] = EZNumber(elements[\w].view, 900@18, "  Participant ID  ",
+	elements[\participantID] = EZNumber(elements[\w].view, 900@25, "  Participant ID  ",
 		ControlSpec(minval: 0, maxval: 99, step: 1, default: e[\participantID]),
 		labelWidth: 280, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
-	.font_(Font("Helvetica", 12))
+	.font_(Font("Helvetica", 14))
 	.action_({ |ez|
 		e[\participantID] = ez.value.asInteger; // update value in settings dictionary
 		o.sendMsg('/participantID', e[\participantID]); // send updated value via OSC
