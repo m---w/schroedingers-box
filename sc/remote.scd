@@ -6,7 +6,7 @@ SuperCollider Control Patch for Bela
 //Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
 (
-~localMode = true; // SET CORRECT MODE HERE! (false=Bela, true=local)
+~localMode = false; // SET CORRECT MODE HERE! (false=Bela, true=local)
 
 if(~localMode, {
 	o = NetAddr("localhost", 57120); // set local address
@@ -367,7 +367,7 @@ e.addCutoff = 1000.0;
 	// update function (call from outside to update GUI to current parameter values)
 	elements[\upd] = {
 		elements[\params].keysValuesDo{|key,item|
-			elements.params[key].value = e[key]/sliderDict[key][7];
+			elements.params[key].value = e[key]/sliderDict[key][6];
 		};
 		elements[\preset].value = e[\preset];
 		elements[\participantID].value = e[\participantID];

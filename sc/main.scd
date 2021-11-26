@@ -19,8 +19,10 @@ if(~hostname==\bela, { // If running on Bela
 	s.options.numInputBusChannels = 4;
 	s.options.numOutputBusChannels = 8;
 	n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr("192.168.0.103", 57120) ]; // set GUI addresses
+	"Bela recognized itself as Bela.".postln;
 }, { // If running elsewhere (debug)
 	n = [ NetAddr("localhost", 57120) ];
+	"No Bela detected. --> Debug mode.".postln;
 });
 
 
@@ -58,6 +60,7 @@ p[\onsetDetection] = (); // onset detection parameters
 ~addCutoff = 500.0;
 ~addMinDel = 0.5;
 ~addMaxDel = 1.0;
+~playbackRand = 0.1;
 
 
 /*===================== GUI CONTROLS =====================*/
@@ -171,7 +174,7 @@ p[\onsetDetection] = (); // onset detection parameters
 /*===================== SOUND SELECTION =====================*/
 
 
-OSCdef(\next_sound, { | msg, time |
+OSCdef(\preset, { | msg, time |
 	~preset = msg[1].asInteger;
 	("New sound selected:"+~preset).postln;
 
@@ -181,7 +184,7 @@ OSCdef(\next_sound, { | msg, time |
 	~voices = 5;
 	~ampfactor = 0.0;
 	~ampfactorcat = inf.neg;
-	~glassflag = true; //glass already broke or cannot break
+	~glassflag = true; // glass already broke or cannot break
 	~breakingThreshold = 0.1; // threshold for breaking glass
 
 
@@ -203,6 +206,13 @@ OSCdef(\next_sound, { | msg, time |
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
+	v.free; // free previous voicer instance
+	v = Voicer.new(~voices, \sample_player); // start new voicer
+
+	// voicer settings
+	v.latency = nil; // set latency of the voicer. nil means as soon as possible.
+	v.stealer = \preferLate; // set voice stealing algorithm
+
 
 	// init secondary sound selection
 	if(~addsound, {
@@ -214,7 +224,7 @@ OSCdef(\next_sound, { | msg, time |
 	//finish
 	if(~preset>=666){s.freeAll};
 
-},'/sound/preset');
+},'/preset');
 
 
 /*===================== RANDOMIZATION =====================*/
@@ -231,7 +241,7 @@ OSCdef(\next_sound, { | msg, time |
 };
 
 ~randRate = {
-	1.0*bilinrand(~playbackRand); // +-random percent playback rate
+	1.0+~playbackRand.bilinrand; // +-random percent playback rate
 };
 
 ~randCombFreq = {
@@ -246,32 +256,21 @@ OSCdef(\next_sound, { | msg, time |
 /*===================== NEW VOICE TRIGGER =====================*/
 
 
-~triggerSecondary = {
-	if(x[\addSound].isPlaying.not, {
-		x[\addSound] = Synth.new(\addsound, [\bufnum, ~soundcat_sum[~chooseAddSound.()].bufnum, \amp, ~ampfactorcat*~ampfactorcatGlobal, \rate, ~randRate.()]).register;
-		if(~debugSound, {
-			"Secondary sound started.".postln;
-		});
-		~onset_sum = 0; // reset onset counter
-	});
-};
-
-
 // function to trigger new voice
 ~voicetrigger = {
 	var lastvoice; // variable to store voice that is returned by this function
 
 	// Primary sound
-	lastvoice = v.trigger(1, 1, [\amp, ~defaultVel, \gate, 1, \bufnum, ~sound[~chooseSound.()].bufnum, \ampfactor, ~ampfactor*~ampfactorGlobal, \rate, ~randRate.(), \combFiltFreq, ~randCombFreq.(), \combFiltDryWet, ~combFiltDryWet, \velUpdateLag, ~velUpdateLag]);
+	lastvoice = v.trigger(freq: 1, gate: 1, args: [\amp, ~defaultVel, \gate, 1, \bufnum, ~sound[~chooseSound.()].bufnum, \ampfactor, ~ampfactor*~ampfactorGlobal, \rate, ~randRate.(), \combFiltFreq, ~randCombFreq.(), \combFiltDryWet, ~combFiltDryWet, \velUpdateLag, ~velUpdateLag], lat: nil);
 
 	// Secondary sound
-	if(x[\addSound].isPlaying.not&&~addsound){
+	if(x[\addSound].isPlaying.not && ~addsound){
 		~onset_sum = ~onset_sum + 1; // increment onset counter
 
 		// Random decision (tune inMin and inMax to set minimum and maximum number of hits for 0% and 100% chance, respectively)
 		if( ~onset_sum.linlin(inMin: 1, inMax: 7, outMin: 0.0, outMax: 1.0, clip: 'minmax').coin ) {
 			// Trigger new secondary sound
-			x[\addSound] = Synth(\addsound, [\bufnum, ~soundcat_sum[~chooseAddSound.()].bufnum, \amp, ~ampfactorcat*~ampfactorcatGlobal, \rate, ~randRate.(), \deltime, ~randAddDelay.(), \cutoff, ~addCutoff]);
+			x[\addSound] = Synth.new(\addsound, [\bufnum, ~soundcat_sum[~chooseAddSound.()].bufnum, \amp, ~ampfactorcat*~ampfactorcatGlobal, \rate, ~randRate.(), \deltime, ~randAddDelay.(), \cutoff, ~addCutoff]).register;
 			if(~debugSound, {
 				"Secondary sound started.".postln;
 			});
@@ -330,7 +329,7 @@ OSCdef(\next_sound, { | msg, time |
 			},
 			3, { // Velocity update
 				~globalvel = val;
-				~lastvoice.set([\amp, val]);
+				~lastvoice.set([\amp, val.linexp(0.005, 0.35, 0.005, 0.7, \minmax)]);
 				if(~debugOnsets, {
 					("Velocity update:"+val).postln;
 				});
@@ -340,7 +339,7 @@ OSCdef(\next_sound, { | msg, time |
 		// Break glass
 		if(~outcome&&~glassflag){
 			if(~globalvel>~breakingThreshold){
-				x[\breakingSound] = Synth(\sample_player, [\amp, val, \gate, 1, \bufnum, ~soundcat_sum[~chooseAddSound.()].bufnum, \ampfactor, ~ampfactor*~ampfactorGlobal, \rate, ~randRate.()]);
+				x[\breakingSound] = Synth.new(\sample_player, [\amp, val, \gate, 1, \bufnum, ~soundcat_sum[~chooseAddSound.()].bufnum, \ampfactor, ~ampfactor*~ampfactorGlobal, \rate, ~randRate.()]);
 				~glassflag = false;
 			};
 		};
