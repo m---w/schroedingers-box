@@ -1,4 +1,4 @@
-Schrodinger's Box
+Schrödinger's Box
 =================
 
 
