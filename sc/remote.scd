@@ -1,12 +1,13 @@
 /*
 Schroedinger's Box
-SuperCollider Control Patch for Bela
+Remote Control
+SuperCollider Patch
 2021 Jason Svoronos-Kanavas, Marian Weger
 */
-//Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
+// Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
 (
-~localMode = false; // SET CORRECT MODE HERE! (false=Bela, true=local)
+~localMode = true; // SET CORRECT MODE HERE! (false=Bela, true=local)
 
 if(~localMode, {
 	o = NetAddr("localhost", 57120); // set local address
@@ -21,20 +22,13 @@ Window.closeAll;
 OSCFunc({|msg, time|
 	var key = msg[1];
 	var val = msg[2];
-	("OSC incoming:"+msg).postln;
-	switch(key,
-		\booted, {
-			~gui.resend(); // let GUI resend parameters
-		},
-		\mainDB, {
-			e.mainDB = val; // master volume (GUI) via each sound config file in Bela
-			{~gui.upd.()}.defer; // then update GUI
-		},
-		\catDB, {
-			e.catDB = val; // Cat volume (GUI) value
-			{~gui.upd.()}.defer;
-		},
-	);
+	("Remote: OSC incoming:"+msg).postln;
+	if(key==\booted, {
+		{~gui.resend()}.defer; // let GUI resend all parameters
+	}, {
+		e[\key] = val; // 1. update parameter in dictionary
+		{~gui.upd.()}.defer; // 2. then update GUI
+	});
 },'/bela');
 
 
@@ -61,42 +55,52 @@ e.velDelay = 0.006; // delay between FBOD trigger and reporting of velocity. Vel
 e.defaultVel = 0.01; // default velocity
 e.velUpdateLag = 0.001;
 
-// Master
-e.mainDB = inf.neg; // main volume in dB
-e.catDB = inf.neg; // cat volume in dB
+// Preset Settings
+e.primaryDB = inf.neg; // primary level in dB
+e.secondaryDB = inf.neg; // secondary level in dB
+e.outcomeDB = inf.neg; // outcome level in dB
+e.secondaryCutoff = 1000.0; // Cutoff frequency of LPF for secondary sound, in Hz
 
-e.mainGlobalDB = inf.neg; // main volume in dB
-e.catGlobalDB = inf.neg; // cat volume in dB
+// Master
+e.primaryMasterDB = inf.neg; // primary level in dB
+e.secondaryMasterDB = inf.neg; // secondary level in dB
+e.outcomeMasterDB = inf.neg; // outcome level in dB
+e.masterHPF = 80.0; // master HPF cutoff in Hz
+e.masterLPF = 20000.0; // master LPF cutoff in Hz
 
 // Experiment
 e.participantID = 0; // participant ID
 e.preset = 0; // sound preset
 
 // Test Tone Generator
-e.sineMasterDB = 80.0.neg;
-e.noiseMasterDB = 80.0.neg;
-e.testFreq = 400.0;
-e.toggleMaster = 0;
-e.toggle1 = 0;
-e.toggle2 = 0;
-e.toggle3 = 0;
-e.toggle4 = 0;
-e.flip1 = 0;
-e.flip2 = 0;
-e.flip3 = 0;
-e.flip4 = 0;
+e.sineMasterDB = 80.0.neg; // level of sine generator in dB
+e.noiseMasterDB = 80.0.neg; // level of noise generator in dB
+e.testFreq = 400.0; // sine frequency in Hz
+e.toggleMaster = 0; // start/stop the test tone synth
+e.toggle1 = 0; // output channel 1 on/off
+e.toggle2 = 0; // output channel 2 on/off
+e.toggle3 = 0; // output channel 3 on/off
+e.toggle4 = 0; // output channel 4 on/off
+e.flip1 = 0; // output channel 1 flip phase
+e.flip2 = 0; // output channel 2 flip phase
+e.flip3 = 0; // output channel 3 flip phase
+e.flip4 = 0; // output channel 4 flip phase
 
-e.combFiltMinFreq = 20.0;
-e.combFiltMaxFreq = 20000.0;
-e.combFiltDryWet = 0.0;
+// Primary Sound
+e.combFiltMinFreq = 20.0; // minimum combfilter frequency in Hz
+e.combFiltMaxFreq = 20000.0; // maximum combfilter frequency in Hz
+e.combFiltDryWet = 0.0; // dry/wet for comb filter
 
+// Global Sound Parameters
 e.playbackRand = 0.1; // percent rate randomization
 
-e.breakingThreshold = 0.1;
+// Outcome sound
+e.breakingThreshold = 0.1; // threshold velocity for breaking
 
-e.addMinDel = 0.5;
-e.addMaxDel = 1.0;
-e.addCutoff = 1000.0;
+// Secondary Sound
+e.secondaryMinDel = 0.5; // minimum start delay
+e.secondaryMaxDel = 1.0; // maximum start delay
+e.secondaryCutoff = 1000.0; // cutoff frequency of lowpass filter in Hz
 
 
 // GUI function definition
@@ -104,70 +108,105 @@ e.addCutoff = 1000.0;
 
 	// settings of all the sliders in the GUI
 	// They will appear in this order in the GUI
-	var sliderList = [
-		// min max warp step units label factor name
-		// 0   1   2    3    4     5     6      7
+	// min max warp step units label factor name
+	// 0   1   2    3    4     5     6      7
 
-		// TBOD
+	// TBOD
+	var sliderListTBOD = [
 		[-180, 0.0, \lin, 1.0, "dB", "TBOD threshold", 1.0, \tbThreshDB],
 		[80.0, 8000.0, \exp, 1.0, "Hz", "HPF cutoff", 1.0, \tbHpfFreq],
 		[1.0, 120.0, \lin, 1.0, "Hz", "LPF 1 cutoff", 1.0, \tbLpf1Freq],
 		[1.0, 120.0, \lin, 1.0, "Hz", "LPF 2 cutoff", 1.0, \tbLpf2Freq],
 		[0.1, 500.0, \exp, 1.0, "ms", "TBOD refractory period", 1.0e-3, \tbRefPeriod],
 		[0.0, 32.0, \lin, 1.0, "FFT frames", "False Alarm Cancellation delay", 1.0, \cancelDel],
+	];
 
-		// FBOD
+	// FBOD
+	var sliderListFBOD = [
 		[-40, 40.0, \lin, 1.0, "dB", "FBOD threshold", 1.0, \fbThreshDB],
 		[0.1, 10.0, \exp, 0.1, "s", "Relax Time", 1.0, \fbRelaxtime],
 		[140.0.neg, 0.0, \lin, 1.0, "dB", "Floor", 1.0, \fbFloorDB],
 		[0.0, 100.0, \lin, 1.0, "FFT frames", "MinGap", 1.0, \fbMingap],
 		[0.0, 30.0, \lin, 1.0, "FFT frames", "MedianSpan", 1.0, \fbMedianspan],
+	];
 
-		// Velocity Detection
+	// Velocity Detection
+	var sliderListVelocity = [
 		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Delay", 1.0e-3, \velDelay],
 		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Update Lag", 1.0e-3, \velUpdateLag],
 		[0.0001, 1.0, \exp, 0.0, "", "Default Velocity", 1.0, \defaultVel],
+	];
 
-		// Levels (current preset)
-		[-60.0, 30.0, \lin, 0.1, "dB", "Secondary sound level", 1.0, \catDB],
-		[-60.0, 30.0, \lin, 0.1, "dB", "Primary sound level", 1.0, \mainDB],
+	// Preset
+	var sliderListPresetParams = [
+		[-60.0, 30.0, \lin, 0.1, "dB", "Primary sound level", 1.0, \primaryDB],
+		[-60.0, 30.0, \lin, 0.1, "dB", "Secondary sound level", 1.0, \secondaryDB],
+		[-60.0, 30.0, \lin, 0.1, "dB", "Secondary sound level", 1.0, \outcomeDB],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Secondary Sound Upper Cutoff", 1.0, \secondaryCutoff],
+		[-1.0, 1.0, \lin, 0.0, "", "Comb Filter Dry/Wet", 1.0, \combFiltDryWet],
+	];
 
-		// Master Levels
-		[-60.0, 30.0, \lin, 0.1, "dB", "Global secondary sound level", 1.0, \catGlobalDB],
-		[-60.0, 30.0, \lin, 0.1, "dB", "Global primary sound level", 1.0, \mainGlobalDB],
+	// Master
+	var sliderListMaster = [
+		[-60.0, 30.0, \lin, 0.1, "dB", "Global primary sound level", 1.0, \primaryMasterDB],
+		[-60.0, 30.0, \lin, 0.1, "dB", "Global secondary sound level", 1.0, \secondaryMasterDB],
+		[-60.0, 30.0, \lin, 0.1, "dB", "Global outcome sound level", 1.0, \outcomeMasterDB],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Master HPF Cutoff", 1.0, \masterHPF],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Master LPF Cutoff", 1.0, \masterLPF],
+	];
 
-		// Test Tone Generator
+	// Test Tone Generator
+	var sliderListTest = [
 		[-80.0, 0.0, \lin, 0.1, "dB", "Noise Volume", 1.0, \noiseMasterDB],
 		[-80.0, 0.0, \lin, 0.1, "dB", "Sine Volume", 1.0, \sineMasterDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Sine Frequency", 1.0, \testFreq],
-
-		// Sound
-		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Min Frequency", 1.0, \combFiltMinFreq],
-		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Max Frequency", 1.0, \combFiltMaxFreq],
-		[-1.0, 1.0, \lin, 0.0, "", "Comb Filter Dry/Wet", 1.0, \combFiltDryWet],
-		[0.0, 10.0, \lin, 0.1, "%", "Playback Rate Randomization", 1.0e-2, \playbackRand],
-		[0.001, 1.0, \exp, 0.0, "", "Breaking Threshold", 1.0, \breakingThreshold],
-		[0.0, 5.0, \lin, 0.1, "s", "Min Delay for Secondary Sound", 1.0, \addMinDel],
-		[0.0, 5.0, \lin, 0.1, "s", "Max Delay for Secondary Sound", 1.0, \addMaxDel],
-		[20.0, 20000.0, \exp, 1.0, "Hz", "Secondary Sound Upper Cutoff", 1.0, \addCutoff],
-
-
 	];
 
+	// Sound
+	var sliderListSound = [
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Min Frequency", 1.0, \combFiltMinFreq],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Max Frequency", 1.0, \combFiltMaxFreq],
+		[0.0, 10.0, \lin, 0.1, "%", "Playback Rate Randomization", 1.0e-2, \playbackRand],
+		[0.001, 1.0, \exp, 0.0, "", "Breaking Threshold", 1.0, \breakingThreshold],
+		[0.0, 5.0, \lin, 0.1, "s", "Min Delay for Secondary Sound", 1.0, \secondaryMinDel],
+		[0.0, 5.0, \lin, 0.1, "s", "Max Delay for Secondary Sound", 1.0, \secondaryMaxDel],
+	];
+
+
 	// convert to dictionary, to address them by name
-	var sliderDict = ().putPairs([sliderList.flop.last,sliderList].flop.flatten);
+	var sliderDictTBOD = ().putPairs([sliderListTBOD.flop.last,sliderListTBOD].flop.flatten);
+	var sliderDictFBOD = ().putPairs([sliderListFBOD.flop.last,sliderListFBOD].flop.flatten);
+	var sliderDictVelocity = ().putPairs([sliderListVelocity.flop.last,sliderListVelocity].flop.flatten);
+	var sliderDictPresetParams = ().putPairs([sliderListPresetParams.flop.last,sliderListPresetParams].flop.flatten);
+	var sliderDictMaster = ().putPairs([sliderListMaster.flop.last,sliderListMaster].flop.flatten);
+	var sliderDictTest = ().putPairs([sliderListTest.flop.last,sliderListTest].flop.flatten);
+	var sliderDictSound = ().putPairs([sliderListSound.flop.last,sliderListSound].flop.flatten);
+
 
 	// slider creation function
 	var makeSlider = { |item|
-		EZSlider(elements[\w].view, 900@20, "  "++item[5]++"  ",
+		EZSlider(elements[\w].view, 900@22, "  "++item[5]++"  ",
 			ControlSpec(minval: item[0], maxval: item[1], warp: item[2], step: item[3], default: e[item[7]]/item[6], units: item[4]),
 			labelWidth: 280, unitWidth: 100, initVal: e[item[7]]/item[6], numberWidth: 60, layout: \horz, initAction: true)
 		.setColors(Color.grey, Color.white)
-		.font_(Font("Helvetica", 12))
+		.font_(Font("Helvetica", 14))
 		.action_({ |ez|
 			e[item[7]] = ez.value*item[6]; // update value in settings dictionary
 			o.sendMsg('/'++item[7], e[item[7]]); // send updated value via OSC
 			(item[7]++":"+e[item[7]]).postln; // print message
+		});
+	};
+
+	// toggle creation function
+	var makeToggle = { |key, text|
+		Button(elements[\w], Rect(0,0,80,22))
+		.states_([[text, Color.white, Color.gray], [text, Color.gray, Color.green]])
+		.font_(Font("Helvetica", 14))
+		.action_({|obj|
+			var val = obj.value.asInteger;
+			e[key] = val; // update value in settings dictionary
+			o.sendMsg(key, e[key]); // send updated value via OSC
+			(key.asString++":"+e[key]).postln; // print message
 		});
 	};
 
@@ -182,7 +221,7 @@ e.addCutoff = 1000.0;
 	var heading = { |text|
 		StaticText(elements[\w].view, 900@24)
 		.string_(text++":")
-		.font_(Font("Helvetica", 18))
+		.font_(Font("Helvetica", 14))
 		.stringColor_(Color.white)
 		;
 	};
@@ -194,7 +233,13 @@ e.addCutoff = 1000.0;
 	var newline = { elements[\v].nextLine };
 
 	// dictionary to access individual sliders from outside
-	elements[\params] = ();
+	elements[\tbod] = ();
+	elements[\fbod] = ();
+	elements[\velocity] = ();
+	elements[\presetParams] = ();
+	elements[\master] = ();
+	elements[\test] = ();
+	elements[\sound] = ();
 
 	// Window
 	elements[\w] = Window("Schroedinger's GUI", Rect(400,400,910,900), scroll: true)
@@ -213,40 +258,40 @@ e.addCutoff = 1000.0;
 
 	heading.("TBOD");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\tbThreshDB, \tbHpfFreq, \tbLpf1Freq, \tbLpf2Freq, \tbRefPeriod, \cancelDel]);
+	makeSliders.(elements[\tbod], sliderDictTBOD, sliderListTBOD.flop.last);
 	newline.();
 
 	heading.("FBOD");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\fbThreshDB, \fbRelaxtime, \fbFloorDB, \fbMingap, \fbMedianspan]);
+	makeSliders.(elements[\fbod], sliderDictFBOD, sliderListFBOD.flop.last);
 	newline.();
 
 	heading.("Velocity detection");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\velDelay, \velUpdateLag, \defaultVel]);
+	makeSliders.(elements[\velocity], sliderDictVelocity, sliderListVelocity.flop.last);
 	newline.();
 
-	heading.("Levels (current preset)");
+	heading.("Preset Settings");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\catDB, \mainDB]);
+	makeSliders.(elements[\presetParams], sliderDictPresetParams, sliderListPresetParams.flop.last);
 	newline.();
 
-	heading.("Master Levels");
+	heading.("Master");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\catGlobalDB, \mainGlobalDB]);
+	makeSliders.(elements[\master], sliderDictMaster, sliderListMaster.flop.last);
 	newline.();
 
 	heading.("Sound");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\combFiltMinFreq, \combFiltMaxFreq, \combFiltDryWet, \playbackRand, \breakingThreshold, \addMinDel, \addMaxDel, \addCutoff]);
+	makeSliders.(elements[\sound], sliderDictSound, sliderListSound.flop.last);
 	newline.();
 
-	heading.("Test signal generator");
+	heading.("Test Signal Generator");
 	newline.();
-	makeSliders.(elements[\params], sliderDict, [\noiseMasterDB, \sineMasterDB, \testFreq]);
-	newline.();¸
+	makeSliders.(elements[\test], sliderDictTest, sliderListTest.flop.last);
+	newline.();
 
-	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,120,30))
+	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,80,20))
 	.states_([["TestTone", Color.white, Color.gray], ["TestTone", Color.gray, Color.green]])
 	.action_({|obj|
 		var val = obj.value;
@@ -254,94 +299,19 @@ e.addCutoff = 1000.0;
 		o.sendMsg('/toggleMaster', e[\toggleMaster].asFloat); // send updated value via OSC
 		("Test Tone State:"+e[\toggleMaster]).postln; // print message
 	});
-	elements[\toggleSine] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Sine", Color.white, Color.gray], ["Sine", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\toggleSine] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/toggleSine', e[\toggleSine].asFloat); // send updated value via OSC
-		("Sine State:"+e[\toggleSine]).postln; // print message
-	});
-	elements[\toggleNoise] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Noise", Color.white, Color.gray], ["Noise", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\toggleNoise] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/toggleNoise', e[\toggleNoise].asFloat); // send updated value via OSC
-		("Noise State:"+e[\toggleNoise]).postln; // print message
-	});
 
-	elements[\toggle1] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Ch.1", Color.white, Color.gray], ["Ch.1", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\toggle1] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/toggle1', e[\toggle1].asFloat); // send updated value via OSC
-		("Test Tone State Ch.1:"+e[\toggle1]).postln; // print message
-	});
-	elements[\toggle2] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Ch.2", Color.white, Color.gray], ["Ch.2", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\toggle2] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/toggle2', e[\toggle2].asFloat); // send updated value via OSC
-		("Test Tone State Ch.2:"+e[\toggle2]).postln; // print message
-	});
-	elements[\toggle3] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Ch.3", Color.white, Color.gray], ["Ch.3", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\toggle3] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/toggle3', e[\toggle3].asFloat); // send updated value via OSC
-		("Test Tone State Ch.3:"+e[\toggle3]).postln; // print message
-	});
-	elements[\toggle4] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Ch.4", Color.white, Color.gray], ["Ch.4", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\toggle4] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/toggle4', e[\toggle4].asFloat); // send updated value via OSC
-		("Test Tone State Ch.4:"+e[\toggle4]).postln; // print message
-	});
-	elements[\flip1] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Flip Ch.1", Color.white, Color.gray], ["Flip Ch.1", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\flip1] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/flip1', e[\flip1].asFloat); // send updated value via OSC
-		("Flip Ch.1:"+e[\flip1]).postln; // print message
-	});
-	elements[\flip2] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Flip Ch.2", Color.white, Color.gray], ["Flip Ch.2", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\flip2] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/flip2', e[\flip2].asFloat); // send updated value via OSC
-		("Flip Ch.2:"+e[\flip2]).postln; // print message
-	});
-	elements[\flip3] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Flip Ch.3", Color.white, Color.gray], ["Flip Ch.3", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\flip3] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/flip3', e[\flip3].asFloat); // send updated value via OSC
-		("Flip Ch.3:"+e[\flip3]).postln; // print message
-	});
-	elements[\flip4] = Button(elements[\w], Rect(0,0,120,30))
-	.states_([["Flip Ch.4", Color.white, Color.gray], ["Flip Ch.4", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\flip4] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/flip4', e[\flip4].asFloat); // send updated value via OSC
-		("Flip Ch.4:"+e[\flip4]).postln; // print message
-	});
+	elements[\toggles] = ();
+	( [[\toggleSine, "Sine"], [\toggleNoise, "Noise"]] ++ 4.collect{|i| i=i+1; [\toggle++i, "Ch."+i]} ++ 4.collect{|i| i=i+1; [\flip++i, "Flip Ch."+i]} ).do{ |item|
+		elements[\toggles][item[0].asSymbol] = makeToggle.(item[0].asSymbol, item[1]);
+	};
+
 	newline.();
 
 	heading.("Participant and Sound Selection");
 	newline.();
-	elements[\preset] = EZNumber(elements[\w].view, 900@25, "  Preset  ",
+	elements[\preset] = EZNumber(elements[\w].view, 180@22, "  Preset  ",
 		ControlSpec(minval: -1, maxval: 99, step: 1, default: e[\preset]),
-		labelWidth: 280, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
+		labelWidth: 120, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
 	.font_(Font("Helvetica", 14))
 	.action_({ |ez|
@@ -350,60 +320,82 @@ e.addCutoff = 1000.0;
 		("Preset:"+e[\preset]).postln; // print message
 	});
 
-	newline.();
-	elements[\participantID] = EZNumber(elements[\w].view, 900@25, "  Participant ID  ",
+	elements[\participantID] = EZNumber(elements[\w].view, 180@22, "  Participant ID  ",
 		ControlSpec(minval: 0, maxval: 99, step: 1, default: e[\participantID]),
-		labelWidth: 280, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
+		labelWidth: 120, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
 	.font_(Font("Helvetica", 14))
 	.action_({ |ez|
 		e[\participantID] = ez.value.asInteger; // update value in settings dictionary
 		o.sendMsg('/participantID', e[\participantID]); // send updated value via OSC
-		~sample = -1; // init sample number
-		elements[\preset].valueAction_(~sample);
+		elements[\preset].valueAction_(1.neg); // init sample number
 		("Participant ID:"+e[\participantID]).postln; // print message
 	});
 
+	newline.();
+
 	// update function (call from outside to update GUI to current parameter values)
 	elements[\upd] = {
-		elements[\params].keysValuesDo{|key,item|
-			elements.params[key].value = e[key]/sliderDict[key][6];
+		elements.tbod.keysValuesDo{|key,item|
+			elements.tbod[key].value = e[key]/sliderDictTBOD[key][6];
+		};
+		elements.fbod.keysValuesDo{|key,item|
+			elements.fbod[key].value = e[key]/sliderDictFBOD[key][6];
+		};
+		elements.velocity.keysValuesDo{|key,item|
+			elements.velocity[key].value = e[key]/sliderDictVelocity[key][6];
+		};
+		elements.presetParams.keysValuesDo{|key,item|
+			elements.presetParams[key].value = e[key]/sliderDictPresetParams[key][6];
+		};
+		elements.master.keysValuesDo{|key,item|
+			elements.master[key].value = e[key]/sliderDictMaster[key][6];
+		};
+		elements.sound.keysValuesDo{|key,item|
+			elements.sound[key].value = e[key]/sliderDictSound[key][6];
+		};
+		elements.test.keysValuesDo{|key,item|
+			elements.test[key].value = e[key]/sliderDictTest[key][6];
+		};
+		elements[\toggles].keysValuesDo{|key,item|
+			elements.toggles[key].value = e[key];
 		};
 		elements[\preset].value = e[\preset];
 		elements[\participantID].value = e[\participantID];
 		elements[\toggleMaster].value = e[\toggleMaster];
-		elements[\toggleNoise].value = e[\toggleNoise];
-		elements[\toggleSine].value = e[\toggleSine];
-		elements[\toggle1].value = e[\toggle1];
-		elements[\toggle2].value = e[\toggle2];
-		elements[\toggle3].value = e[\toggle3];
-		elements[\toggle4].value = e[\toggle4];
-		elements[\flip1].value = e[[\flip1]];
-		elements[\flip2].value = e[\flip2];
-		elements[\flip3].value = e[\flip3];
-		elements[\flip4].value = e[\flip4];
 		"GUI updated"; // return message
 	};
 
 	// resend function (call from outside to resend all values)
 	elements[\resend] = {
-		elements[\params].keysValuesDo{|key,item|
-			elements.params[key].doAction;
+		elements.tbod.keysValuesDo{|key,item|
+			elements.tbod[key].doAction;
+		};
+		elements.fbod.keysValuesDo{|key,item|
+			elements.fbod[key].doAction;
+		};
+		elements.velocity.keysValuesDo{|key,item|
+			elements.velocity[key].doAction;
+		};
+		elements.presetParams.keysValuesDo{|key,item|
+			elements.presetParams[key].doAction;
+		};
+		elements.master.keysValuesDo{|key,item|
+			elements.master[key].doAction;
+		};
+		elements.sound.keysValuesDo{|key,item|
+			elements.sound[key].doAction;
+		};
+		elements.test.keysValuesDo{|key,item|
+			elements.test[key].doAction;
+		};
+		elements[\toggles].keysValuesDo{|key,item|
+			elements.toggles[key].doAction;
 		};
 		elements[\preset].doAction;
 		elements[\participantID].doAction;
 		elements[\toggleMaster].doAction;
-		elements[\toggleNoise].doAction;
-		elements[\toggleSine].doAction;
-		elements[\toggle1].doAction;
-		elements[\toggle2].doAction;
-		elements[\toggle3].doAction;
-		elements[\toggle4].doAction;
-		elements[\flip1].doAction;
-		elements[\flip2].doAction;
-		elements[\flip3].doAction;
-		elements[\flip4].doAction;
-		"settings sent"; // return message
+		"Settings sent on request."; // return message
 	};
 
 	// return gui dictionary
@@ -416,6 +408,8 @@ e.addCutoff = 1000.0;
 ~gui = ~schroedingersGUI.(n, e);
 
 ~gui.resend.();
+
+"Remote Patch READY".postln;
 
 // if parameters are updated within the settings dictionary e, then call ~gui.upd.() to update the gui
 // to resend the current gui state, call ~gui.resend.()
