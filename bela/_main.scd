@@ -44,6 +44,7 @@ q = (); // other parameters
 ~tbodTriggered = false; // flag to store if TBOD has triggered
 ~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
 ~debugOnsets = true; // debug printing for onset detection
+~debugSound = true; // debug printing for sound triggering
 
 // Secondary sound
 q[\secondaryMinDel] = 0.5;
@@ -70,8 +71,8 @@ q[\playbackRand] = 0.1;
 			("OSC incoming:"+addr+val).postln;
 		});
 		p.od[addr] = val;
-		if(x[\onsetDetection].isPlaying, {
-			x[\onsetDetection].set(addr, val);
+		if(x[\od].isPlaying, {
+			x[\od].set(addr, val);
 		});
 	}, addr);
 };
@@ -218,17 +219,18 @@ OSCdef(\preset, { | msg, time |
 	~voices = 5; // number of simultaneous voices (polyphony)
 	~ampfactor = 0.0; // primary sound level
 	~ampfactorcat = inf.neg; // secondary sound level
+	~ampfactoroutcome = inf.neg; // outcome sound level
 	~outcomePossible = true; // outcome didn't happen yet?
 	~breakingThreshold = 0.1; // threshold for breaking glass
 	~secondaryCutoff = 1000.0; // cutoff for secondary sound
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
+	~sound.do{|item| item.free}; // free buffers of primary sounds
+	~soundcat_sum.do{|item| item.free}; // free buffers of secondary sounds
+	~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
 
 	// Load preset
 	if(~preset > 0){
-		var path = ("./loader/sound"++~preset.asInteger ++"/sound"++~preset.asInteger ++".scd").standardizePath; // path to preset file
-		~sound.do{|item| item.free}; // free buffers of primary sounds
-		~soundcat_sum.do{|item| item.free}; // free buffers of secondary sounds
-		path.load; // load preset file
+		("./presets/sound"++~preset.asInteger ++".scd").standardizePath.load; // load preset file
 	}{
 		// Notify if no preset was selected
 		"No preset selected. Press the button to start!".postln;
@@ -236,18 +238,19 @@ OSCdef(\preset, { | msg, time |
 
 	// init primary sound
 	p.primary[\level] = ~ampfactor;
+	p.primary[\combFilterDryWet] = ~combFilterDryWet;
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
 	v.free; // free previous voicer instance
-	v = Voicer.new(voices: ~voices, things: \primary, bus: ~masterBus, addAction: \addToHead); // start new voicer
+	v = Voicer.new(voices: ~voices, things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
 	v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 	v.stealer = \preferLate; // set voice stealing algorithm
 
 	// init secondary sound
+	p.secondary[\level] = ~ampfactorcat;
+	p.secondary[\upperCutoff] = ~secondaryCutoff;
 	if(~addsound, {
-		p.secondary[\level] = ~ampfactorcat;
-		p.secondary[\upperCutoff] = ~secondaryCutoff;
 		~addSoundSize = ~soundcat_sum.size; // number of secondary sounds in this preset
 		~addSoundIndArray = (0..(~addSoundSize-1)); // array of secondary sound indices
 		~lastAddSoundID = ~addSoundIndArray.choose; // choose a random start index
@@ -263,6 +266,7 @@ OSCdef(\preset, { | msg, time |
 	n.do{|item| item.sendMsg(\bela, \secondaryDB, p.secondary[\level]) };
 	n.do{|item| item.sendMsg(\bela, \outcomeDB, p.outcome[\level]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
+	n.do{|item| item.sendMsg(\bela, \combFilterDryWet, p.primary[\combFilterDryWet]) };
 
 	//finish
 	if(~preset>=666){s.freeAll};
@@ -307,7 +311,6 @@ OSCdef(\preset, { | msg, time |
 		// Random decision (tune inMin and inMax to set minimum and maximum number of hits for 0% and 100% chance, respectively)
 		if( ~onsetCounter.linlin(inMin: 1, inMax: 7, outMin: 0.0, outMax: 1.0, clip: 'minmax').coin ) {
 			// Trigger new secondary sound
-			p.secondary[\busnum] = ~secondaryBus.index;
 			p.secondary[\bufnum] = ~soundcat_sum[~chooseAddSound.()].bufnum;
 			p.secondary[\rate] = ~randRate.();
 			p.secondary[\deltime] = ~randAddDelay.();
@@ -413,9 +416,15 @@ s.waitForBoot{
 
 	/*===================== BUS ALLOCATION =====================*/
 
-	p.primary[\busnum] = Bus.audio(s, numChannels: 1);
-	p.secondary[\busnum] = Bus.audio(s, numChannels: 1);
-	p.outcome[\busnum] = Bus.audio(s, numChannels: 1);
+	// allocate busses
+	p.primary[\busnum] = Bus.audio(s, numChannels: 1).postln;
+	p.secondary[\busnum] = Bus.audio(s, numChannels: 1).postln;
+	p.outcome[\busnum] = Bus.audio(s, numChannels: 1).postln;
+
+	// map also to master busses
+	p.master[\primaryBus] = p.primary[\busnum];
+	p.master[\secondaryBus] = p.secondary[\busnum];
+	p.master[\outcomeBus] = p.outcome[\busnum];
 
 
 	/*===================== SYNTHDEFS =====================*/
@@ -607,8 +616,8 @@ s.waitForBoot{
 	1.wait; // wait a second
 
 	// start those synths that should always be running
-	x[\od] = Synth.new(\od, addAction: \addToHead).register; // start onset detection synth
-	x[\master] = Synth.new(\master, addAction: \addToTail).register; // start master synth
+	x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
+	x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
 
 
 	// request parameters from GUI

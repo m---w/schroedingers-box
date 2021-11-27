@@ -7,7 +7,7 @@ SuperCollider Patch
 // Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
 (
-~localMode = true; // SET CORRECT MODE HERE! (false=Bela, true=local)
+~localMode = false; // SET CORRECT MODE HERE! (false=Bela, true=local)
 
 if(~localMode, {
 	o = NetAddr("localhost", 57120); // set local address
@@ -26,7 +26,7 @@ OSCFunc({|msg, time|
 	if(key==\booted, {
 		{~gui.resend()}.defer; // let GUI resend all parameters
 	}, {
-		e[\key] = val; // 1. update parameter in dictionary
+		e[key] = val; // 1. update parameter in dictionary
 		{~gui.upd.()}.defer; // 2. then update GUI
 	});
 },'/bela');
