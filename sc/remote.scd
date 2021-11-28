@@ -7,7 +7,7 @@ SuperCollider Patch
 // Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
 (
-~localMode = true; // SET CORRECT MODE HERE! (false=Bela, true=local)
+~localMode = false; // SET CORRECT MODE HERE! (false=Bela, true=local)
 
 if(~localMode, {
 	o = NetAddr("localhost", 57120); // set local address
@@ -36,7 +36,7 @@ OSCFunc({|msg, time|
 e = (); // create empty dictionary
 
 // TBOD
-e.tbThreshDB = 120.0.neg; // TBOD threshold in dB
+e.tbThreshDB = 100.0.neg; // TBOD threshold in dB
 e.tbRefPeriod = 0.05;// specifies a minimum gap (in seconds) between subsequent onset detections
 e.tbLpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
 e.tbLpf2Freq = 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
@@ -44,7 +44,7 @@ e.tbHpfFreq = 4000.0; // frequency of high-pass filter in Hz  (TBOD)
 e.cancelDel = 1.0; // Delay between TBOD trigger and cancel message, in FFT frames.
 
 // FBOD
-e.fbThreshDB = -22.0; // FBOD threshold in dB
+e.fbThreshDB = -16.0; // FBOD threshold in dB
 e.fbRelaxtime = 1.0; // specifies the time (in seconds) for the normalisation to "forget" about a recent onset. If you find too much re-triggering (e.g. as a note dies away unevenly) then you might wish to increase this value.
 e.fbFloorDB = 20.0.neg; // is a lower limit, connected to the idea of how quiet the sound is expected to get without becoming indistinguishable from noise. For some cleanly-recorded classical music with wide dynamic variations, I found it helpful to go down as far as 0.000001.
 e.fbMingap = 40; // specifies a minimum gap (in FFT frames) between onset detections, a brute-force way to prevent too many doubled detections.
@@ -154,7 +154,7 @@ e.secondaryCountCurve = 0; // curve
 	var sliderListPresetParams = [
 		[-60.0, 30.0, \lin, 0.1, "dB", "Primary sound level", 1.0, \primaryDB],
 		[-60.0, 30.0, \lin, 0.1, "dB", "Secondary sound level", 1.0, \secondaryDB],
-		[-60.0, 30.0, \lin, 0.1, "dB", "Secondary sound level", 1.0, \outcomeDB],
+		[-60.0, 30.0, \lin, 0.1, "dB", "Outcome sound level", 1.0, \outcomeDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Secondary Sound Upper Cutoff", 1.0, \secondaryCutoff],
 		[-1.0, 1.0, \lin, 0.0, "", "Comb Filter Dry/Wet", 1.0, \combFiltDryWet],
 	];

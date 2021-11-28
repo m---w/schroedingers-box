@@ -273,8 +273,12 @@ OSCdef(\preset, { | msg, time |
 	});
 
 	// init outcome sound
+	p.outcome[\level] = ~ampfactorcat; // TODO: separate level variable for outcome in presets
+	// p.outcome[\level] = ~ampfactoroutcome;
 	if(~outcome, {
-		p.outcome[\level] = ~ampfactoroutcome;
+		~addSoundSize = ~soundcat_sum.size; // number of secondary sounds in this preset
+		~addSoundIndArray = (0..(~addSoundSize-1)); // array of secondary sound indices
+		~lastAddSoundID = ~addSoundIndArray.choose; // choose a random start index
 	});
 
 	// update remote GUI
@@ -415,7 +419,7 @@ OSCdef(\preset, { | msg, time |
 				p.outcome[\bufnum] = ~soundcat_sum[~chooseAddSound.()].bufnum; // choose random sample
 				p.outcome[\rate] = ~randRate.(); // choose random playback rate
 				x[\outcome] = Synth.new(\outcome, p.outcome.asKeyValuePairs, addAction: \addToHead); // create synth
-				~outcomePossible = false; // outcome not possible anymore
+				// ~outcomePossible = false; // outcome not possible anymore // WARNING: outcome is always possible!
 			};
 		};
 
@@ -443,7 +447,19 @@ s.waitForBoot{
 	p.master[\outcomeBus] = p.outcome[\busnum];
 
 	// load chirp into buffer
-	p.tt[\bufnum] = Buffer.read(s, (~path+/+"chirp/chirp_6.6s_48kHz_14_octaves_1_fadein_0_fadeout.wav").standardizePath);
+	p.tt[\bufnum] = Buffer.read(s, (~path+/+"chirp/chirp_6.6s_48kHz_14_octaves_1_fadein_0_fadeout_24bit.wav").standardizePath);
+
+	// Load Impulse Response for Equalization, to be used with PartConv
+	p.master[\partConvFFTSize] = 4 * s.options.blockSize; // FFT size for the partitioned convolution. At least 4x blocksize.
+	~irBuf = Buffer.read(s, (~path+/+"ir/2021-11-28_18-19-08-128_ex_ir_out_01_in_01.wav").standardizePath);
+	s.sync;
+	~irBufSize = PartConv.calcBufSize(p.master[\partConvFFTSize], ~irBuf);
+	~irNumPartitions = PartConv.calcNumPartitions(p.master[\partConvFFTSize], ~irBuf); // for debugging only
+	~irSpectrum = Buffer.alloc(s, ~irBufSize, 1);
+	~irSpectrum.preparePartConv(~irBuf, p.master[\partConvFFTSize]);
+	s.sync;
+	~irBuf.free; // don't need time domain data anymore, just needed spectral version
+	p.master[\irbufnum] = ~irSpectrum.bufnum;
 
 
 	/*===================== SYNTHDEFS =====================*/
@@ -452,7 +468,7 @@ s.waitForBoot{
 	SynthDef(\primary,{
 
 		arg
-		outbus = 0,
+		busnum = 0,
 		gate = 1.0,
 		vel = 0.0,
 		bufnum = 0,
@@ -469,14 +485,14 @@ s.waitForBoot{
 		sig = XFade2.ar(sig, comb, combFiltDryWet); // crossfade between dry and comb-filtered
 		sig = sig * EnvGen.ar(Env.asr(0.0, 1.0, 0.005), gate: gate, doneAction:2); // apply release envelope
 		sig = vel.lag(velUpdateLag) * sig * level.dbamp; // apply velocity and master level
-		Out.ar(outbus, sig); // play to bus
+		Out.ar(busnum, sig); // play to bus
 
 	}).add;
 
 	SynthDef(\outcome,{
 
 		arg
-		outbus = 0,
+		busnum = 0,
 		gate = 1.0,
 		vel = 0.0,
 		bufnum = 0,
@@ -487,7 +503,7 @@ s.waitForBoot{
 
 		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate, trigger: gate, doneAction: 2); // play sample
 		sig = vel * sig * level.dbamp; // apply velocity and master level
-		Out.ar(outbus, sig); // play to bus
+		Out.ar(busnum, sig); // play to bus
 
 	}).add;
 
@@ -496,7 +512,7 @@ s.waitForBoot{
 	SynthDef(\secondary, {
 
 		arg
-		outbus = 0,
+		busnum = 0,
 		bufnum = 0,
 		level = inf.neg,
 		deltime = 0.5,
@@ -509,7 +525,7 @@ s.waitForBoot{
 		sig = PlayBuf.ar(1, bufnum, rate, trigger, doneAction: 2); // play sample
 		sig = LPF.ar(sig, upperCutoff); // low-pass filter to simulate damping through box
 		sig = sig * level.dbamp; // apply amplitude
-		Out.ar(outbus, sig);
+		Out.ar(busnum, sig);
 
 	}).add;
 
@@ -525,9 +541,11 @@ s.waitForBoot{
 		secondaryLevel = 0.0,
 		outcomeLevel = 0.0,
 		lpf = 20000.0,
-		hpf = 80.0;
+		hpf = 80.0,
+		irbufnum = 0,
+		partConvFFTSize = 256;
 
-		var primary, secondary, outcome, master;
+		var primary, secondary, outcome, master, out;
 
 		primary = In.ar(primaryBus, numChannels: 1) * primaryLevel.dbamp; // read primary bus and apply level
 		secondary = In.ar(secondaryBus, numChannels: 1) * secondaryLevel.dbamp; // read secondary bus and apply level
@@ -535,10 +553,11 @@ s.waitForBoot{
 
 		master = primary + secondary + outcome; // just sum all sounds together
 
-		// TODO: equalization!
+		// Equalization with inverse filter
+		out = PartConv.ar(master, fftsize: partConvFFTSize, irbufnum: irbufnum); // Partitioned convolution with impulse response of equalization filter
 
-		master = LPF.ar(HPF.ar(master, hpf), lpf).tanh; // output filtering and protection
-		Out.ar(0, master!4); // write same signal to all output channels
+		out = LPF.ar(HPF.ar(out, hpf), lpf).tanh; // output filtering and protection
+		Out.ar(0, out!4); // write same signal to all output channels
 
 	}).add;
 
