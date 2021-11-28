@@ -166,6 +166,7 @@ q = (); // other parameters
 ~oscSetp.(\master, \outcomeLevel, \outcomeMasterDB);
 ~oscSetp.(\master, \lpf, \masterLPF);
 ~oscSetp.(\master, \hpf, \masterHPF);
+~oscSetp.(\master, \eq, \eq);
 
 // Test Tone Generator
 ~oscSetpTT = {|key| ~oscSetp.(\tt, key, key)}; // shortcut function
@@ -543,7 +544,8 @@ s.waitForBoot{
 		lpf = 20000.0,
 		hpf = 80.0,
 		irbufnum = 0,
-		partConvFFTSize = 256;
+		partConvFFTSize = 256,
+		eq = 1;
 
 		var primary, secondary, outcome, master, out;
 
@@ -554,7 +556,7 @@ s.waitForBoot{
 		master = primary + secondary + outcome; // just sum all sounds together
 
 		// Equalization with inverse filter
-		out = PartConv.ar(master, fftsize: partConvFFTSize, irbufnum: irbufnum); // Partitioned convolution with impulse response of equalization filter
+		out = (eq * PartConv.ar(master, fftsize: partConvFFTSize, irbufnum: irbufnum)) + ((1.0-eq) * master); // Partitioned convolution with impulse response of equalization filter, with bypass switch
 
 		out = LPF.ar(HPF.ar(out, hpf), lpf).tanh; // output filtering and protection
 		Out.ar(0, out!4); // write same signal to all output channels
