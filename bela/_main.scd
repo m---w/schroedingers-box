@@ -9,6 +9,8 @@ SuperCollider Patch
 
 s = Server.default;
 ~hostname = "hostname".unixCmdGetStdOut.replace("\n","").asSymbol; // get system hostname
+~path = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
+
 
 // Set up options
 if(~hostname==\bela, { // If running on Bela
@@ -46,17 +48,8 @@ q = (); // other parameters
 ~debugOnsets = true; // debug printing for onset detection
 ~debugSound = true; // debug printing for sound triggering
 
-// Secondary sound
-q[\secondaryMinDel] = 0.5;
-q[\secondaryMaxDel] = 1.0;
-
-// Primary sound
-q[\combFiltMinFreq] = 20.0;
-q[\combFiltMaxFreq] = 20000.0;
-
 // Sound
 ~globalvel = 0.0; // init velocity
-q[\playbackRand] = 0.1;
 
 
 /*===================== GUI CONTROLS =====================*/
@@ -109,6 +102,15 @@ q[\playbackRand] = 0.1;
 ~oscSetq.(\breakingThreshold);
 ~oscSetq.(\secondaryMinDel);
 ~oscSetq.(\secondaryMaxDel);
+~oscSetq.(\secondaryMinCount);
+~oscSetq.(\secondaryMaxCount);
+~oscSetq.(\secondaryCountCurve);
+~oscSetq.(\velMapInMin);
+~oscSetq.(\velMapInMax);
+~oscSetq.(\velMapOutMin);
+~oscSetq.(\velMapOutMax);
+~oscSetq.(\velMapCurve);
+
 
 // OSC Receiver function for synth parameters
 ~oscSetp = { |dict, key, addr, printflag=true|
@@ -181,18 +183,18 @@ q[\playbackRand] = 0.1;
 ~oscSetpTT.(\flip3);
 ~oscSetpTT.(\flip4);
 
-~oscSetT = { |addr, func, printflag=true|
+~oscSetFunc = { |addr, func, printflag=true|
 	OSCFunc({|msg, time|
 		var val = msg[1];
 		if(printflag, {
 			("OSC incoming:"+addr+val).postln;
 		});
-		p.tt[addr] = val;
-		func.(val);
+		func.(val, addr);
 	}, addr);
 };
 
-~oscSetT.(\toggleMaster, {|val|
+~oscSetFunc.(\toggleMaster, {|val, addr|
+	p.tt[addr] = val;
 	if(val==1, {
 		if(x[\tt].isPlaying.not, {
 			x[\tt] = Synth.new(\tt, p.tt.asKeyValuePairs, addAction: \addToHead).register;
@@ -203,6 +205,20 @@ q[\playbackRand] = 0.1;
 		});
 	});
 });
+
+~oscSetFunc.(\panic, {|val, addr|
+	x[\tt].free;
+	x[\secondary].free;
+	x[\outcome].free;
+	v.panic;
+});
+
+~oscSetFunc.(\triggerOnset, {|val, addr|
+	~lastvoice = ~newPrimarySound.(); // trigger new primary sound
+	~maybeNewSecondarySound.(); // maybe trigger new secondary sound
+});
+
+
 
 
 
@@ -230,7 +246,7 @@ OSCdef(\preset, { | msg, time |
 
 	// Load preset
 	if(~preset > 0){
-		("./presets/sound"++~preset.asInteger ++".scd").standardizePath.load; // load preset file
+		(~path+/+"presets/sound"++~preset.asInteger ++".scd").standardizePath.load; // load preset file
 	}{
 		// Notify if no preset was selected
 		"No preset selected. Press the button to start!".postln;
@@ -309,7 +325,7 @@ OSCdef(\preset, { | msg, time |
 		~onsetCounter = ~onsetCounter + 1; // increment onset counter
 
 		// Random decision (tune inMin and inMax to set minimum and maximum number of hits for 0% and 100% chance, respectively)
-		if( ~onsetCounter.linlin(inMin: 1, inMax: 7, outMin: 0.0, outMax: 1.0, clip: 'minmax').coin ) {
+		if( ~onsetCounter.lincurve(inMin: q[\secondaryMinCount], inMax: q[\secondaryMaxCount], outMin: 0.0, outMax: 1.0, curve: q[\secondaryCountCurve], clip: \minmax).coin ) {
 			// Trigger new secondary sound
 			p.secondary[\bufnum] = ~soundcat_sum[~chooseAddSound.()].bufnum;
 			p.secondary[\rate] = ~randRate.();
@@ -382,7 +398,7 @@ OSCdef(\preset, { | msg, time |
 			},
 			3, { // Velocity update
 				~globalvel = val;
-				~lastvoice.set([\vel, ~globalvel.linexp(0.005, 0.35, 0.005, 0.7, \minmax)]);
+				~lastvoice.set([\vel, ~globalvel.lincurve(q[\velMapInMin], q[\velMapInMax], q[\velMapOutMin], q[\velMapOutMax], curve: q[\velMapCurve], clip: \minmax)]);
 				if(~debugOnsets, {
 					("Velocity update:"+val).postln;
 				});
@@ -414,17 +430,20 @@ OSCdef(\preset, { | msg, time |
 s.waitForBoot{
 
 
-	/*===================== BUS ALLOCATION =====================*/
+	/*===================== BUS AND BUFFER ALLOCATIONS =====================*/
 
 	// allocate busses
-	p.primary[\busnum] = Bus.audio(s, numChannels: 1).postln;
-	p.secondary[\busnum] = Bus.audio(s, numChannels: 1).postln;
-	p.outcome[\busnum] = Bus.audio(s, numChannels: 1).postln;
+	p.primary[\busnum] = Bus.audio(s, numChannels: 1);
+	p.secondary[\busnum] = Bus.audio(s, numChannels: 1);
+	p.outcome[\busnum] = Bus.audio(s, numChannels: 1);
 
 	// map also to master busses
 	p.master[\primaryBus] = p.primary[\busnum];
 	p.master[\secondaryBus] = p.secondary[\busnum];
 	p.master[\outcomeBus] = p.outcome[\busnum];
+
+	// load chirp into buffer
+	p.tt[\bufnum] = Buffer.read(s, (~path+/+"chirp/chirp_6.6s_48kHz_14_octaves_1_fadein_0_fadeout.wav").standardizePath);
 
 
 	/*===================== SYNTHDEFS =====================*/
@@ -583,6 +602,7 @@ s.waitForBoot{
 
 	// TEST TONE GENERATOR
 	SynthDef(\tt, {
+
 		arg
 		noiseMasterDB = -80.0,
 		sineMasterDB = -80.0,
@@ -597,15 +617,20 @@ s.waitForBoot{
 		flip1 = 0.0,
 		flip2 = 0.0,
 		flip3 = 0.0,
-		flip4 = 0.0;
+		flip4 = 0.0,
+		bufnum = 0,
+		playChirp = 0.0;
 
 		var noise = WhiteNoise.ar(noiseMasterDB.dbamp*toggleNoise); // white noise generator
 		var sine = SinOsc.ar(testFreq, mul: sineMasterDB.dbamp*toggleSine); // sine tone generator
-		var sig = (sine + noise) * toggleMaster; // monophonic test signal
+		var chirp = PlayBuf.ar(1, bufnum: bufnum, trigger: playChirp, doneAction: 0) * sineMasterDB.dbamp;
+		var sig = (sine + noise + chirp) * toggleMaster; // monophonic test signal
 		var flipToggles = [flip1, flip2, flip3, flip4].madd(2.0.neg,1.0); // flip phase switches
 		var toggles = [toggle1, toggle2, toggle3, toggle4]; // channel state switches
 		var sigArray = toggles*flipToggles*sig; // 4ch test signal
+
 		Out.ar(0, (sigArray!2).flat); // play same signal to 1-4 and 5-8
+
 	}).add;
 
 

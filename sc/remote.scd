@@ -7,7 +7,7 @@ SuperCollider Patch
 // Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
 (
-~localMode = false; // SET CORRECT MODE HERE! (false=Bela, true=local)
+~localMode = true; // SET CORRECT MODE HERE! (false=Bela, true=local)
 
 if(~localMode, {
 	o = NetAddr("localhost", 57120); // set local address
@@ -53,7 +53,12 @@ e.fbMedianspan = 11; // specifies the size (in FFT frames) of the median window 
 // Velocity detection
 e.velDelay = 0.006; // delay between FBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
 e.defaultVel = 0.01; // default velocity
-e.velUpdateLag = 0.001;
+e.velUpdateLag = 0.001; // lag time for velocity update smoothing
+e.velMapInMin = 0.005; // mapping between amplitude and velocity: inMin
+e.velMapInMax = 0.35; // mapping between amplitude and velocity: inMax
+e.velMapOutMin = 0.005; // mapping between amplitude and velocity: outMin
+e.velMapOutMax = 0.7; // mapping between amplitude and velocity: outMax
+e.velMapCurve = 1; // mapping between amplitude and velocity: curve
 
 // Preset Settings
 e.primaryDB = inf.neg; // primary level in dB
@@ -101,6 +106,9 @@ e.breakingThreshold = 0.1; // threshold velocity for breaking
 e.secondaryMinDel = 0.5; // minimum start delay
 e.secondaryMaxDel = 1.0; // maximum start delay
 e.secondaryCutoff = 1000.0; // cutoff frequency of lowpass filter in Hz
+e.secondaryMinCount = 1; // min onset count for secondary trigger
+e.secondaryMaxCount = 7; // max onset count for secondary trigger
+e.secondaryCountCurve = 0; // curve
 
 
 // GUI function definition
@@ -135,6 +143,11 @@ e.secondaryCutoff = 1000.0; // cutoff frequency of lowpass filter in Hz
 		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Delay", 1.0e-3, \velDelay],
 		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Update Lag", 1.0e-3, \velUpdateLag],
 		[0.0001, 1.0, \exp, 0.0, "", "Default Velocity", 1.0, \defaultVel],
+		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: inMin", 1.0, \velMapInMin],
+		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: inMax", 1.0, \velMapInMax],
+		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMin", 1.0, \velMapOutMin],
+		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMax", 1.0, \velMapOutMax],
+		[-10, 10, \lin, 0.1, "", "Velocity Map: curve", 1.0, \velMapCurve],
 	];
 
 	// Preset
@@ -170,6 +183,9 @@ e.secondaryCutoff = 1000.0; // cutoff frequency of lowpass filter in Hz
 		[0.001, 1.0, \exp, 0.0, "", "Breaking Threshold", 1.0, \breakingThreshold],
 		[0.0, 5.0, \lin, 0.1, "s", "Min Delay for Secondary Sound", 1.0, \secondaryMinDel],
 		[0.0, 5.0, \lin, 0.1, "s", "Max Delay for Secondary Sound", 1.0, \secondaryMaxDel],
+		[0, 10, \lin, 1, "", "Secondary Min Count", 1.0, \secondaryMinCount],
+		[1, 50, \lin, 1, "", "Secondary Max Count", 1.0, \secondaryMaxCount],
+		[-10, 10, \lin, 0.1, "", "Secondary Count Curve", 1.0, \secondaryCountCurve],
 	];
 
 
@@ -296,14 +312,21 @@ e.secondaryCutoff = 1000.0; // cutoff frequency of lowpass filter in Hz
 	.action_({|obj|
 		var val = obj.value;
 		e[\toggleMaster] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/toggleMaster', e[\toggleMaster].asFloat); // send updated value via OSC
-		("Test Tone State:"+e[\toggleMaster]).postln; // print message
+		o.sendMsg('/toggleMaster', e[\toggleMaster]); // send updated value via OSC
+		("toggleMaster:"+e[\toggleMaster]).postln; // print message
 	});
 
 	elements[\toggles] = ();
 	( [[\toggleSine, "Sine"], [\toggleNoise, "Noise"]] ++ 4.collect{|i| i=i+1; [\toggle++i, "Ch."+i]} ++ 4.collect{|i| i=i+1; [\flip++i, "Flip Ch."+i]} ).do{ |item|
 		elements[\toggles][item[0].asSymbol] = makeToggle.(item[0].asSymbol, item[1]);
 	};
+
+	elements[\playChirp] = Button(elements[\w], Rect(0,0,80,20))
+	.states_([["Play Chirp", Color.white, Color.gray]])
+	.action_({|obj|
+		o.sendMsg('/playChirp', \play); // send updated value via OSC
+		"playChirp: play".postln; // print message
+	});
 
 	newline.();
 
@@ -330,6 +353,24 @@ e.secondaryCutoff = 1000.0; // cutoff frequency of lowpass filter in Hz
 		o.sendMsg('/participantID', e[\participantID]); // send updated value via OSC
 		elements[\preset].valueAction_(1.neg); // init sample number
 		("Participant ID:"+e[\participantID]).postln; // print message
+	});
+
+	newline.();
+	heading.("Tools");
+	newline.();
+
+	elements[\triggerOnset] = Button(elements[\w], Rect(0,0,120,20))
+	.states_([["trigger onset", Color.white, Color.gray]])
+	.action_({|obj|
+		o.sendMsg('/triggerOnset', \onset); // send updated value via OSC
+		"trigger: onset".postln; // print message
+	});
+
+	elements[\panic] = Button(elements[\w], Rect(0,0,120,20))
+	.states_([["PANIC", Color.white, Color.red]])
+	.action_({|obj|
+		o.sendMsg('/panic', \panic); // send updated value via OSC
+		"panic: panic".postln; // print message
 	});
 
 	newline.();
