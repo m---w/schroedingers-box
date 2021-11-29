@@ -368,6 +368,19 @@ OSCdef(\preset, { | msg, time |
 
 /*===================== TRIGGERING =====================*/
 
+~maybeUpdateVelocity = {
+	if( ~velocityCounter==4, { // check if all 4 velocity values already arrived
+		~globalvel = ~globalvels.mean; // average individual velocities to get global velocity
+
+		// TODO: get position from velocities.
+
+		~lastvoice.set([\vel, ~globalvel.lincurve(q[\velMapInMin], q[\velMapInMax], q[\velMapOutMin], q[\velMapOutMax], curve: q[\velMapCurve], clip: \minmax)]);
+		if(~debugOnsets, {
+			("Velocity update:"+~globalvel).postln;
+		});
+	});
+};
+
 // ONSET DETECTION
 ~oscReceiverOD = OSCFunc({ |msg, time|
 	var id = msg[2];
@@ -398,6 +411,8 @@ OSCdef(\preset, { | msg, time |
 				~fbodAgrees = false;
 			},
 			2, { // FBOD trigger
+				~waitingForVelocities = true; // now waiting for velocities to arrive
+				~velocityCounter = 0; // no velocity arrived yet
 				if( ~tbodTriggered, { // agree
 					~fbodAgrees = true;
 					if(~debugOnsets, {
@@ -411,11 +426,45 @@ OSCdef(\preset, { | msg, time |
 					});
 				});
 			},
+			/*
 			3, { // Velocity update
 				~globalvel = val;
 				~lastvoice.set([\vel, ~globalvel.lincurve(q[\velMapInMin], q[\velMapInMax], q[\velMapOutMin], q[\velMapOutMax], curve: q[\velMapCurve], clip: \minmax)]);
 				if(~debugOnsets, {
 					("Velocity update:"+val).postln;
+				});
+			};
+			*/
+			3, { // Velocity update, Channel 1
+				~velocityCounter = ~velocityCounter+1; // increment velocity counter
+				~globalvels[0] = val;
+				~maybeUpdateVelocity.(); // if this was the last value to arrive, then update velocity
+				if(~debugOnsets, {
+					("Velocity update: Channel 1"+val).postln;
+				});
+			},
+			4, { // Velocity update, Channel 2
+				~velocityCounter = ~velocityCounter+1; // increment velocity counter
+				~globalvels[1] = val;
+				~maybeUpdateVelocity.(); // if this was the last value to arrive, then update velocity
+				if(~debugOnsets, {
+					("Velocity update: Channel 2"+val).postln;
+				});
+			},
+			5, { // Velocity update, Channel 3
+				~velocityCounter = ~velocityCounter+1; // increment velocity counter
+				~globalvels[2] = val;
+				~maybeUpdateVelocity.(); // if this was the last value to arrive, then update velocity
+				if(~debugOnsets, {
+					("Velocity update: Channel 3"+val).postln;
+				});
+			},
+			6, { // Velocity update, Channel 4
+				~velocityCounter = ~velocityCounter+1; // increment velocity counter
+				~globalvels[3] = val;
+				~maybeUpdateVelocity.(); // if this was the last value to arrive, then update velocity
+				if(~debugOnsets, {
+					("Velocity update: Channel 4"+val).postln;
 				});
 			};
 		);
@@ -588,7 +637,7 @@ s.waitForBoot{
 		tbHpfFreq = 4000.0,
 		cancelDel = 1.0;
 
-		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, vel;
+		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, vels, velTrig;
 		var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
 		var nfft = 256; // FFT size in samples
 		var frameDur = (nfft/SampleRate.ir)*1.1; // duration of one fft frame in seconds, plus safety of 10 percent. 5.4ms at 48kHz and 256samp fft size.
@@ -598,7 +647,7 @@ s.waitForBoot{
 		var lpf1CoeffAm = 1.0-lpf1CoeffA; // pre-computation
 		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
 
-		sigRaw = SoundIn.ar([0,1,2,3]); // 4 input channels
+		sigRaw = SoundIn.ar([0,1,2,3]); // input channels
 		sig = sigRaw.sum; // downmix to mono
 
 		//=== TBOD ===
@@ -623,8 +672,15 @@ s.waitForBoot{
 		SendTrig.ar(DelayN.ar(tbTrig, 0.1, cancelDel*frameDur), 0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
 
 		//=== VD: velocity detection ===
-		vel = RunningMax.ar(sig.abs, DelayN.ar(fbTrigAR, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
-		SendTrig.ar(DelayN.ar(fbTrigAR, 0.1, velDelay), 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
+		vels = RunningMax.ar(sigRaw.abs, DelayN.ar(fbTrigAR, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
+		// vel = vels.mean; // average all channels
+		// SendTrig.ar(DelayN.ar(fbTrigAR, 0.1, velDelay), 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
+		velTrig = DelayN.ar(fbTrigAR, 0.1, velDelay); // create trigger signal for velocity update. Waiting time is set via velDelay.
+		// send the 4 individual velocity values to the language:
+		SendTrig.ar(velTrig, 3, value: vels[0]); // velocity of channel 0
+		SendTrig.ar(velTrig, 4, value: vels[1]); // velocity´ of channel 1
+		SendTrig.ar(velTrig, 5, value: vels[2]); // velocity of channel 2
+		SendTrig.ar(velTrig, 6, value: vels[3]); // velocity of channel 3
 
 	}).add;
 
