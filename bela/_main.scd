@@ -458,7 +458,7 @@ s.waitForBoot{
 	p.master[\outcomeBus] = p.outcome[\busnum];
 
 	// load chirp into buffer
-	p.tt[\bufnum] = Buffer.read(s, (~path+/+"chirp/chirp_6.6s_48kHz_14_octaves_1_fadein_0_fadeout_24bit.wav").standardizePath);
+	p.tt[\bufnum] = Buffer.read(s, (~path+/+"chirp/chirp_"++switch(s.sampleRate.round.asInteger, 44100, "7.2s_44.1kHz", 48000, "6.6s_48kHz")++"_14_octaves_1_fadein_0_fadeout_24bit.wav").standardizePath);
 
 	// Load Impulse Response for Equalization, to be used with PartConv
 	p.master[\partConvFFTSize] = 4 * s.options.blockSize; // FFT size for the partitioned convolution. At least 4x blocksize.
