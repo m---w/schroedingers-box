@@ -47,6 +47,7 @@ q = (); // other parameters
 ~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
 ~debugOnsets = true; // debug printing for onset detection
 ~debugSound = true; // debug printing for sound triggering
+~secondaryPossible = true; // flag used in secondary sound logic
 
 // Sound
 ~globalvel = 0.0; // init velocity
@@ -139,6 +140,11 @@ q = (); // other parameters
 			\master, {
 				if(x[\master].isPlaying, {
 					x[\master].set(key, val);
+				});
+			},
+			\tt, {
+				if(x[\tt].isPlaying, {
+					x[\tt].set(key, val);
 				});
 			}
 		);
@@ -326,7 +332,7 @@ OSCdef(\preset, { | msg, time |
 
 // Secondary sound
 ~maybeNewSecondarySound = {
-	if(x[\secondary].isPlaying.not && ~addsound){
+	if(x[\secondary].isPlaying.not && ~addsound && ~secondaryPossible){
 		~onsetCounter = ~onsetCounter + 1; // increment onset counter
 
 		// Random decision (tune inMin and inMax to set minimum and maximum number of hits for 0% and 100% chance, respectively)
@@ -334,11 +340,15 @@ OSCdef(\preset, { | msg, time |
 			// Trigger new secondary sound
 			p.secondary[\bufnum] = ~soundcat_sum[~chooseAddSound.()].bufnum;
 			p.secondary[\rate] = ~randRate.();
-			p.secondary[\deltime] = ~randAddDelay.();
-			x[\secondary] = Synth.new(\secondary, p.secondary.asKeyValuePairs, addAction: \addToHead).register;
-			if(~debugSound, {
-				"Secondary sound started.".postln;
-			});
+			~secondaryPossible = false; // block secondary sound triggers until the synth has started
+			fork{
+				~randAddDelay.().wait;
+				x[\secondary] = Synth.new(\secondary, p.secondary.asKeyValuePairs, addAction: \addToHead).register;
+				if(~debugSound, {
+					"Secondary sound started.".postln;
+				});
+				~secondaryPossible = true; // don't block anymore. Synth is already playing.
+			};
 			~onsetCounter = 1; // reset onset counter to 1 (so that there is already some small chance to directly trigger secondary sound again next time
 		};
 
@@ -516,13 +526,12 @@ s.waitForBoot{
 		busnum = 0,
 		bufnum = 0,
 		level = inf.neg,
-		deltime = 0.5,
 		rate = 1.0,
 		upperCutoff = 500;
 
 		var sig;
 
-		sig = PlayBuf.ar(1, bufnum, rate, 1, doneAction: 2); // play sample
+		sig = PlayBuf.ar(1, bufnum, rate: rate, trigger: 1.0, doneAction: 2); // play sample
 		sig = LPF.ar(sig, upperCutoff); // low-pass filter to simulate damping through box
 		sig = sig * level.dbamp; // apply amplitude
 		Out.ar(busnum, sig);
