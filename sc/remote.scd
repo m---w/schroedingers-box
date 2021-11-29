@@ -9,7 +9,7 @@ SuperCollider Patch
 (
 //~localMode = "ping -c 1 bela.local; echo $?".unixCmdGetStdOut.asInteger==2; // Check if Bela is reachable (false=Bela, true=local)
 
-~localMode = false;
+~localMode = true;
 
 if(~localMode, {
 	"Oh no! Bela is unreachable. GUI starts in local mode.".postln;
@@ -69,14 +69,17 @@ e.primaryDB = inf.neg; // primary level in dB
 e.secondaryDB = inf.neg; // secondary level in dB
 e.outcomeDB = inf.neg; // outcome level in dB
 e.secondaryCutoff = 4000.0; // Cutoff frequency of LPF for secondary sound, in Hz
+e.combFiltDryWet = 0.0; // dry/wet for comb filter
+
 
 // Master
-e.primaryMasterDB = inf.neg; // primary level in dB
-e.secondaryMasterDB = inf.neg; // secondary level in dB
-e.outcomeMasterDB = inf.neg; // outcome level in dB
+e.primaryMasterDB = 0.0; // primary level in dB
+e.secondaryMasterDB = 0.0; // secondary level in dB
+e.outcomeMasterDB = 0.0; // outcome level in dB
 e.masterHPF = 100.0; // master HPF cutoff in Hz
 e.masterLPF = 16000.0; // master LPF cutoff in Hz
 e.eq = 1; // output equalization
+e.masterLevel = inf.neg; // Master level in dB
 
 // Experiment
 e.participantID = 0; // participant ID
@@ -99,7 +102,11 @@ e.flip4 = 0; // output channel 4 flip phase
 // Primary Sound
 e.combFiltMinFreq = 20.0; // minimum combfilter frequency in Hz
 e.combFiltMaxFreq = 20000.0; // maximum combfilter frequency in Hz
-e.combFiltDryWet = 0.0; // dry/wet for comb filter
+e.slMaxPlaybackRate = 1.1; // max playback rate, as controlled by source localization
+
+
+// Source Localization
+e.slMaxRatio = 5.0; // maximum amplitude ratio for source localization
 
 // Global Sound Parameters
 e.playbackRand = 0.01; // percent rate randomization
@@ -165,11 +172,12 @@ e.secondaryCountCurve = 3; // curve
 
 	// Master
 	var sliderListMaster = [
-		[-60.0, 30.0, \lin, 0.1, "dB", "Global primary sound level", 1.0, \primaryMasterDB],
-		[-60.0, 30.0, \lin, 0.1, "dB", "Global secondary sound level", 1.0, \secondaryMasterDB],
-		[-60.0, 30.0, \lin, 0.1, "dB", "Global outcome sound level", 1.0, \outcomeMasterDB],
-		[20.0, 20000.0, \exp, 1.0, "Hz", "Master HPF Cutoff", 1.0, \masterHPF],
-		[20.0, 20000.0, \exp, 1.0, "Hz", "Master LPF Cutoff", 1.0, \masterLPF],
+		[-60.0, 30.0, \lin, 0.0, "dB", "Global primary sound level", 1.0, \primaryMasterDB],
+		[-60.0, 30.0, \lin, 0.0, "dB", "Global secondary sound level", 1.0, \secondaryMasterDB],
+		[-60.0, 30.0, \lin, 0.0, "dB", "Global outcome sound level", 1.0, \outcomeMasterDB],
+		[20.0, 20000.0, \exp, 0.1, "Hz", "Master HPF Cutoff", 1.0, \masterHPF],
+		[20.0, 20000.0, \exp, 0.1, "Hz", "Master LPF Cutoff", 1.0, \masterLPF],
+		[-60.0, 30.0, \lin, 0.0, "dB", "Global Master Level", 1.0, \masterLevel],
 	];
 
 	// Test Tone Generator
@@ -190,8 +198,9 @@ e.secondaryCountCurve = 3; // curve
 		[0, 10, \lin, 1, "", "Secondary Min Count", 1.0, \secondaryMinCount],
 		[1, 50, \lin, 1, "", "Secondary Max Count", 1.0, \secondaryMaxCount],
 		[-10, 10, \lin, 0.1, "", "Secondary Count Curve", 1.0, \secondaryCountCurve],
+		[1.0, 2.0, \exp, 0.0, "", "Source Position: Max Playback Rate", 1.0, \slMaxPlaybackRate],
+		[1.0, 10.0, \exp, 0.0, "", "Source Localization: Max Ratio", 1.0, \slMaxRatio],
 	];
-
 
 	// convert to dictionary, to address them by name
 	var sliderDictTBOD = ().putPairs([sliderListTBOD.flop.last,sliderListTBOD].flop.flatten);
@@ -308,6 +317,7 @@ e.secondaryCountCurve = 3; // curve
 	heading.("Master");
 	newline.();
 	makeSliders.(elements[\master], sliderDictMaster, sliderListMaster.flop.last);
+	elements.master.masterLevel.setColors(knobColor: Color.red);
 	newline.();
 
 	heading.("Sound");

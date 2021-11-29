@@ -175,6 +175,7 @@ q = (); // other parameters
 ~oscSetp.(\master, \lpf, \masterLPF);
 ~oscSetp.(\master, \hpf, \masterHPF);
 ~oscSetp.(\master, \eq, \eq);
+~oscSetp.(\master, \masterLevel, \masterLevel);
 
 // Test Tone Generator
 ~oscSetpTT = {|key| ~oscSetp.(\tt, key, key)}; // shortcut function
@@ -216,10 +217,15 @@ q = (); // other parameters
 });
 
 ~oscSetFunc.(\panic, {|val, addr|
+	// free synths
 	x[\tt].free;
 	x[\secondary].free;
 	x[\outcome].free;
 	v.panic;
+	// set master level to zero
+	p.master[\masterLevel] = inf.neg;
+	x[\master].set(\masterLevel, p.master[\masterLevel]);
+	n.do{|item| item.sendMsg(\bela, \masterLevel, p.master[\masterLevel]) };
 });
 
 ~oscSetFunc.(\triggerOnset, {|val, addr|
@@ -227,8 +233,15 @@ q = (); // other parameters
 	~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 });
 
+~oscSetFunc.(\slMaxPlaybackRate, {|val, addr|
+	q[\slMaxPlaybackRate] = val;
+	q[\slMinPlaybackRate] = val.reciprocal;
+});
 
-
+~oscSetFunc.(\slMaxRatio, {|val, addr|
+	q[\slMaxRatio] = val;
+	q[\slMinRatio] = val.reciprocal;
+});
 
 
 /*===================== SOUND SELECTION =====================*/
@@ -241,16 +254,16 @@ OSCdef(\preset, { | msg, time |
 	// load default settings (these may be defined in the preset)
 	~addsound = false; // secondary sound on/off
 	~outcome = false; // outcome sound on/off
-	~voices = 5; // number of simultaneous voices (polyphony)
+	~voices = 2; // number of simultaneous voices (polyphony)
 	~ampfactor = 0.0; // primary sound level
 	~ampfactorcat = inf.neg; // secondary sound level
 	~ampfactoroutcome = inf.neg; // outcome sound level
 	~outcomePossible = true; // outcome didn't happen yet?
-	~breakingThreshold = 0.1; // threshold for breaking glass
-	~secondaryCutoff = 1000.0; // cutoff for secondary sound
+	// ~breakingThreshold = 0.1; // threshold for breaking glass
+	~secondaryCutoff = 4000.0; // cutoff for secondary sound
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
-	~sound.do{|item| item.free}; // free buffers of primary sounds
-	~soundcat_sum.do{|item| item.free}; // free buffers of secondary sounds
+	~sound.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of primary sounds
+	~soundcat_sum.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of secondary sounds
 	~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
 
 	// Load preset
@@ -305,7 +318,6 @@ OSCdef(\preset, { | msg, time |
 
 /*===================== RANDOMIZATION =====================*/
 
-
 ~chooseSound = {
 	// set new sample ID (random from array, but not same as previous)
 	~lastSoundID = ~soundIndArray[~soundIndArray.rejectIndices({|i| i==~lastSoundID})].choose;
@@ -317,11 +329,12 @@ OSCdef(\preset, { | msg, time |
 };
 
 ~randRate = {
-	1.0+q[\playbackRand].bilinrand; // +-random percent playback rate
+	exprand(q[\playbackRand], q[\playbackRand].reciprocal); // random playback rate on exponential scale
+	// if playbackRand is 2.0, then rate will be random between 0.5 and 2.0.
 };
 
 ~randCombFreq = {
-	rrand(q[\combFiltMinFreq], q[\combFiltMaxFreq]);
+	exprand(q[\combFiltMaxFreq], q[\combFiltMinFreq]); // random frequency on exponential scale between min and max
 };
 
 ~randAddDelay = {
@@ -361,8 +374,8 @@ OSCdef(\preset, { | msg, time |
 ~newPrimarySound = {
 	// set parameters
 	p.primary[\bufnum] = ~sound[~chooseSound.()].bufnum;
-	p.primary[\rate] = ~randRate.();
-	p.primary[\combFiltFreq] = ~randCombFreq.();
+	p.primary[\rate] = 1.0; // pitch is controlled by position
+	p.primary[\combFiltFreq] = (q[\combFiltMinFreq]*q[\combFiltMaxFreq]).sqrt; // comb filter is controlled by position. just set it to the geometric mean.
 	// play voice
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
 };
@@ -371,24 +384,37 @@ OSCdef(\preset, { | msg, time |
 /*===================== TRIGGERING =====================*/
 
 ~maybeUpdateSourcePos = {
+
 	if( ~velocityCounter>3, { // check if all 4 velocity values already arrived
+
 		~waitingForVelocities = false; // not waiting anymore
 
 		if(~debugOnsets, {
-			"source localization: update".postln;
+			"source localization: updating...".postln;
 		});
-
-		// TODO: get position from velocities.
-
-		/*
 
 		// Position goes from -1 to +1.
 		~sourcePos[0] = 0.0; // just setting to center for now
 		~sourcePos[1] = 0.0; // just setting to center for now
 
+		// TODO: check channel numbers by looking at the individual velocities. The nearest mic should give the loudest velocity.
+		// For now, I assume the following channel mapping:
+		//  top left: 0
+		//  top right: 1
+		//  bottom left: 2
+		//  bottom right: 3
+
+		// guess source position from level differences (i.e., from amplitude ratios)
+		~sourcePos[0] = [~globalvels[0]/~globalvels[1], ~globalvels[2]/~globalvels[3]].explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0).mean;
+		~sourcePos[1] = [~globalvels[0]/~globalvels[2], ~globalvels[1]/~globalvels[3]].explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0).mean;
+
+		if(~debugOnsets, {
+			("source position:"+~sourcePos.round(0.01)).postln;
+		});
+
 		// set playback rate and comb filter, respectively
-		p.primary[\rate] = 1.0 + (~sourcePos.mean * q[\posToPlaybackRate]);
-		p.primary[\combFiltFreq] = q[\combFiltBaseFreq] * (1.0 + ( 0.5 * (~sourcePos[0]-~sourcePos[1]) * q[\posToCombFiltFreq] ));
+		p.primary[\rate] = ~sourcePos.sum.linexp(inMin: -2.0, inMax: 2.0, outMin: q[\slMinPlaybackRate], outMax: q[\slMaxPlaybackRate], clip: \minmax); // map position to playback speed
+		p.primary[\combFiltFreq] = (~sourcePos[0]-~sourcePos[1]).linexp(inMin: -2.0, inMax: 2.0, outMin: q[\combFiltMinFreq], outMax: q[\combFiltMaxFreq], clip: \minmax); // map position to filter frequency
 
 		// update voice
 		~lastvoice.set([\rate, p.primary[\rate], \combFiltFreq, p.primary[\combFiltFreq]]);
@@ -396,9 +422,6 @@ OSCdef(\preset, { | msg, time |
 		if(~debugOnsets, {
 			("Source Position update:"+~sourcePos).postln;
 		});
-
-		*/
-
 
 	});
 };
@@ -570,6 +593,8 @@ s.waitForBoot{
 
 	}).add;
 
+
+	// OUTCOME SOUND
 	SynthDef(\outcome,{
 
 		arg
@@ -623,7 +648,8 @@ s.waitForBoot{
 		hpf = 80.0,
 		irbufnum = 0,
 		partConvFFTSize = 256,
-		eq = 1;
+		eq = 1,
+		masterLevel = inf.neg;
 
 		var primary, secondary, outcome, master, out;
 
@@ -636,7 +662,7 @@ s.waitForBoot{
 		// Equalization with inverse filter
 		out = (eq * PartConv.ar(master, fftsize: partConvFFTSize, irbufnum: irbufnum)) + ((1.0-eq) * master); // Partitioned convolution with impulse response of equalization filter, with bypass switch
 
-		out = LPF.ar(HPF.ar(out, hpf), lpf).tanh; // output filtering and protection
+		out = LPF.ar(HPF.ar(out*masterLevel.dbamp, hpf), lpf).tanh; // output filtering and protection
 		Out.ar(0, out!4); // write same signal to all output channels
 
 	}).add;
