@@ -491,7 +491,7 @@ s.waitForBoot{
 
 		var sig, comb;
 
-		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate, trigger: gate, doneAction: 2); // play sample
+		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 2); // play sample
 		comb = sig - DelayN.ar(sig, maxdelaytime: 0.1, delaytime: combFiltFreq.reciprocal); // comb filter
 		sig = XFade2.ar(sig, comb, combFiltDryWet); // crossfade between dry and comb-filtered
 		sig = sig * EnvGen.ar(Env.asr(0.0, 1.0, 0.005), gate: gate, doneAction:2); // apply release envelope
@@ -512,7 +512,7 @@ s.waitForBoot{
 
 		var sig, comb;
 
-		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate, trigger: gate, doneAction: 2); // play sample
+		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 2); // play sample
 		sig = vel * sig * level.dbamp; // apply velocity and master level
 		Out.ar(busnum, sig); // play to bus
 
@@ -531,7 +531,7 @@ s.waitForBoot{
 
 		var sig;
 
-		sig = PlayBuf.ar(1, bufnum, rate: rate, trigger: 1.0, doneAction: 2); // play sample
+		sig = PlayBuf.ar(1, bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: 1.0, doneAction: 2); // play sample
 		sig = LPF.ar(sig, upperCutoff); // low-pass filter to simulate damping through box
 		sig = sig * level.dbamp; // apply amplitude
 		Out.ar(busnum, sig);
