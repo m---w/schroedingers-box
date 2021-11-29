@@ -1,3 +1,4 @@
+sounds/
 src-code/bela/old/
 src-code/bela/new-gui/
 src-code/old/
@@ -12,3 +13,5 @@ zoom-recs/
 echothief/
 old/
 temp-sounds/
+sounds/*
+sounds/parameter_space.org

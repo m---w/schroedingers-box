@@ -520,10 +520,9 @@ s.waitForBoot{
 		rate = 1.0,
 		upperCutoff = 500;
 
-		var sig, trigger;
+		var sig;
 
-		trigger = DelayN.ar(Trig.ar(1.0), deltime, deltime); // trigger after specified time
-		sig = PlayBuf.ar(1, bufnum, rate, trigger, doneAction: 2); // play sample
+		sig = PlayBuf.ar(1, bufnum, rate, 1, doneAction: 2); // play sample
 		sig = LPF.ar(sig, upperCutoff); // low-pass filter to simulate damping through box
 		sig = sig * level.dbamp; // apply amplitude
 		Out.ar(busnum, sig);

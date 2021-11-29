@@ -7,7 +7,9 @@ SuperCollider Patch
 // Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
 (
-~localMode = "ping -c 1 bela.local; echo $?".unixCmdGetStdOut.asInteger==2; // Check if Bela is reachable (false=Bela, true=local)
+//~localMode = "ping -c 1 bela.local; echo $?".unixCmdGetStdOut.asInteger==2; // Check if Bela is reachable (false=Bela, true=local)
+
+~localMode = false;
 
 if(~localMode, {
 	"Oh no! Bela is unreachable. GUI starts in local mode.".postln;

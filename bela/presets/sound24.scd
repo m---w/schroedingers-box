@@ -3,7 +3,7 @@
 ~sound24var3 = Buffer.readChannel(s, "./sounds/fan-scissors_var03.wav", channels:1);
 ~sound24var4 = Buffer.readChannel(s, "./sounds/fan-scissors_var04.wav", channels:1);
 ~sound24var5 = Buffer.readChannel(s, "./sounds/fan-scissors_var05.wav", channels:1);
-~sound24var6 = Buffer.readChannel(s, "./sounds/fan-scissors_var06.wav", channels:1)
+~sound24var6 = Buffer.readChannel(s, "./sounds/fan-scissors_var06.wav", channels:1);
 
 ~sound = [~sound24var1, ~sound24var2, ~sound24var3, ~sound24var4, ~sound24var5, ~sound24var6];
 
