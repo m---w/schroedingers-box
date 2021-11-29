@@ -107,6 +107,7 @@ e.slMaxPlaybackRate = 1.1; // max playback rate, as controlled by source localiz
 
 // Source Localization
 e.slMaxRatio = 5.0; // maximum amplitude ratio for source localization
+e.slLpfFreq = 25.0; // lowpass filter freq for envelope detection for source localization
 
 // Global Sound Parameters
 e.playbackRand = 0.01; // percent rate randomization
@@ -134,8 +135,8 @@ e.secondaryCountCurve = 3; // curve
 	var sliderListTBOD = [
 		[-180, 0.0, \lin, 1.0, "dB", "TBOD threshold", 1.0, \tbThreshDB],
 		[80.0, 8000.0, \exp, 1.0, "Hz", "HPF cutoff", 1.0, \tbHpfFreq],
-		[1.0, 120.0, \lin, 1.0, "Hz", "LPF 1 cutoff", 1.0, \tbLpf1Freq],
-		[1.0, 120.0, \lin, 1.0, "Hz", "LPF 2 cutoff", 1.0, \tbLpf2Freq],
+		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 1 cutoff", 1.0, \tbLpf1Freq],
+		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 2 cutoff", 1.0, \tbLpf2Freq],
 		[0.1, 500.0, \exp, 1.0, "ms", "TBOD refractory period", 1.0e-3, \tbRefPeriod],
 		[0.0, 32.0, \lin, 1.0, "FFT frames", "False Alarm Cancellation delay", 1.0, \cancelDel],
 	];
@@ -200,6 +201,7 @@ e.secondaryCountCurve = 3; // curve
 		[-10, 10, \lin, 0.1, "", "Secondary Count Curve", 1.0, \secondaryCountCurve],
 		[1.0, 2.0, \exp, 0.0, "", "Source Position: Max Playback Rate", 1.0, \slMaxPlaybackRate],
 		[1.0, 10.0, \exp, 0.0, "", "Source Localization: Max Ratio", 1.0, \slMaxRatio],
+		[1.0, 120.0, \exp, 1.0, "Hz", "Source Localization: LPF cutoff", 1.0, \slLpfFreq],
 	];
 
 	// convert to dictionary, to address them by name

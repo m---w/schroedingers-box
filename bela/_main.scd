@@ -86,6 +86,7 @@ q = (); // other parameters
 ~oscSetOD.(\tbLpf2Freq);
 ~oscSetOD.(\tbHpfFreq);
 ~oscSetOD.(\cancelDel);
+~oscSetOD.(\slLpfFreq);
 
 
 // OSC receiver function for global parameters
