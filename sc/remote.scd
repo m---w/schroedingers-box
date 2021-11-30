@@ -7,9 +7,14 @@ SuperCollider Patch
 // Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
 (
-//~localMode = "ping -c 1 bela.local; echo $?".unixCmdGetStdOut.asInteger==2; // Check if Bela is reachable (false=Bela, true=local)
-
-~localMode = true;
+Platform.case(
+    \osx,       { "OSX".postln;
+		~localMode = "ping -c 1 bela.local; echo $?".unixCmdGetStdOut.asInteger==68;
+	},
+    \linux,     { "Linux".postln;
+		~localMode = "ping -c 1 bela.local; echo $?".unixCmdGetStdOut.asInteger==2; // Check if Bela is reachable (false=Bela, true=local)
+	},
+);
 
 if(~localMode, {
 	"Oh no! Bela is unreachable. GUI starts in local mode.".postln;
@@ -18,6 +23,7 @@ if(~localMode, {
 	"Hooray! Bela responded. Connecting to Bela...".postln;
 	o = NetAddr("bela.local", 57120); // set bela remote address
 });
+
 
 Window.closeAll;
 
