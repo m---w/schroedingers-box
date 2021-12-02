@@ -45,12 +45,11 @@ q = (); // other parameters
 // Variable Init
 ~tbodTriggered = false; // flag to store if TBOD has triggered
 ~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
-~debugOnsets = false; // debug printing for onset detection
-~debugSound = true; // debug printing for sound triggering
+~debugOnsets = true; // debug printing for onset detection
+~debugSourcePos = false;
+~debugSound = false; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
-~globalvels = 1e-99!4; // init global velocities
-~velocityCounter = 0;
-~waitingForVelocities = false; // flag for velocity detection
+~globalvels = 0.0!4; // init global velocities
 ~globalvel = 0.0; // init velocity
 ~sourcePos = 0.0!2; // init source position
 
@@ -87,6 +86,10 @@ q = (); // other parameters
 ~oscSetOD.(\tbHpfFreq);
 ~oscSetOD.(\cancelDel);
 ~oscSetOD.(\slLpfFreq);
+~oscSetOD.(\inGain1);
+~oscSetOD.(\inGain2);
+~oscSetOD.(\inGain3);
+~oscSetOD.(\inGain4);
 
 
 // OSC receiver function for global parameters
@@ -384,32 +387,26 @@ OSCdef(\preset, { | msg, time |
 
 /*===================== TRIGGERING =====================*/
 
-~maybeUpdateSourcePos = {
+~updateSourcePos = {
 
-	/*if( ~velocityCounter>3, { // check if all 4 velocity values already arrived
 
-		~waitingForVelocities = false; // not waiting anymore
-
-		if(~debugOnsets, {
-			"source localization: updating...".postln;
-		});
 
 		// Position goes from -1 to +1.
-		~sourcePos[0] = 0.0; // just setting to center for now
-		~sourcePos[1] = 0.0; // just setting to center for now
 
-		// TODO: check channel numbers by looking at the individual velocities. The nearest mic should give the loudest velocity.
-		// For now, I assume the following channel mapping:
+
+		// Channel mapping:
 		//  top left: 0
-		//  top right: 1
-		//  bottom left: 2
-		//  bottom right: 3
-		
-		// guess source position from level differences (i.e., from amplitude ratios)
-		~sourcePos[0] = [~globalvels[0]/(~globalvels[1] + 1e-99), ~globalvels[2]/(~globalvels[3] + 1e-99)].collect{|i|i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
-		~sourcePos[1] = [~globalvels[0]/(~globalvels[2] + 1e-99), ~globalvels[1]/(~globalvels[3] + 1e-99)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
+		//  top right: 3
+		//  bottom left: 1
+		//  bottom right: 2
 
-		if(~debugOnsets, {
+		// guess source position from level differences (i.e., from amplitude ratios)
+		// right vs. left
+		~sourcePos[0] = [~globalvels[3]/(~globalvels[0] + 1e-16), ~globalvels[2]/(~globalvels[1] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
+		// top vs. bottom
+		~sourcePos[1] = [~globalvels[0]/(~globalvels[1] + 1e-16), ~globalvels[3]/(~globalvels[2] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
+
+		if(~debugSourcePos, {
 			("source position:"+~sourcePos.round(0.01)).postln;
 		});
 
@@ -420,11 +417,11 @@ OSCdef(\preset, { | msg, time |
 		// update voice
 		~lastvoice.set([\rate, p.primary[\rate], \combFiltFreq, p.primary[\combFiltFreq]]);
 
-		if(~debugOnsets, {
-			("Source Position update:"+~sourcePos).postln;
+		if(~debugSourcePos, {
+			("Source Position update:"+~sourcePos.round(0.01)).postln;
 		});
 
-	});*/
+
 };
 
 // ONSET DETECTION
@@ -457,8 +454,6 @@ OSCdef(\preset, { | msg, time |
 				~fbodAgrees = false;
 			},
 			2, { // FBOD trigger
-				~waitingForVelocities = true; // now waiting for velocities to arrive
-				~velocityCounter = 0; // no velocity arrived yet
 				if( ~tbodTriggered, { // agree
 					~fbodAgrees = true;
 					if(~debugOnsets, {
@@ -478,38 +473,22 @@ OSCdef(\preset, { | msg, time |
 				if(~debugOnsets, {
 					("Velocity update:"+val).postln;
 				});
-			};
+			},
 			// Source Localization:
 			4, { // Velocity update, Channel 1
-				~velocityCounter = ~velocityCounter+1; // increment velocity counter
 				~globalvels[0] = val;
-				~maybeUpdateSourcePos.(); // if this was the last value to arrive, then update source position
-				if(~debugOnsets, {
-					("Source Localization: Ch.1 velocity:"+val).postln;
-				});
 			},
 			5, { // Velocity update, Channel 2
-				~velocityCounter = ~velocityCounter+1; // increment velocity counter
 				~globalvels[1] = val;
-				~maybeUpdateSourcePos.(); // if this was the last value to arrive, then update source position
-				if(~debugOnsets, {
-					("Source Localization: Ch.2 velocity:"+val).postln;
-				});
 			},
 			6, { // Velocity update, Channel 3
-				~velocityCounter = ~velocityCounter+1; // increment velocity counter
 				~globalvels[2] = val;
-				~maybeUpdateSourcePos.(); // if this was the last value to arrive, then update source position
-				if(~debugOnsets, {
-					("Source Localization: Ch.3 velocity:"+val).postln;
-				});
 			},
 			7, { // Velocity update, Channel 4
-				~velocityCounter = ~velocityCounter+1; // increment velocity counter
 				~globalvels[3] = val;
-				~maybeUpdateSourcePos.(); // if this was the last value to arrive, then update source position
-				if(~debugOnsets, {
-					("Source Localization: Ch.4 velocity:"+val).postln;
+				~updateSourcePos.(); // update source position
+				if(~debugSourcePos, {
+					("Source Localization: Velocities (dB rel to mean):"+(~globalvels/~globalvel).ampdb.round(1.0)).postln;
 				});
 			};
 		);
@@ -551,7 +530,9 @@ s.waitForBoot{
 	p.master[\secondaryBus] = p.secondary[\busnum];
 	p.master[\outcomeBus] = p.outcome[\busnum];
 
-	~dummybuffer = Buffer.alloc(s, 64, bufnum:0);
+	// allocate dummy buffer that will be used by default
+	~dummybuffer = Buffer.alloc(s, 64, bufnum: 0);
+
 	// load chirp into buffer
 	p.tt[\bufnum] = Buffer.read(s, (~path+/+"chirp/chirp_"++switch(s.sampleRate.round.asInteger, 44100, "7.2s_44.1kHz", 48000, "6.6s_48kHz")++"_14_octaves_1_fadein_0_fadeout_24bit.wav").standardizePath);
 
@@ -587,7 +568,7 @@ s.waitForBoot{
 		var sig, comb;
 
 		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 2); // play sample
-		comb = sig - DelayN.ar(sig, maxdelaytime: 0.1, delaytime: combFiltFreq.reciprocal); // comb filter
+		comb = sig - DelayN.ar(sig, maxdelaytime: 0.1, delaytime: combFiltFreq.reciprocal.lag(velUpdateLag)); // comb filter
 		sig = XFade2.ar(sig, comb, combFiltDryWet); // crossfade between dry and comb-filtered
 		sig = sig * EnvGen.ar(Env.asr(0.0, 1.0, 0.005), gate: gate, doneAction:2); // apply release envelope
 		sig = vel.lag(velUpdateLag) * sig * level.dbamp; // apply velocity and master level
@@ -685,7 +666,11 @@ s.waitForBoot{
 		tbLpf2Freq = 25.0,
 		tbHpfFreq = 4000.0,
 		cancelDel = 1.0,
-		slLpfFreq = 25.0;
+		slLpfFreq = 25.0,
+		inGain1 = 0.0,
+		inGain2 = 0.0,
+		inGain3 = 0.0,
+		inGain4 = 0.0;
 
 		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, vel, vels, velTrig, onsetVels;
 		var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
@@ -699,7 +684,7 @@ s.waitForBoot{
 		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
 		var slLpfCoeffAm = 1.0-slLpfCoeffA; // pre-computation
 
-		sigRaw = SoundIn.ar([0,1,2,3]); // input channels
+		sigRaw = SoundIn.ar([0,1,2,3]) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels
 		sig = sigRaw.sum; // downmix to mono
 
 		//=== TBOD ===
@@ -726,15 +711,18 @@ s.waitForBoot{
 		//=== VD: velocity detection ===
 		vels = RunningMax.ar(sigRaw.abs, DelayN.ar(fbTrigAR, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
 		vel = vels.mean; // average all channels
-		SendTrig.ar(DelayN.ar(fbTrigAR, 0.1, velDelay), 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
+		velTrig = DelayN.ar(fbTrigAR, 0.1, velDelay); // trigger for velocity detection
+		SendTrig.ar(velTrig, 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
 
 		//=== SL: source localization ===
-		onsetVels = Integrator.ar(slLpfCoeffAm*sigRaw.abs, slLpfCoeffA); // Take envelope, with smoothing
+		// onsetVels = Integrator.ar(slLpfCoeffAm*sigRaw.abs, slLpfCoeffA); // Take envelope, with smoothing
+		//onsetVels = Amplitude.ar(sigRaw.abs, 0.01, 0.01);
+		//onsetVels = sigRaw.abs;
 		// send the 4 individual velocity values to the language:
-		SendTrig.ar(fbTrigAR, 4, value: onsetVels[0]); // velocity of channel 0
-		SendTrig.ar(fbTrigAR, 5, value: onsetVels[1]); // velocity of channel 1
-		SendTrig.ar(fbTrigAR, 6, value: onsetVels[2]); // velocity of channel 2
-		SendTrig.ar(fbTrigAR, 7, value: onsetVels[3]); // velocity of channel 3
+		SendTrig.ar(velTrig, 4, value: vels[0]); // velocity of channel 0
+		SendTrig.ar(velTrig, 5, value: vels[1]); // velocity of channel 1
+		SendTrig.ar(velTrig, 6, value: vels[2]); // velocity of channel 2
+		SendTrig.ar(velTrig, 7, value: vels[3]); // velocity of channel 3
 
 	}).add;
 

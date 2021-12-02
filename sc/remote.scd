@@ -61,21 +61,26 @@ e.fbMingap = 40; // specifies a minimum gap (in FFT frames) between onset detect
 e.fbMedianspan = 22; // specifies the size (in FFT frames) of the median window used for smoothing the detection function before triggering.
 
 // Velocity detection
-e.velDelay = 0.006; // delay between FBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
+e.velDelay = 0.005; // delay between FBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
 e.defaultVel = 0.05; // default velocity
-e.velUpdateLag = 0.001; // lag time for velocity update smoothing
+e.velUpdateLag = 0.0005; // lag time for velocity update smoothing
 e.velMapInMin = 0.005; // mapping between amplitude and velocity: inMin
-e.velMapInMax = 0.35; // mapping between amplitude and velocity: inMax
-e.velMapOutMin = 0.005; // mapping between amplitude and velocity: outMin
-e.velMapOutMax = 0.7; // mapping between amplitude and velocity: outMax
+e.velMapInMax = 0.05; // mapping between amplitude and velocity: inMax
+e.velMapOutMin = 0.01; // mapping between amplitude and velocity: outMin
+e.velMapOutMax = 1; // mapping between amplitude and velocity: outMax
 e.velMapCurve = 1; // mapping between amplitude and velocity: curve
+
+e.inGain1 = -9.2;
+e.inGain2 = -0.6;
+e.inGain3 = 0.0;
+e.inGain4 = 2.5;
 
 // Preset Settings
 e.primaryDB = inf.neg; // primary level in dB
 e.secondaryDB = inf.neg; // secondary level in dB
 e.outcomeDB = inf.neg; // outcome level in dB
 e.secondaryCutoff = 4000.0; // Cutoff frequency of LPF for secondary sound, in Hz
-e.combFiltDryWet = 0.0; // dry/wet for comb filter
+e.combFiltDryWet = 1.0; // dry/wet for comb filter
 
 
 // Master
@@ -106,13 +111,13 @@ e.flip3 = 0; // output channel 3 flip phase
 e.flip4 = 0; // output channel 4 flip phase
 
 // Primary Sound
-e.combFiltMinFreq = 20.0; // minimum combfilter frequency in Hz
-e.combFiltMaxFreq = 20000.0; // maximum combfilter frequency in Hz
+e.combFiltMinFreq = 100.0; // minimum combfilter frequency in Hz
+e.combFiltMaxFreq = 5000.0; // maximum combfilter frequency in Hz
 e.slMaxPlaybackRate = 1.1; // max playback rate, as controlled by source localization
 
 
 // Source Localization
-e.slMaxRatio = 5.0; // maximum amplitude ratio for source localization
+e.slMaxRatio = 2.0; // maximum amplitude ratio for source localization
 e.slLpfFreq = 25.0; // lowpass filter freq for envelope detection for source localization
 
 // Global Sound Parameters
@@ -166,6 +171,10 @@ e.secondaryCountCurve = 3; // curve
 		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMin", 1.0, \velMapOutMin],
 		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMax", 1.0, \velMapOutMax],
 		[-10, 10, \lin, 0.1, "", "Velocity Map: curve", 1.0, \velMapCurve],
+		[-20, 20.0, \lin, 0.1, "dB", "input gain 1", 1.0, \inGain1],
+		[-20, 20.0, \lin, 0.1, "dB", "input gain 2", 1.0, \inGain2],
+		[-20, 20.0, \lin, 0.1, "dB", "input gain 3", 1.0, \inGain3],
+		[-20, 20.0, \lin, 0.1, "dB", "input gain 4", 1.0, \inGain4],
 	];
 
 	// Preset
