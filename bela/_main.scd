@@ -45,10 +45,10 @@ q = (); // other parameters
 // Variable Init
 ~tbodTriggered = false; // flag to store if TBOD has triggered
 ~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
-~debugOnsets = true; // debug printing for onset detection
+~debugOnsets = false; // debug printing for onset detection
 ~debugSound = true; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
-~globalvels = 0.0!4; // init global velocities
+~globalvels = 1e-99!4; // init global velocities
 ~velocityCounter = 0;
 ~waitingForVelocities = false; // flag for velocity detection
 ~globalvel = 0.0; // init velocity
@@ -386,7 +386,7 @@ OSCdef(\preset, { | msg, time |
 
 ~maybeUpdateSourcePos = {
 
-	if( ~velocityCounter>3, { // check if all 4 velocity values already arrived
+	/*if( ~velocityCounter>3, { // check if all 4 velocity values already arrived
 
 		~waitingForVelocities = false; // not waiting anymore
 
@@ -404,10 +404,10 @@ OSCdef(\preset, { | msg, time |
 		//  top right: 1
 		//  bottom left: 2
 		//  bottom right: 3
-
+		
 		// guess source position from level differences (i.e., from amplitude ratios)
-		~sourcePos[0] = [~globalvels[0]/~globalvels[1], ~globalvels[2]/~globalvels[3]].explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0).mean;
-		~sourcePos[1] = [~globalvels[0]/~globalvels[2], ~globalvels[1]/~globalvels[3]].explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0).mean;
+		~sourcePos[0] = [~globalvels[0]/(~globalvels[1] + 1e-99), ~globalvels[2]/(~globalvels[3] + 1e-99)].collect{|i|i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
+		~sourcePos[1] = [~globalvels[0]/(~globalvels[2] + 1e-99), ~globalvels[1]/(~globalvels[3] + 1e-99)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
 
 		if(~debugOnsets, {
 			("source position:"+~sourcePos.round(0.01)).postln;
@@ -424,7 +424,7 @@ OSCdef(\preset, { | msg, time |
 			("Source Position update:"+~sourcePos).postln;
 		});
 
-	});
+	});*/
 };
 
 // ONSET DETECTION
@@ -551,6 +551,7 @@ s.waitForBoot{
 	p.master[\secondaryBus] = p.secondary[\busnum];
 	p.master[\outcomeBus] = p.outcome[\busnum];
 
+	~dummybuffer = Buffer.alloc(s, 64, bufnum:0);
 	// load chirp into buffer
 	p.tt[\bufnum] = Buffer.read(s, (~path+/+"chirp/chirp_"++switch(s.sampleRate.round.asInteger, 44100, "7.2s_44.1kHz", 48000, "6.6s_48kHz")++"_14_octaves_1_fadein_0_fadeout_24bit.wav").standardizePath);
 
@@ -608,7 +609,7 @@ s.waitForBoot{
 
 		var sig, comb;
 
-		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 2); // play sample
+		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: 1, trigger: gate, doneAction: 2); // play sample
 		sig = vel * sig * level.dbamp; // apply velocity and master level
 		Out.ar(busnum, sig); // play to bus
 
@@ -627,7 +628,7 @@ s.waitForBoot{
 
 		var sig;
 
-		sig = PlayBuf.ar(1, bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: 1.0, doneAction: 2); // play sample
+		sig = PlayBuf.ar(1, bufnum, rate: 1, trigger: 1.0, doneAction: 2); // play sample
 		sig = LPF.ar(sig, upperCutoff); // low-pass filter to simulate damping through box
 		sig = sig * level.dbamp; // apply amplitude
 		Out.ar(busnum, sig);
