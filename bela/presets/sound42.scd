@@ -2,9 +2,9 @@
 ~sound42var1 = Buffer.readChannel(s, "./sounds/thermo-metallic_var01.wav", channels:1);
 ~sound42var2 = Buffer.readChannel(s, "./sounds/thermo-metallic_var02.wav", channels:1);
 ~sound42var3 = Buffer.readChannel(s, "./sounds/thermo-metallic_var03.wav", channels:1);
-~sound42var3 = Buffer.readChannel(s, "./sounds/thermo-metallic_var04.wav", channels:1);
-~sound42var3 = Buffer.readChannel(s, "./sounds/thermo-metallic_var05.wav", channels:1);
-~sound42var3 = Buffer.readChannel(s, "./sounds/thermo-metallic_var06.wav", channels:1);
+~sound42var4 = Buffer.readChannel(s, "./sounds/thermo-metallic_var04.wav", channels:1);
+~sound42var5 = Buffer.readChannel(s, "./sounds/thermo-metallic_var05.wav", channels:1);
+~sound42var6 = Buffer.readChannel(s, "./sounds/thermo-metallic_var06.wav", channels:1);
 
 //playback array
 ~sound = [~sound42var1, ~sound42var2, ~sound42var3, ~sound42var4,  ~sound42var5, ~sound42var6];
@@ -15,9 +15,9 @@
 //secondary sound
 ~sound42cat1 = Buffer.read(s, "./sounds/ballon-defl_var01.wav");
 ~sound42cat2 = Buffer.read(s, "./sounds/ballon-defl_var02.wav");
-~sound42cat3 = Buffer.readChannel(s, "./sounds/ballon-defl_var03.wav");
-~sound42cat4 = Buffer.readChannel(s, "./sounds/ballon-infl_var01.wav");
-~sound42cat5 = Buffer.read(s, "./sounds/ballon-infl_var02.wav");
+~sound42cat3 = Buffer.read(s, "./sounds/balloon-defl_var03.wav");
+~sound42cat4 = Buffer.readChannel(s, "./sounds/ballon-infl_var01.wav", channels:1);
+~sound42cat5 = Buffer.readChannel(s, "./sounds/ballon-infl_var02.wav", channels:1);
 ~sound42cat6 = Buffer.read(s, "./sounds/ballon-infl_var03.wav");
 ~sound42cat7 = Buffer.read(s, "./sounds/balloon-pop_var_01.wav");
 ~sound42cat8 = Buffer.read(s, "./sounds/balloon-pop_var_02.wav");
