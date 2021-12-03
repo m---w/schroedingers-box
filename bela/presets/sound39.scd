@@ -14,7 +14,7 @@
 ~soundoutcomevar7 = Buffer.read(s, "./sounds/fire-burst_var07.wav");
 
 
-~sound = [~sound39var1, ~sound39var2, ~sound39var3, ~sound39var4, ~sound39var5];
+~sound = [~sound39var1, ~sound39var2, ~sound39var3];
 
 ~soundcat_sum = [~soundoutcomevar1, ~soundoutcomevar2, ~soundoutcomevar3, ~soundoutcomevar4, ~soundoutcomevar5, ~soundoutcomevar6, ~soundoutcomevar7, ~soundonce];
 

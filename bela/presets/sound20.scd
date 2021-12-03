@@ -11,8 +11,8 @@
 //buffer load and initialisation
 ~soundstopped = 0; //do not play cat on every detected impact
 ~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
-~sound20cat1 = Buffer.read(s, "./sounds/cheer_var01.wav");
-~sound20cat2 = Buffer.read(s, "./sounds/cheer_var02.wav");
+~sound20cat1 = Buffer.readChannel(s, "./sounds/cheer_var01.wav", channels:1);
+~sound20cat2 = Buffer.readChannel(s, "./sounds/cheer_var02.wav", channels:1);
 ~sound20cat3 = Buffer.readChannel(s, "./sounds/cheer_var03.wav", channels:1);
 ~sound20cat4 = Buffer.readChannel(s, "./sounds/cheer_var04.wav", channels:1);
 //~sound20cat5 = Buffer.read(s, "./sounds/cat_05.wav");
@@ -25,7 +25,10 @@
 
 //amplitude configuration
 ~ampfactor = 10.neg;
-~ampfactorcat = inf.neg;
+~ampfactorcat = 33.neg;
 //send amplitude config to bela
 n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
-n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 
+n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB
+
+//secondary sound cuttof freq
+~secondaryCutoff = 1085.0;
