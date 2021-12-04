@@ -85,7 +85,6 @@ q = (); // other parameters
 ~oscSetOD.(\tbLpf2Freq);
 ~oscSetOD.(\tbHpfFreq);
 ~oscSetOD.(\cancelDel);
-~oscSetOD.(\slLpfFreq);
 ~oscSetOD.(\inGain1);
 ~oscSetOD.(\inGain2);
 ~oscSetOD.(\inGain3);
@@ -117,6 +116,10 @@ q = (); // other parameters
 ~oscSetq.(\velMapOutMin);
 ~oscSetq.(\velMapOutMax);
 ~oscSetq.(\velMapCurve);
+~oscSetq.(\testOnsetVel);
+~oscSetq.(\testOnsetFreq);
+~oscSetq.(\testOnsetPosX);
+~oscSetq.(\testOnsetPosY);
 
 
 // OSC Receiver function for synth parameters
@@ -233,7 +236,7 @@ q = (); // other parameters
 });
 
 ~oscSetFunc.(\triggerOnset, {|val, addr|
-	~lastvoice = ~newPrimarySound.(); // trigger new primary sound
+	~lastvoice = ~newPrimarySoundTest.(); // trigger new primary sound
 	~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 });
 
@@ -245,6 +248,20 @@ q = (); // other parameters
 ~oscSetFunc.(\slMaxRatio, {|val, addr|
 	q[\slMaxRatio] = val;
 	q[\slMinRatio] = val.reciprocal;
+});
+
+~oscSetFunc.(\toggleOnsets, {|val, addr|
+	q[\toggleOnsets] = val;
+	if(val==1, {
+		TDef(\outOnset, { loop{
+			q[\testOnsetFreq].reciprocal.wait;
+			// set position
+			~lastvoice = ~newPrimarySoundTest.(); // trigger new primary sound
+			~maybeNewSecondarySound.(); // maybe trigger new secondary sound
+		}}).play;
+	},{
+		TDef(\outOnset).stop;
+	});
 });
 
 
@@ -380,6 +397,14 @@ OSCdef(\preset, { | msg, time |
 	p.primary[\bufnum] = ~sound[~chooseSound.()].bufnum;
 	p.primary[\rate] = 1.0; // pitch is controlled by position
 	p.primary[\combFiltFreq] = (q[\combFiltMinFreq]*q[\combFiltMaxFreq]).sqrt; // comb filter is controlled by position. just set it to the geometric mean.
+	// play voice
+	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
+};
+
+// Primary sound TEST
+~newPrimarySoundTest = {
+	// set parameters
+	p.primary[\bufnum] = ~sound[~chooseSound.()].bufnum;
 	// play voice
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
 };
@@ -666,7 +691,6 @@ s.waitForBoot{
 		tbLpf2Freq = 25.0,
 		tbHpfFreq = 4000.0,
 		cancelDel = 1.0,
-		slLpfFreq = 25.0,
 		inGain1 = 0.0,
 		inGain2 = 0.0,
 		inGain3 = 0.0,
@@ -679,10 +703,8 @@ s.waitForBoot{
 		var minusTwoPiT = 2.0.neg*pi/SampleRate.ir; // pre-computation
 		var lpf1CoeffA = exp(tbLpf1Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf1)
 		var lpf2CoeffA = exp(tbLpf2Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf2)
-		var slLpfCoeffA = exp(slLpfFreq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (source localization)
 		var lpf1CoeffAm = 1.0-lpf1CoeffA; // pre-computation
 		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
-		var slLpfCoeffAm = 1.0-slLpfCoeffA; // pre-computation
 
 		sigRaw = SoundIn.ar([0,1,2,3]) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels
 		sig = sigRaw.sum; // downmix to mono
@@ -715,9 +737,6 @@ s.waitForBoot{
 		SendTrig.ar(velTrig, 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
 
 		//=== SL: source localization ===
-		// onsetVels = Integrator.ar(slLpfCoeffAm*sigRaw.abs, slLpfCoeffA); // Take envelope, with smoothing
-		//onsetVels = Amplitude.ar(sigRaw.abs, 0.01, 0.01);
-		//onsetVels = sigRaw.abs;
 		// send the 4 individual velocity values to the language:
 		SendTrig.ar(velTrig, 4, value: vels[0]); // velocity of channel 0
 		SendTrig.ar(velTrig, 5, value: vels[1]); // velocity of channel 1

@@ -118,7 +118,6 @@ e.slMaxPlaybackRate = 1.1; // max playback rate, as controlled by source localiz
 
 // Source Localization
 e.slMaxRatio = 2.0; // maximum amplitude ratio for source localization
-e.slLpfFreq = 25.0; // lowpass filter freq for envelope detection for source localization
 
 // Global Sound Parameters
 e.playbackRand = 0.01; // percent rate randomization
@@ -201,6 +200,10 @@ e.secondaryCountCurve = 3; // curve
 		[-80.0, 0.0, \lin, 0.1, "dB", "Noise Volume", 1.0, \noiseMasterDB],
 		[-80.0, 0.0, \lin, 0.1, "dB", "Sine Volume", 1.0, \sineMasterDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Sine Frequency", 1.0, \testFreq],
+		[0.001, 1.0, \exp, 0.0, "", "Test Onset velocity", 1.0, \testOnsetVel],
+		[1.0, 10.0, \lin, 0.0, "", "Test Onset Freq", 1.0, \testOnsetFreq],
+		[-1.0, 1.0, \lin, 0.0, "", "Test Onset Pos X", 1.0, \testOnsetPosX],
+		[-1.0, 1.0, \lin, 0.0, "", "Test Onset Pos Y", 1.0, \testOnsetPosY],
 	];
 
 	// Sound
@@ -216,7 +219,6 @@ e.secondaryCountCurve = 3; // curve
 		[-10, 10, \lin, 0.1, "", "Secondary Count Curve", 1.0, \secondaryCountCurve],
 		[1.0, 2.0, \exp, 0.0, "", "Source Position: Max Playback Rate", 1.0, \slMaxPlaybackRate],
 		[1.0, 10.0, \exp, 0.0, "", "Source Localization: Max Ratio", 1.0, \slMaxRatio],
-		[1.0, 120.0, \exp, 1.0, "Hz", "Source Localization: LPF cutoff", 1.0, \slLpfFreq],
 	];
 
 	// convert to dictionary, to address them by name
@@ -406,6 +408,8 @@ e.secondaryCountCurve = 3; // curve
 	newline.();
 	heading.("Tools");
 	newline.();
+
+	elements[\toggles][\toggleOnsets] = makeToggle.(\toggleOnsets, "toggle onsets");
 
 	elements[\triggerOnset] = Button(elements[\w], Rect(0,0,120,22))
 	.states_([["trigger onset", Color.white, Color.gray]])
