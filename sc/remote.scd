@@ -119,6 +119,11 @@ e.slMaxPlaybackRate = 1.1; // max playback rate, as controlled by source localiz
 // Source Localization
 e.slMaxRatio = 2.0; // maximum amplitude ratio for source localization
 
+e.testOnsetPosX = 0.0;
+e.testOnsetPosY = 0.0;
+e.testOnsetVel = 0.5;
+e.testOnsetFreq = 1.5;
+
 // Global Sound Parameters
 e.playbackRand = 0.01; // percent rate randomization
 

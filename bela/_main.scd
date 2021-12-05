@@ -14,6 +14,7 @@ s = Server.default;
 
 // Set up options
 if(~hostname==\bela, { // If running on Bela
+	~debugMode = false;
 	s.options.numAnalogInChannels = 4;
 	s.options.numAnalogOutChannels = 4;
 	s.options.numDigitalChannels = 0;
@@ -24,6 +25,7 @@ if(~hostname==\bela, { // If running on Bela
 	n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr("192.168.0.103", 57120) ]; // set GUI addresses
 	"Bela recognized itself as Bela.".postln;
 }, { // If running elsewhere (debug)
+	~debugMode = true;
 	n = [ NetAddr("localhost", 57120) ];
 	"No Bela detected. --> Debug mode.".postln;
 });
@@ -120,6 +122,7 @@ q = (); // other parameters
 ~oscSetq.(\testOnsetFreq);
 ~oscSetq.(\testOnsetPosX);
 ~oscSetq.(\testOnsetPosY);
+~oscSetQ.(\defaultVel);
 
 
 // OSC Receiver function for synth parameters
@@ -163,7 +166,6 @@ q = (); // other parameters
 };
 
 // Primary Sound
-~oscSetp.(\primary, \vel, \defaultVel);
 ~oscSetp.(\primary, \velUpdateLag, \velUpdateLag);
 ~oscSetp.(\primary, \combFiltDryWet, \combFiltDryWet);
 ~oscSetp.(\primary, \level, \primaryDB);
@@ -253,14 +255,14 @@ q = (); // other parameters
 ~oscSetFunc.(\toggleOnsets, {|val, addr|
 	q[\toggleOnsets] = val;
 	if(val==1, {
-		TDef(\outOnset, { loop{
+		Tdef(\outOnset, { loop{
 			q[\testOnsetFreq].reciprocal.wait;
 			// set position
 			~lastvoice = ~newPrimarySoundTest.(); // trigger new primary sound
 			~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 		}}).play;
 	},{
-		TDef(\outOnset).stop;
+		Tdef(\outOnset).stop;
 	});
 });
 
@@ -397,6 +399,7 @@ OSCdef(\preset, { | msg, time |
 	p.primary[\bufnum] = ~sound[~chooseSound.()].bufnum;
 	p.primary[\rate] = 1.0; // pitch is controlled by position
 	p.primary[\combFiltFreq] = (q[\combFiltMinFreq]*q[\combFiltMaxFreq]).sqrt; // comb filter is controlled by position. just set it to the geometric mean.
+	p.primary[\vel] = q[\defaultVel];
 	// play voice
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
 };
@@ -405,49 +408,78 @@ OSCdef(\preset, { | msg, time |
 ~newPrimarySoundTest = {
 	// set parameters
 	p.primary[\bufnum] = ~sound[~chooseSound.()].bufnum;
+	p.primary[\rate] = ~posToRate.([q[\testOnsetPosX],q[\testOnsetPosY]]); // map position to playback speed
+	p.primary[\combFiltFreq] = ~posToCombFreq.([q[\testOnsetPosX],q[\testOnsetPosY]]); // map position to filter frequency
+	p.primary[\vel] = q[\testOnsetVel];
 	// play voice
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
+	// Break glass
+	~globalvel = q[\testOnsetVel];
+	~maybeTriggerOutcome.();
 };
 
 
 /*===================== TRIGGERING =====================*/
 
+
+~posToRate = {|sourcePos|
+	sourcePos.sum.linexp(inMin: -2.0, inMax: 2.0, outMin: q[\slMinPlaybackRate], outMax: q[\slMaxPlaybackRate], clip: \minmax); // map position to playback speed
+};
+
+~posToCombFreq = {|sourcePos|
+	(sourcePos[0]-sourcePos[1]).linexp(inMin: -2.0, inMax: 2.0, outMin: q[\combFiltMinFreq], outMax: q[\combFiltMaxFreq], clip: \minmax); // map position to filter frequency
+};
+
 ~updateSourcePos = {
 
+	// Position goes from -1 to +1.
 
+	// Channel mapping:
+	//  top left: 0
+	//  top right: 3
+	//  bottom left: 1
+	//  bottom right: 2
 
-		// Position goes from -1 to +1.
+	// guess source position from level differences (i.e., from amplitude ratios)
+	// right vs. left
+	~sourcePos[0] = [~globalvels[3]/(~globalvels[0] + 1e-16), ~globalvels[2]/(~globalvels[1] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
+	// top vs. bottom
+	~sourcePos[1] = [~globalvels[0]/(~globalvels[1] + 1e-16), ~globalvels[3]/(~globalvels[2] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
 
+	if(~debugSourcePos, {
+		("source position:"+~sourcePos.round(0.01)).postln;
+	});
 
-		// Channel mapping:
-		//  top left: 0
-		//  top right: 3
-		//  bottom left: 1
-		//  bottom right: 2
+	// set playback rate and comb filter, respectively
+	p.primary[\rate] = ~posToRate.(~sourcePos); // map position to playback speed
+	p.primary[\combFiltFreq] = ~posToCombFreq.(~sourcePos); // map position to filter frequency
 
-		// guess source position from level differences (i.e., from amplitude ratios)
-		// right vs. left
-		~sourcePos[0] = [~globalvels[3]/(~globalvels[0] + 1e-16), ~globalvels[2]/(~globalvels[1] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
-		// top vs. bottom
-		~sourcePos[1] = [~globalvels[0]/(~globalvels[1] + 1e-16), ~globalvels[3]/(~globalvels[2] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
+	// update voice
+	~lastvoice.set([\rate, p.primary[\rate], \combFiltFreq, p.primary[\combFiltFreq]]);
 
-		if(~debugSourcePos, {
-			("source position:"+~sourcePos.round(0.01)).postln;
-		});
-
-		// set playback rate and comb filter, respectively
-		p.primary[\rate] = ~sourcePos.sum.linexp(inMin: -2.0, inMax: 2.0, outMin: q[\slMinPlaybackRate], outMax: q[\slMaxPlaybackRate], clip: \minmax); // map position to playback speed
-		p.primary[\combFiltFreq] = (~sourcePos[0]-~sourcePos[1]).linexp(inMin: -2.0, inMax: 2.0, outMin: q[\combFiltMinFreq], outMax: q[\combFiltMaxFreq], clip: \minmax); // map position to filter frequency
-
-		// update voice
-		~lastvoice.set([\rate, p.primary[\rate], \combFiltFreq, p.primary[\combFiltFreq]]);
-
-		if(~debugSourcePos, {
-			("Source Position update:"+~sourcePos.round(0.01)).postln;
-		});
+	if(~debugSourcePos, {
+		("Source Position update:"+~sourcePos.round(0.01)).postln;
+	});
 
 
 };
+
+
+~maybeTriggerOutcome = {
+	if(~outcome&&~outcomePossible){
+		if(~globalvel>~breakingThreshold){
+			// 1. Release all primary sounds
+			v.set([\gate, 0], lat: nil);
+			// 2. Trigger new breaking sound
+			p.outcome[\vel] = ~globalvel; // set velocity to global velocity
+			p.outcome[\bufnum] = ~soundcat_sum[~chooseAddSound.()].bufnum; // choose random sample
+			p.outcome[\rate] = ~randRate.(); // choose random playback rate
+			x[\outcome] = Synth.new(\outcome, p.outcome.asKeyValuePairs, addAction: \addToHead); // create synth
+			// ~outcomePossible = false; // outcome not possible anymore // WARNING: outcome is always possible!
+		};
+	};
+};
+
 
 // ONSET DETECTION
 ~oscReceiverOD = OSCFunc({ |msg, time|
@@ -519,18 +551,7 @@ OSCdef(\preset, { | msg, time |
 		);
 
 		// Break glass
-		if(~outcome&&~outcomePossible){
-			if(~globalvel>~breakingThreshold){
-				// 1. Release all primary sounds
-				v.set([\gate, 0], lat: nil);
-				// 2. Trigger new breaking sound
-				p.outcome[\vel] = ~globalvel; // set velocity to global velocity
-				p.outcome[\bufnum] = ~soundcat_sum[~chooseAddSound.()].bufnum; // choose random sample
-				p.outcome[\rate] = ~randRate.(); // choose random playback rate
-				x[\outcome] = Synth.new(\outcome, p.outcome.asKeyValuePairs, addAction: \addToHead); // create synth
-				// ~outcomePossible = false; // outcome not possible anymore // WARNING: outcome is always possible!
-			};
-		};
+		~maybeTriggerOutcome.();
 
 	});
 
