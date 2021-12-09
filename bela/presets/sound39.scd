@@ -1,17 +1,17 @@
-~sound39var1 = Buffer.readChannel(s, "./sounds/match_var01.wav", channels:1);
-~sound39var2 = Buffer.readChannel(s, "./sounds/match_var02.wav", channels:1);
-~sound39var3 = Buffer.readChannel(s, "./sounds/match_var03.wav", channels:1);
+~sound39var1 = Buffer.readChannel(s, ~path+/+"./sounds/match_var01.wav", channels:1);
+~sound39var2 = Buffer.readChannel(s, ~path+/+"./sounds/match_var02.wav", channels:1);
+~sound39var3 = Buffer.readChannel(s, ~path+/+"./sounds/match_var03.wav", channels:1);
 
 //happens only once??
-~soundonce = Buffer.readChannel(s, "./sounds/match_light.wav", channels:1);
+~soundonce = Buffer.readChannel(s, ~path+/+"./sounds/match_light.wav", channels:1);
 
-~soundoutcomevar1 = Buffer.read(s, "./sounds/fire-burst_var01.wav");
-~soundoutcomevar2 = Buffer.read(s, "./sounds/fire-burst_var02.wav");
-~soundoutcomevar3 = Buffer.read(s, "./sounds/fire-burst_var03.wav");
-~soundoutcomevar4 = Buffer.read(s, "./sounds/fire-burst_var04.wav");
-~soundoutcomevar5 = Buffer.read(s, "./sounds/fire-burst_var05.wav");
-~soundoutcomevar6 = Buffer.read(s, "./sounds/fire-burst_var06.wav");
-~soundoutcomevar7 = Buffer.read(s, "./sounds/fire-burst_var07.wav");
+~soundoutcomevar1 = Buffer.read(s, ~path+/+"./sounds/fire-burst_var01.wav");
+~soundoutcomevar2 = Buffer.read(s, ~path+/+"./sounds/fire-burst_var02.wav");
+~soundoutcomevar3 = Buffer.read(s, ~path+/+"./sounds/fire-burst_var03.wav");
+~soundoutcomevar4 = Buffer.read(s, ~path+/+"./sounds/fire-burst_var04.wav");
+~soundoutcomevar5 = Buffer.read(s, ~path+/+"./sounds/fire-burst_var05.wav");
+~soundoutcomevar6 = Buffer.read(s, ~path+/+"./sounds/fire-burst_var06.wav");
+~soundoutcomevar7 = Buffer.read(s, ~path+/+"./sounds/fire-burst_var07.wav");
 
 
 ~sound = [~sound39var1, ~sound39var2, ~sound39var3];

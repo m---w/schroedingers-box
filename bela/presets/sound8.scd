@@ -1,5 +1,5 @@
-~sound8var1 = Buffer.readChannel(s, "./sounds/10meatknife_var1.wav", channels:1);
-~sound8var2 = Buffer.readChannel(s, "./sounds/10meatknife_var2.wav", channels:1);
+~sound8var1 = Buffer.readChannel(s, ~path+/+"./sounds/10meatknife_var1.wav", channels:1);
+~sound8var2 = Buffer.readChannel(s, ~path+/+"./sounds/10meatknife_var2.wav", channels:1);
 
 ~sound = [~sound8var1, ~sound8var2];
 
