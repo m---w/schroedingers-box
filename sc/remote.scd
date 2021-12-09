@@ -50,13 +50,13 @@ e.tbThreshDB = 110.0.neg; // TBOD threshold in dB
 e.tbRefPeriod = 0.05;// specifies a minimum gap (in seconds) between subsequent onset detections
 e.tbLpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
 e.tbLpf2Freq = 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
-e.tbHpfFreq = 4000.0; // frequency of high-pass filter in Hz  (TBOD)
+e.tbHpfFreq = 1000.0; // frequency of high-pass filter in Hz  (TBOD)
 e.cancelDel = 1.0; // Delay between TBOD trigger and cancel message, in FFT frames.
 
 // FBOD
-e.fbThreshDB = -20.0; // FBOD threshold in dB
+e.fbThreshDB = -30.0; // FBOD threshold in dB
 e.fbRelaxtime = 1.0; // specifies the time (in seconds) for the normalisation to "forget" about a recent onset. If you find too much re-triggering (e.g. as a note dies away unevenly) then you might wish to increase this value.
-e.fbFloorDB = 20.0.neg; // is a lower limit, connected to the idea of how quiet the sound is expected to get without becoming indistinguishable from noise. For some cleanly-recorded classical music with wide dynamic variations, I found it helpful to go down as far as 0.000001.
+e.fbFloorDB = 10.0.neg; // is a lower limit, connected to the idea of how quiet the sound is expected to get without becoming indistinguishable from noise. For some cleanly-recorded classical music with wide dynamic variations, I found it helpful to go down as far as 0.000001.
 e.fbMingap = 40; // specifies a minimum gap (in FFT frames) between onset detections, a brute-force way to prevent too many doubled detections.
 e.fbMedianspan = 22; // specifies the size (in FFT frames) of the median window used for smoothing the detection function before triggering.
 
@@ -373,7 +373,7 @@ e.secondaryCountCurve = 3; // curve
 	elements[\toggles] = ();
 
 
-	[[\toggleSine, "Sine"], [\toggleNoise, "Noise"]].do{ |item|
+	[[\toggleSine, "Sine"], [\toggleNoise, "Noise"], [\record, "Record"]].do{ |item|
 		elements[\toggles][item[0].asSymbol] = makeToggle.(item[0].asSymbol, item[1]);
 	};
 
@@ -414,7 +414,7 @@ e.secondaryCountCurve = 3; // curve
 	heading.("Tools");
 	newline.();
 
-	elements[\toggles][\toggleOnsets] = makeToggle.(\toggleOnsets, "toggle onsets");
+	elements[\toggles][\toggleOnsets] = makeToggle.(\toggleOnsets, "Onsets");
 
 	elements[\triggerOnset] = Button(elements[\w], Rect(0,0,120,22))
 	.states_([["trigger onset", Color.white, Color.gray]])

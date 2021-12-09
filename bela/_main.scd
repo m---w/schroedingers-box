@@ -267,6 +267,25 @@ q = (); // other parameters
 });
 
 
+
+~oscSetFunc.(\record, {|val, addr|
+	if(
+		val==1,
+		{if(~testRecSynth.isPlaying, {}, {
+			q.testRecPath = (~path+/+"rec/rec_"++Date.getDate.format("%Y-%m-%d_%H-%M-%S")++".wav").standardizePath;
+			q.testRecBuf.write(q.testRecPath, "WAV", "int24", 0, 0, true); // create file, leave open
+			~testRecSynth = Synth.new(\recorder, [\buf, q.testRecBuf.bufnum]).register; // record
+			("Recording started ("++q.testRecPath++")").postln;
+		};);},
+		{
+			~testRecSynth.free;
+			q.testRecBuf.close;
+			("Recording stopped ("++q.testRecPath++")").postln;
+		}
+	);
+});
+
+
 /*===================== SOUND SELECTION =====================*/
 
 
@@ -595,6 +614,10 @@ s.waitForBoot{
 	p.master[\irbufnum] = ~irSpectrum.bufnum;
 
 
+	// test recorder
+	q.testRecBuf = Buffer.alloc(s, 48000*30, 4); // allocate a disk i/o buffer
+
+
 	/*===================== SYNTHDEFS =====================*/
 
 	// PRIMARY SOUND
@@ -603,7 +626,7 @@ s.waitForBoot{
 		arg
 		busnum = 0,
 		gate = 1.0,
-		vel = 0.0,
+		vel = 0.1,
 		bufnum = 0,
 		level = inf.neg,
 		rate = 1.0,
@@ -727,7 +750,7 @@ s.waitForBoot{
 		var lpf1CoeffAm = 1.0-lpf1CoeffA; // pre-computation
 		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
 
-		sigRaw = SoundIn.ar([0,1,2,3]) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels
+		sigRaw = HPF.ar(SoundIn.ar([0,1,2,3]), freq: 100.0) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels
 		sig = sigRaw.sum; // downmix to mono
 
 		//=== TBOD ===
@@ -798,6 +821,12 @@ s.waitForBoot{
 
 		Out.ar(0, (sigArray!2).flat); // play same signal to 1-4 and 5-8
 
+	}).add;
+
+
+	// Recorder
+	SynthDef(\recorder, {|buf=0|
+		DiskOut.ar(buf, SoundIn.ar([0,1,2,3]));
 	}).add;
 
 
