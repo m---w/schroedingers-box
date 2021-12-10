@@ -1,14 +1,14 @@
-~sound32var1 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var01.wav", channels:1);
-~sound32var2 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var02.wav", channels:1);
-~sound32var3 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var03.wav", channels:1);
-~sound32var4 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var04.wav", channels:1);
-~sound32var5 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var05.wav", channels:1);
-~sound32var6 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var06.wav", channels:1);
+~sound32var1 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var01.wav", channels:0);
+~sound32var2 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var02.wav", channels:0);
+~sound32var3 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var03.wav", channels:0);
+~sound32var4 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var04.wav", channels:0);
+~sound32var5 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var05.wav", channels:0);
+~sound32var6 = Buffer.readChannel(s, ~path+/+"./sounds/init-impact_var06.wav", channels:0);
 
-~soundoutcomevar1 = Buffer.readChannel(s, ~path+/+"./sounds/cartoon-outcome_var01.wav", channels:1);
-~soundoutcomevar2 = Buffer.readChannel(s, ~path+/+"./sounds/cartoon-outcome_var02.wav", channels:1);
-~soundoutcomevar3 = Buffer.readChannel(s, ~path+/+"./sounds/cartoon-outcome_var03.wav", channels:1);
-~soundoutcomevar4 = Buffer.readChannel(s, ~path+/+"./sounds/cartoon-outcome_var03.wav", channels:1);
+~soundoutcomevar1 = Buffer.readChannel(s, ~path+/+"./sounds/cartoon-outcome_var01.wav", channels:0);
+~soundoutcomevar2 = Buffer.readChannel(s, ~path+/+"./sounds/cartoon-outcome_var02.wav", channels:0);
+~soundoutcomevar3 = Buffer.readChannel(s, ~path+/+"./sounds/cartoon-outcome_var03.wav", channels:0);
+~soundoutcomevar4 = Buffer.readChannel(s, ~path+/+"./sounds/cartoon-outcome_var03.wav", channels:0);
 
 ~sound = [~sound32var1, ~sound32var2, ~sound32var3, ~sound32var4, ~sound32var5, ~sound32var6];
 

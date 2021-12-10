@@ -13,7 +13,7 @@
 //secondary sound
 ~sound49cat1 = Buffer.readChannel(s, ~path+/+"./sounds/boiler.wav", channels:0);
 
-~soundcat_sum = [~sound49cat1];
+~soundcat_sum = [~sound49cat1, ~sound49cat1];
 
 //secondary sound flag 
 ~addsound = true;
@@ -24,7 +24,7 @@
 
 //amplitude configuration
 ~ampfactor = 10.neg;
-~ampfactorcat = 13.neg;
+~ampfactorcat = 10.neg;
 //send amplitude config to bela
 n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
 n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 

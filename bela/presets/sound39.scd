@@ -1,9 +1,9 @@
-~sound39var1 = Buffer.readChannel(s, ~path+/+"./sounds/match_var01.wav", channels:1);
-~sound39var2 = Buffer.readChannel(s, ~path+/+"./sounds/match_var02.wav", channels:1);
-~sound39var3 = Buffer.readChannel(s, ~path+/+"./sounds/match_var03.wav", channels:1);
+~sound39var1 = Buffer.readChannel(s, ~path+/+"./sounds/match_var01.wav", channels:0);
+~sound39var2 = Buffer.readChannel(s, ~path+/+"./sounds/match_var02.wav", channels:0);
+~sound39var3 = Buffer.readChannel(s, ~path+/+"./sounds/match_var03.wav", channels:0);
 
 //happens only once??
-~soundonce = Buffer.readChannel(s, ~path+/+"./sounds/match_light.wav", channels:1);
+~soundonce = Buffer.readChannel(s, ~path+/+"./sounds/match_light.wav", channels:0);
 
 ~soundoutcomevar1 = Buffer.read(s, ~path+/+"./sounds/fire-burst_var01.wav");
 ~soundoutcomevar2 = Buffer.read(s, ~path+/+"./sounds/fire-burst_var02.wav");

@@ -10,7 +10,7 @@
 
 
 //playback array
-~sound = [~sound6var1, ~sound6var2, ~sound6var3, ~sound6var4, ~sound6var5, ~sound6var6, ~sound6var7, ~sound6var8];
+~sound = [~sound53var1, ~sound53var2, ~sound53var3, ~sound53var4, ~sound53var5, ~sound53var6, ~sound53var7, ~sound53var8];
 
 //buffer load and initialisation
 ~soundstopped = 0; //do not play cat on every detected impact
@@ -25,7 +25,7 @@
 ~sound53cat7 = Buffer.readChannel(s, ~path+/+"./sounds/nails-drop_var07.wav", channels:0);
 ~sound53cat8 = Buffer.readChannel(s, ~path+/+"./sounds/nails-drop_var08.wav", channels:0);
 
-~soundcat_sum = [~sound6cat1, ~sound6cat2, ~sound6cat3, ~sound6cat4, ~sound6cat5, ~sound6cat6, ~sound6cat7, ~sound6cat8];
+~soundcat_sum = [~sound53cat1, ~sound53cat2, ~sound53cat3, ~sound53cat4, ~sound53cat5, ~sound53cat6, ~sound53cat7, ~sound53cat8];
 
 //secondary sound flag 
 ~addsound = true;
