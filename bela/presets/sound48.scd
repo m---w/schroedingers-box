@@ -22,7 +22,7 @@
 ~sound48cat6 = Buffer.readChannel(s, ~path+/+"./sounds/sackl-squeek_var03.wav", channels:0);
 ~sound48cat7 = Buffer.readChannel(s, ~path+/+"./sounds/sackl-squeek_var04.wav", channels:0);
 
-~soundcat_sum = [~sound48cat1, ~sound48cat2, ~sound48cat3, ~sound48cat4, ~sound48cat5, ~sound48cat6, ~sound48cat7, ~sound48cat8, ~sound48cat9];
+~soundcat_sum = [~sound48cat1, ~sound48cat2, ~sound48cat3, ~sound48cat4, ~sound48cat5, ~sound48cat6, ~sound48cat7];
 
 //secondary sound flag 
 ~addsound = true;
@@ -37,3 +37,6 @@
 //send amplitude config to bela
 n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
 n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 
+
+//Comb Filter config
+~combFilterDryWet = 1.0.neg;

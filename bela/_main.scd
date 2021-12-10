@@ -301,7 +301,7 @@ OSCdef(\preset, { | msg, time |
 	~ampfactorcat = inf.neg; // secondary sound level
 	~ampfactoroutcome = inf.neg; // outcome sound level
 	~outcomePossible = true; // outcome didn't happen yet?
-	// ~breakingThreshold = 0.1; // threshold for breaking glass
+	~breakingThreshold = 0.1; // threshold for breaking glass
 	~secondaryCutoff = 4000.0; // cutoff for secondary sound
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
 	~sound.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of primary sounds
@@ -314,6 +314,7 @@ OSCdef(\preset, { | msg, time |
 	}{
 		// Notify if no preset was selected
 		"No preset selected. Press the button to start!".postln;
+		~sound = [~dummybuffer];
 	};
 
 	// init primary sound
@@ -610,7 +611,7 @@ s.waitForBoot{
 	p.master[\outcomeBus] = p.outcome[\busnum];
 
 	// allocate dummy buffer that will be used by default
-	~dummybuffer = Buffer.alloc(s, 64, bufnum: 0);
+	~dummybuffer = Buffer.alloc(s, 64, bufnum:0);
 
 	// load chirp into buffer
 	p.tt[\bufnum] = Buffer.read(s, (~path+/+"chirp/chirp_"++switch(s.sampleRate.round.asInteger, 44100, "7.2s_44.1kHz", 48000, "6.6s_48kHz")++"_14_octaves_1_fadein_0_fadeout_24bit.wav").standardizePath);
