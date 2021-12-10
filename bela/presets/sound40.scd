@@ -42,3 +42,6 @@ n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB
 
 //secondary cuttoff freq
 ~secondaryCutoff = 2021;
+
+//Comb Filter config
+~combFilterDryWet = 1.0;

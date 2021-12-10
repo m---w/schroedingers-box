@@ -32,3 +32,6 @@ n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB
 
 //secondary sound cuttof freq
 ~secondaryCutoff = 1085.0;
+
+//Comb Filter config
+~combFilterDryWet = 1.0;
