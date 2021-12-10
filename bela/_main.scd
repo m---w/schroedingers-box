@@ -418,7 +418,7 @@ OSCdef(\preset, { | msg, time |
 	p.primary[\bufnum] = ~sound[~chooseSound.()].bufnum;
 	p.primary[\rate] = 1.0; // pitch is controlled by position
 	p.primary[\combFiltFreq] = (q[\combFiltMinFreq]*q[\combFiltMaxFreq]).sqrt; // comb filter is controlled by position. just set it to the geometric mean.
-	p.primary[\vel] = q[\defaultVel];
+	// p.primary[\vel] = q[\defaultVel];
 	// play voice
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
 };
@@ -499,6 +499,14 @@ OSCdef(\preset, { | msg, time |
 	};
 };
 
+~mapVel = {
+	p.primary[\vel] = ~globalvel.lincurve(q[\velMapInMin], q[\velMapInMax], q[\velMapOutMin], q[\velMapOutMax], curve: q[\velMapCurve], clip: \minmax);
+};
+
+~setVel = {
+	~lastvoice.set([\vel, p.primary[\vel]]);
+};
+
 
 // ONSET DETECTION
 ~oscReceiverOD = OSCFunc({ |msg, time|
@@ -521,10 +529,12 @@ OSCdef(\preset, { | msg, time |
 				~fbodAgrees = false;
 			},
 			1, { // TBOD trigger new
+				~globalvel = val;
+				~mapVel.();
 				~lastvoice = ~newPrimarySound.(); // trigger new primary sound
 				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 				if(~debugOnsets, {
-					("TBOD triggers new onset.").postln;
+					("TBOD triggers new onset. Velocity:"+val).postln;
 				});
 				~tbodTriggered = true;
 				~fbodAgrees = false;
@@ -533,19 +543,23 @@ OSCdef(\preset, { | msg, time |
 				if( ~tbodTriggered, { // agree
 					~fbodAgrees = true;
 					if(~debugOnsets, {
-						("FBOD agrees with TBOD.").postln;
+						("FBOD agrees with TBOD. Velocity:"+val).postln;
 					});
 				}, { // trigger new
+					~globalvel = val;
+					~mapVel.();
 					~lastvoice = ~newPrimarySound.(); // trigger new primary sound
 					~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 					if(~debugOnsets, {
-						("FBOD triggers new onset.").postln;
+						("FBOD triggers new onset. Velocity:"+val).postln;
 					});
 				});
 			},
 			3, { // Velocity update
 				~globalvel = val;
-				~lastvoice.set([\vel, ~globalvel.lincurve(q[\velMapInMin], q[\velMapInMax], q[\velMapOutMin], q[\velMapOutMax], curve: q[\velMapCurve], clip: \minmax)]);
+				~mapVel.();
+				~setVel.();
+				//~lastvoice.set([\vel, ~globalvel.lincurve(q[\velMapInMin], q[\velMapInMax], q[\velMapOutMin], q[\velMapOutMax], curve: q[\velMapCurve], clip: \minmax)]);
 				if(~debugOnsets, {
 					("Velocity update:"+val).postln;
 				});
@@ -740,7 +754,7 @@ s.waitForBoot{
 		inGain3 = 0.0,
 		inGain4 = 0.0;
 
-		var sigRaw, sig, sighpf, sigsquared, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, vel, vels, velTrig, onsetVels;
+		var sigRaw, sig, sighpf, energies, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, vel, vels, velTrig, onsetVels, energy, sigRawSum, tbVel, fbVel, sigRawEnergies;
 		var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
 		var nfft = 256; // FFT size in samples
 		var frameDur = (nfft/SampleRate.ir)*1.1; // duration of one fft frame in seconds, plus safety of 10 percent. 5.4ms at 48kHz and 256samp fft size.
@@ -749,43 +763,53 @@ s.waitForBoot{
 		var lpf2CoeffA = exp(tbLpf2Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf2)
 		var lpf1CoeffAm = 1.0-lpf1CoeffA; // pre-computation
 		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
+		var hipCoeffsb1 = exp(tbHpfFreq*minusTwoPiT); // coeff b1 for hpf
+		var hipCoeffsa0 = 0.5+(0.5*hipCoeffsb1); // coeff a0 for hpf
+		var hipCoeffsa1 = hipCoeffsa0.neg;
 
-		sigRaw = HPF.ar(SoundIn.ar([0,1,2,3]), freq: 100.0) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels
-		sig = sigRaw.sum; // downmix to mono
+		sigRaw = SoundIn.ar([0,1,2,3]) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels, high-pass filtered
+		// sigRaw = sigRaw.squared; // Squaring (get signal energy)
+		//sig = sigRaw.sum; // downmix to mono
+		sigRawEnergies = HPF.ar(sigRaw, 700.0).squared;
+
+		sigRawSum = sigRaw.sum;
 
 		//=== TBOD ===
-		sighpf = HPF.ar(LPF.ar(sig, 16000.0), tbHpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
-		sigsquared = sighpf.squared; // Squaring (get signal energy)
-		lpf1 = Integrator.ar(lpf1CoeffAm*sigsquared, lpf1CoeffA); // Smoothing 1. Turchet2018: 25
+		sighpf = FOS.ar(sigRaw, hipCoeffsa0, hipCoeffsa1, hipCoeffsb1); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
+		energies = sighpf.squared; // Squaring (get signal energy)
+		energy = energies.sum; // add up all energies
+		lpf1 = Integrator.ar(lpf1CoeffAm*energy, lpf1CoeffA); // Smoothing 1. Turchet2018: 25
 		derivative = Slope.ar(lpf1); // 1st derivative = slope
 		lpf2 = Integrator.ar(lpf2CoeffAm*derivative, lpf2CoeffA); // Smoothing 2. Turchet2018: 25
 		// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 		tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
 		// ttrig = Schmidt.ar(tsub, tbThreshDB.dbamp, tbThreshLowDB.dbamp); // thresholding with high and low threshold
 		tbTrig = Trig.ar((tsub-tbThreshDB.dbamp).sign.max(0), tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
-		SendTrig.ar(tbTrig, 1); // send TBOD trigger to language. ID 1 means TBOD.
+		tbVel = RunningMax.ar(sigRawEnergies, DelayN.ar(tbTrig, tbRefPeriod-sampleDur, tbRefPeriod-sampleDur)).mean;
+		SendTrig.ar(tbTrig, 1, tbVel); // send TBOD trigger to language. ID 1 means TBOD. Value is first guess for velocity.
 
 		//=== FBOD ===
-		chain = FFT(LocalBuf(nfft), sig, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64. Wintype 1 is Hann window.
+		chain = FFT(LocalBuf(nfft), sigRawSum, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64. Wintype 1 is Hann window.
 		fbTrigKR = Onsets.kr(chain, threshold: fbThreshDB.dbamp, odftype: \rcomplex, relaxtime: fbRelaxtime, floor: fbFloorDB.dbamp, mingap: fbMingap, medianspan: fbMedianspan); // rcomplex is best. if it takes up too much cpu, then use power.
 		fbTrigAR = T2A.ar(fbTrigKR, offset: 0);
-		SendTrig.ar(fbTrigAR, 2); // send FBOD trigger to language. ID 2 means FBOD.
+		fbVel = RunningMax.ar(sigRawEnergies, DelayN.ar(fbTrigAR, tbRefPeriod-sampleDur, tbRefPeriod-sampleDur)).mean;
+		SendTrig.ar(fbTrigAR, 2, fbVel); // send FBOD trigger to language. ID 2 means FBOD.
 
 		//=== FAC: false alarm cancellation ===
 		SendTrig.ar(DelayN.ar(tbTrig, 0.1, cancelDel*frameDur), 0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
 
 		//=== VD: velocity detection ===
-		vels = RunningMax.ar(sigRaw.abs, DelayN.ar(fbTrigAR, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
+		vels = RunningMax.ar(sigRawEnergies, DelayN.ar(fbTrigAR, 0.1, velDelay+sampleDur)); // running max of input. reset delayed after FBOD trigger + 1 sample safety.
 		vel = vels.mean; // average all channels
 		velTrig = DelayN.ar(fbTrigAR, 0.1, velDelay); // trigger for velocity detection
 		SendTrig.ar(velTrig, 3, value: vel); // send velocity value to language. Waiting time is set via velDelay.
 
 		//=== SL: source localization ===
 		// send the 4 individual velocity values to the language:
-		SendTrig.ar(velTrig, 4, value: vels[0]); // velocity of channel 0
-		SendTrig.ar(velTrig, 5, value: vels[1]); // velocity of channel 1
-		SendTrig.ar(velTrig, 6, value: vels[2]); // velocity of channel 2
-		SendTrig.ar(velTrig, 7, value: vels[3]); // velocity of channel 3
+		//SendTrig.ar(velTrig, 4, value: vels[0]); // velocity of channel 0
+		//SendTrig.ar(velTrig, 5, value: vels[1]); // velocity of channel 1
+		//SendTrig.ar(velTrig, 6, value: vels[2]); // velocity of channel 2
+		//SendTrig.ar(velTrig, 7, value: vels[3]); // velocity of channel 3
 
 	}).add;
 
