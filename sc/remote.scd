@@ -50,22 +50,22 @@ e.tbThreshDB = 110.0.neg; // TBOD threshold in dB
 e.tbRefPeriod = 0.05;// specifies a minimum gap (in seconds) between subsequent onset detections
 e.tbLpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
 e.tbLpf2Freq = 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
-e.tbHpfFreq = 1000.0; // frequency of high-pass filter in Hz  (TBOD)
+e.tbHpfFreq = 4000.0; // frequency of high-pass filter in Hz  (TBOD)
 e.cancelDel = 1.0; // Delay between TBOD trigger and cancel message, in FFT frames.
 
 // FBOD
-e.fbThreshDB = -30.0; // FBOD threshold in dB
+e.fbThreshDB = -20.0; // FBOD threshold in dB
 e.fbRelaxtime = 1.0; // specifies the time (in seconds) for the normalisation to "forget" about a recent onset. If you find too much re-triggering (e.g. as a note dies away unevenly) then you might wish to increase this value.
 e.fbFloorDB = 10.0.neg; // is a lower limit, connected to the idea of how quiet the sound is expected to get without becoming indistinguishable from noise. For some cleanly-recorded classical music with wide dynamic variations, I found it helpful to go down as far as 0.000001.
 e.fbMingap = 40; // specifies a minimum gap (in FFT frames) between onset detections, a brute-force way to prevent too many doubled detections.
 e.fbMedianspan = 22; // specifies the size (in FFT frames) of the median window used for smoothing the detection function before triggering.
 
 // Velocity detection
-e.velDelay = 0.005; // delay between FBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
+e.velDelay = 0.001; // delay between TBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
 e.defaultVel = 0.05; // default velocity
-e.velUpdateLag = 0.0005; // lag time for velocity update smoothing
-e.velMapInMin = 0.005; // mapping between amplitude and velocity: inMin
-e.velMapInMax = 0.05; // mapping between amplitude and velocity: inMax
+e.velUpdateLag = 0.0002; // lag time for velocity update smoothing
+e.velMapInMin = 1e-5; // mapping between amplitude and velocity: inMin
+e.velMapInMax = 0.01; // mapping between amplitude and velocity: inMax
 e.velMapOutMin = 0.01; // mapping between amplitude and velocity: outMin
 e.velMapOutMax = 1; // mapping between amplitude and velocity: outMax
 e.velMapCurve = 1; // mapping between amplitude and velocity: curve
@@ -170,8 +170,8 @@ e.secondaryCountCurve = 3; // curve
 		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Delay", 1.0e-3, \velDelay],
 		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Update Lag", 1.0e-3, \velUpdateLag],
 		[0.0001, 1.0, \exp, 0.0, "", "Default Velocity", 1.0, \defaultVel],
-		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: inMin", 1.0, \velMapInMin],
-		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: inMax", 1.0, \velMapInMax],
+		[0.001, 1000.0, \exp, 0.0, "1e-3", "Velocity Map: inMin", 1.0e-3, \velMapInMin],
+		[0.001, 1000.0, \exp, 0.0, "1e-3", "Velocity Map: inMax", 1.0e-3, \velMapInMax],
 		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMin", 1.0, \velMapOutMin],
 		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMax", 1.0, \velMapOutMax],
 		[-10, 10, \lin, 0.1, "", "Velocity Map: curve", 1.0, \velMapCurve],
