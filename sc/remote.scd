@@ -47,7 +47,7 @@ e = (); // create empty dictionary
 
 // TBOD
 e.tbThreshDB = 110.0.neg; // TBOD threshold in dB
-e.tbRefPeriod = 0.05;// specifies a minimum gap (in seconds) between subsequent onset detections
+e.tbRefPeriod = 0.1;// specifies a minimum gap (in seconds) between subsequent onset detections
 e.tbLpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
 e.tbLpf2Freq = 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
 e.tbHpfFreq = 4000.0; // frequency of high-pass filter in Hz  (TBOD)
@@ -61,14 +61,14 @@ e.fbMingap = 40; // specifies a minimum gap (in FFT frames) between onset detect
 e.fbMedianspan = 22; // specifies the size (in FFT frames) of the median window used for smoothing the detection function before triggering.
 
 // Velocity detection
-e.velDelay = 0.001; // delay between TBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
+e.velDelay = 0.0009; // delay between TBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
 e.defaultVel = 0.05; // default velocity
 e.velUpdateLag = 0.0002; // lag time for velocity update smoothing
 e.velMapInMin = 1e-5; // mapping between amplitude and velocity: inMin
-e.velMapInMax = 0.01; // mapping between amplitude and velocity: inMax
+e.velMapInMax = 0.05; // mapping between amplitude and velocity: inMax
 e.velMapOutMin = 0.01; // mapping between amplitude and velocity: outMin
 e.velMapOutMax = 1; // mapping between amplitude and velocity: outMax
-e.velMapCurve = 1; // mapping between amplitude and velocity: curve
+e.velMapCurve = 4.0.neg; // mapping between amplitude and velocity: curve
 
 e.inGain1 = -9.2;
 e.inGain2 = -0.6;
@@ -388,7 +388,7 @@ e.secondaryCountCurve = 3; // curve
 	heading.("Participant and Sound Selection");
 	newline.();
 	elements[\preset] = EZNumber(elements[\w].view, 180@22, "  Preset  ",
-		ControlSpec(minval: -1, maxval: 99, step: 1, default: e[\preset]),
+		ControlSpec(minval: -1, maxval: 666, step: 1, default: e[\preset]),
 		labelWidth: 120, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
 	.font_(Font("Helvetica", 14))
@@ -399,7 +399,7 @@ e.secondaryCountCurve = 3; // curve
 	});
 
 	elements[\participantID] = EZNumber(elements[\w].view, 180@22, "  Participant ID  ",
-		ControlSpec(minval: 0, maxval: 99, step: 1, default: e[\participantID]),
+		ControlSpec(minval: 0, maxval: 666, step: 1, default: e[\participantID]),
 		labelWidth: 120, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
 	.font_(Font("Helvetica", 14))

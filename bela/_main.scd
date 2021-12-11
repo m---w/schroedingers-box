@@ -47,8 +47,8 @@ q = (); // other parameters
 // Variable Init
 ~tbodTriggered = false; // flag to store if TBOD has triggered
 ~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
-~debugOnsets = false; // debug printing for onset detection
-~debugSourcePos = true; // debug printing for sound localization
+~debugOnsets = true; // debug printing for onset detection
+~debugSourcePos = false; // debug printing for sound localization
 ~debugSound = false; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
 ~globalvels = 0.0!4; // init global velocities
@@ -122,7 +122,7 @@ q = (); // other parameters
 ~oscSetq.(\testOnsetFreq);
 ~oscSetq.(\testOnsetPosX);
 ~oscSetq.(\testOnsetPosY);
-~oscSetQ.(\defaultVel);
+~oscSetq.(\defaultVel);
 
 
 // OSC Receiver function for synth parameters
@@ -523,7 +523,7 @@ OSCdef(\preset, { | msg, time |
 				if(~tbodTriggered&&~fbodAgrees.not, {
 					~lastvoice.set([\gate, 0]);
 					if(~debugOnsets, {
-						("No confirmation from FBOD. --> Onset cancelled.").postln;
+						("Onset cancelled.").postln;
 					});
 				});
 				~tbodTriggered = false;
@@ -535,7 +535,7 @@ OSCdef(\preset, { | msg, time |
 				~lastvoice = ~newPrimarySound.(); // trigger new primary sound
 				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 				if(~debugOnsets, {
-					("TBOD triggers new onset. Velocity:"+val).postln;
+					("TBOD: new onset. Vel:"+val).postln;
 				});
 				~tbodTriggered = true;
 				~fbodAgrees = false;
@@ -544,15 +544,15 @@ OSCdef(\preset, { | msg, time |
 				if( ~tbodTriggered, { // agree
 					~fbodAgrees = true;
 					if(~debugOnsets, {
-						("FBOD agrees with TBOD. Velocity:"+val).postln;
+						("FBOD: confirm").postln;
 					});
 				}, { // trigger new
-					~globalvel = val;
+					~globalvel = q[\defaultVel];
 					~mapVel.();
 					~lastvoice = ~newPrimarySound.(); // trigger new primary sound
 					~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 					if(~debugOnsets, {
-						("FBOD triggers new onset. Velocity:"+val).postln;
+						("FBOD: new onset").postln;
 					});
 				});
 			},
@@ -652,10 +652,10 @@ s.waitForBoot{
 		var sig, comb;
 
 		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 2); // play sample
-		comb = sig - DelayN.ar(sig, maxdelaytime: 0.1, delaytime: combFiltFreq.reciprocal.lag(velUpdateLag)); // comb filter
+		comb = sig - DelayN.ar(sig, maxdelaytime: 0.1, delaytime: combFiltFreq.reciprocal); // comb filter
 		sig = XFade2.ar(sig, comb, combFiltDryWet); // crossfade between dry and comb-filtered
 		sig = sig * EnvGen.ar(Env.asr(0.0, 1.0, 0.005), gate: gate, doneAction:2); // apply release envelope
-		sig = vel.lag(velUpdateLag) * sig * level.dbamp; // apply velocity and master level
+		sig = vel * sig * level.dbamp; // apply velocity and master level
 		Out.ar(busnum, sig); // play to bus
 
 	}).add;
@@ -784,31 +784,38 @@ s.waitForBoot{
 		lpf2 = Integrator.ar(lpf2CoeffAm*derivative, lpf2CoeffA); // Smoothing 2. Turchet2018: 25
 		// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 		tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
-		// ttrig = Schmidt.ar(tsub, tbThreshDB.dbamp, tbThreshLowDB.dbamp); // thresholding with high and low threshold
-		tbTrig = Trig.ar((tsub-tbThreshDB.dbamp).sign.max(0), tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
-		SendTrig.ar(tbTrig, id: 1, value: sigRawEnergy); // send TBOD trigger to language. ID 1 means TBOD. Value is first guess for velocity.
+		tbTrig = Trig.ar(Schmidt.ar(tsub, tbThreshDB.dbamp, (tbThreshDB-6.0).dbamp), tbRefPeriod); // thresholding with high and low threshold
+		//tbTrig = Trig.ar((tsub-tbThreshDB.dbamp).sign.max(0), tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
+		//SendTrig.ar(tbTrig, id: 1, value: 0.0); // send TBOD trigger to language. ID 1 means TBOD. Value is first guess for velocity.
 
 		//=== FAC: false alarm cancellation ===
-		SendTrig.ar(DelayN.ar(tbTrig, 0.1, cancelDel*frameDur), 0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
+		/*
+		SendTrig.ar(DelayN.ar(tbTrig, 0.1, cancelDel*frameDur), id: 0, value: 0.0); // send FBOD cancel trigger to language. ID 0 means FBOD cancel (TBOD false alarm, FBOD correct rejection)
+		*/
 
 		//=== VD: velocity detection ===
 		tbVels = RunningMax.ar(sigRawEnergies, tbTrig); // running max of input. reset at TBOD trigger.
 		tbVel = tbVels.mean; // average all channels
 		velTrig = DelayN.ar(tbTrig, 0.05, velDelay); // after TBOD trigger, wait for specified delay time, then trigger velocity
-		SendTrig.ar(velTrig, id: 3, value: tbVel); // send velocity value to language.
+		//SendTrig.ar(velTrig, id: 3, value: tbVel); // send velocity value to language
+		SendTrig.ar(velTrig, id: 1, value: tbVel); // send velocity value to language.
 
 		//=== SL: source localization ===
 		// send the 4 individual velocity values to the language:
+
 		SendTrig.ar(velTrig, 4, value: tbVels[0]); // velocity of channel 0
 		SendTrig.ar(velTrig, 5, value: tbVels[1]); // velocity of channel 1
 		SendTrig.ar(velTrig, 6, value: tbVels[2]); // velocity of channel 2
 		SendTrig.ar(velTrig, 7, value: tbVels[3]); // velocity of channel 3
 
+
 		//=== FBOD ===
+		/*
 		chain = FFT(LocalBuf(nfft), sigRawSum, hop: 0.25, wintype: 1); // Turchet2018: winsize 256, hopsize 64. Wintype 1 is Hann window.
 		fbTrigKR = Onsets.kr(chain, threshold: fbThreshDB.dbamp, odftype: \rcomplex, relaxtime: fbRelaxtime, floor: fbFloorDB.dbamp, mingap: fbMingap, medianspan: fbMedianspan); // rcomplex is best. if it takes up too much cpu, then use power.
 		fbTrigAR = T2A.ar(fbTrigKR, offset: 0);
-		SendTrig.ar(fbTrigAR, id: 2, value: tbVel); // send FBOD trigger to language. ID 2 means FBOD.
+		SendTrig.ar(fbTrigAR, id: 2, value: 0.0); // send FBOD trigger to language. ID 2 means FBOD.
+		*/
 
 	}).add;
 
