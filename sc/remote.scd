@@ -65,8 +65,8 @@ e.velDelay = 0.0009; // delay between TBOD trigger and reporting of velocity. Ve
 e.defaultVel = 0.05; // default velocity
 e.velUpdateLag = 0.0002; // lag time for velocity update smoothing
 e.velMapInMin = 1e-5; // mapping between amplitude and velocity: inMin
-e.velMapInMax = 0.05; // mapping between amplitude and velocity: inMax
-e.velMapOutMin = 0.01; // mapping between amplitude and velocity: outMin
+e.velMapInMax = 0.01; // mapping between amplitude and velocity: inMax
+e.velMapOutMin = 0.005; // mapping between amplitude and velocity: outMin
 e.velMapOutMax = 1; // mapping between amplitude and velocity: outMax
 e.velMapCurve = 4.0.neg; // mapping between amplitude and velocity: curve
 

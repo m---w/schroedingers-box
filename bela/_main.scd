@@ -19,7 +19,7 @@ if(~hostname==\bela, { // If running on Bela
 	s.options.numAnalogOutChannels = 4;
 	s.options.numDigitalChannels = 0;
 	s.options.maxLogins = 4;
-	s.options.blockSize = 64;
+	s.options.blockSize = 32;
 	s.options.numInputBusChannels = 4;
 	s.options.numOutputBusChannels = 8;
 	n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr("192.168.0.103", 57120) ]; // set GUI addresses
@@ -714,7 +714,7 @@ s.waitForBoot{
 		lpf = 20000.0,
 		hpf = 80.0,
 		irbufnum = 0,
-		partConvFFTSize = 256,
+		partConvFFTSize = 128,
 		eq = 1,
 		masterLevel = inf.neg;
 
@@ -802,7 +802,6 @@ s.waitForBoot{
 
 		//=== SL: source localization ===
 		// send the 4 individual velocity values to the language:
-
 		SendTrig.ar(velTrig, 4, value: tbVels[0]); // velocity of channel 0
 		SendTrig.ar(velTrig, 5, value: tbVels[1]); // velocity of channel 1
 		SendTrig.ar(velTrig, 6, value: tbVels[2]); // velocity of channel 2
