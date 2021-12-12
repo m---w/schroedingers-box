@@ -47,7 +47,7 @@ q = (); // other parameters
 // Variable Init
 ~tbodTriggered = false; // flag to store if TBOD has triggered
 ~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
-~debugOnsets = true; // debug printing for onset detection
+~debugOnsets = false; // debug printing for onset detection
 ~debugSourcePos = false; // debug printing for sound localization
 ~debugSound = false; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
@@ -466,10 +466,6 @@ OSCdef(\preset, { | msg, time |
 	// top vs. bottom
 	~sourcePos[1] = [~globalvels[0]/(~globalvels[1] + 1e-16), ~globalvels[3]/(~globalvels[2] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
 
-	if(~debugSourcePos, {
-		("source position:"+~sourcePos.round(0.01)).postln;
-	});
-
 	// set playback rate and comb filter, respectively
 	p.primary[\rate] = ~posToRate.(~sourcePos); // map position to playback speed
 	p.primary[\combFiltFreq] = ~posToCombFreq.(~sourcePos); // map position to filter frequency
@@ -478,7 +474,7 @@ OSCdef(\preset, { | msg, time |
 	~lastvoice.set([\rate, p.primary[\rate], \combFiltFreq, p.primary[\combFiltFreq]]);
 
 	if(~debugSourcePos, {
-		("Source Position update:"+~sourcePos.round(0.01)).postln;
+		("Localozation:"+~sourcePos.round(0.01)).postln;
 	});
 
 
@@ -611,14 +607,14 @@ s.waitForBoot{
 	p.master[\outcomeBus] = p.outcome[\busnum];
 
 	// allocate dummy buffer that will be used by default
-	~dummybuffer = Buffer.alloc(s, 64, bufnum:0);
+	~dummybuffer = Buffer.alloc(s, 64, bufnum: 0);
 
 	// load chirp into buffer
 	p.tt[\bufnum] = Buffer.read(s, (~path+/+"chirp/chirp_"++switch(s.sampleRate.round.asInteger, 44100, "7.2s_44.1kHz", 48000, "6.6s_48kHz")++"_14_octaves_1_fadein_0_fadeout_24bit.wav").standardizePath);
 
 	// Load Impulse Response for Equalization, to be used with PartConv
 	p.master[\partConvFFTSize] = 4 * s.options.blockSize; // FFT size for the partitioned convolution. At least 4x blocksize.
-	~irBuf = Buffer.read(s, (~path+/+"ir/2021-11-28_18-19-08-128_ex_ir_out_01_in_01.wav").standardizePath);
+	~irBuf = Buffer.read(s, (~path+/+"ir/2021-12-12_20-10-41-751_ex_ir_out_01_in_01.wav").standardizePath);
 	s.sync;
 	~irBufSize = PartConv.calcBufSize(p.master[\partConvFFTSize], ~irBuf);
 	~irNumPartitions = PartConv.calcNumPartitions(p.master[\partConvFFTSize], ~irBuf); // for debugging only
