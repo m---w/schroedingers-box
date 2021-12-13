@@ -34,7 +34,7 @@
 ~voices = 5;
 
 //amplitude configuration
-~ampfactor = 10.neg;
+~ampfactor = 9.neg;
 ~ampfactorcat = 20.neg;
 //send amplitude config to bela
 n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
