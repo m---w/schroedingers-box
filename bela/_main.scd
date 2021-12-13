@@ -294,6 +294,12 @@ OSCdef(\preset, { | msg, time |
 	~preset = msg[1].asInteger; // set preset
 	("New sound selected:"+~preset).postln; // notify
 
+	// free everything that is playing
+	x[\tt].free;
+	x[\secondary].free;
+	x[\outcome].free;
+	v.free; // free previous voicer instance
+
 	// load default settings (these may be defined in the preset)
 	~addsound = false; // secondary sound on/off
 	~outcome = false; // outcome sound on/off
@@ -302,7 +308,7 @@ OSCdef(\preset, { | msg, time |
 	~ampfactorcat = inf.neg; // secondary sound level
 	~ampfactoroutcome = inf.neg; // outcome sound level
 	~outcomePossible = true; // outcome didn't happen yet?
-	~breakingThreshold = 0.1; // threshold for breaking glass
+	// ~breakingThreshold = 0.1; // threshold for breaking glass
 	~secondaryCutoff = 20000.0; // cutoff for secondary sound
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
 	~sound.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of primary sounds
@@ -316,7 +322,8 @@ OSCdef(\preset, { | msg, time |
 	}{
 		// Notify if no preset was selected
 		"No preset selected. Press the button to start!".postln;
-		~sound = [~dummybuffer];
+		~sound = [~dummybuffer, ~dummybuffer];
+		~soundcat_sum = [~dummybuffer, ~dummybuffer];
 	};
 
 	// init primary sound
@@ -325,7 +332,6 @@ OSCdef(\preset, { | msg, time |
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
-	v.free; // free previous voicer instance
 	v = Voicer.new(voices: ~voices, things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
 	v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 	v.stealer = \preferLate; // set voice stealing algorithm
@@ -533,6 +539,7 @@ OSCdef(\preset, { | msg, time |
 				~globalvel = val;
 				~mapVel.();
 				~lastvoice = ~newPrimarySound.(); // trigger new primary sound
+				~maybeTriggerOutcome.(); // maybe trigger breaking sound
 				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 				if(~debugOnsets, {
 					("TBOD: new onset. Vel:"+val).postln;
@@ -550,6 +557,7 @@ OSCdef(\preset, { | msg, time |
 					~globalvel = q[\defaultVel];
 					~mapVel.();
 					~lastvoice = ~newPrimarySound.(); // trigger new primary sound
+					~maybeTriggerOutcome.(); // maybe trigger breaking sound
 					~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 					if(~debugOnsets, {
 						("FBOD: new onset").postln;
@@ -583,9 +591,6 @@ OSCdef(\preset, { | msg, time |
 				});
 			};
 		);
-
-		// Break glass
-		~maybeTriggerOutcome.();
 
 	});
 

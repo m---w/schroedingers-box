@@ -24,7 +24,7 @@
 //no outcome sound (eg glass break)
 ~outcome = false;
 //number of voices
-~voices = 5;
+~voices = 3;
 
 //amplitude configuration
 ~ampfactor = 0.neg;
