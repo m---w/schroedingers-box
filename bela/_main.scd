@@ -76,6 +76,7 @@ q = (); // other parameters
 
 // receive OSC from GUI: create receivers
 ~oscSetOD.(\tbThreshDB);
+~oscSetOD.(\tbThreshLoDB);
 ~oscSetOD.(\fbThreshDB);
 ~oscSetOD.(\fbRelaxtime);
 ~oscSetOD.(\fbFloorDB);
@@ -302,7 +303,7 @@ OSCdef(\preset, { | msg, time |
 	~ampfactoroutcome = inf.neg; // outcome sound level
 	~outcomePossible = true; // outcome didn't happen yet?
 	~breakingThreshold = 0.1; // threshold for breaking glass
-	~secondaryCutoff = 4000.0; // cutoff for secondary sound
+	~secondaryCutoff = 20000.0; // cutoff for secondary sound
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
 	~sound.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of primary sounds
 	~soundcat_sum.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of secondary sounds
@@ -735,6 +736,7 @@ s.waitForBoot{
 	SynthDef(\od, {
 		arg
 		tbThreshDB = 0.0,
+		tbThreshLoDB = 0.0,
 		fbThreshDB = 0.0,
 		fbRelaxtime = 1.0,
 		fbFloorDB = -20.0,
@@ -780,7 +782,7 @@ s.waitForBoot{
 		lpf2 = Integrator.ar(lpf2CoeffAm*derivative, lpf2CoeffA); // Smoothing 2. Turchet2018: 25
 		// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 		tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
-		tbTrig = Trig.ar(Schmidt.ar(tsub, tbThreshDB.dbamp, (tbThreshDB-6.0).dbamp), tbRefPeriod); // thresholding with high and low threshold
+		tbTrig = Trig.ar(Schmidt.ar(tsub, tbThreshDB.dbamp, tbThreshLoDB.dbamp), tbRefPeriod); // thresholding with high and low threshold
 		//tbTrig = Trig.ar((tsub-tbThreshDB.dbamp).sign.max(0), tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
 		//SendTrig.ar(tbTrig, id: 1, value: 0.0); // send TBOD trigger to language. ID 1 means TBOD. Value is first guess for velocity.
 

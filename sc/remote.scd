@@ -47,6 +47,7 @@ e = (); // create empty dictionary
 
 // TBOD
 e.tbThreshDB = 110.0.neg; // TBOD threshold in dB
+e.tbThreshLoDB = 120.0.neg; // TBOD lower threshold in dB
 e.tbRefPeriod = 0.1;// specifies a minimum gap (in seconds) between subsequent onset detections
 e.tbLpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
 e.tbLpf2Freq = 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
@@ -149,6 +150,7 @@ e.secondaryCountCurve = 3; // curve
 	// TBOD
 	var sliderListTBOD = [
 		[-180, 0.0, \lin, 1.0, "dB", "TBOD threshold", 1.0, \tbThreshDB],
+		[-180, 0.0, \lin, 1.0, "dB", "TBOD lower threshold", 1.0, \tbThreshLoDB],
 		[80.0, 8000.0, \exp, 1.0, "Hz", "HPF cutoff", 1.0, \tbHpfFreq],
 		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 1 cutoff", 1.0, \tbLpf1Freq],
 		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 2 cutoff", 1.0, \tbLpf2Freq],
