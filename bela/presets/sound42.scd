@@ -11,7 +11,7 @@
 
 //buffer load and initialisation
 ~soundstopped = 0; //do not play cat on every detected impact
-~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
+ 
 //secondary sound
 ~sound42cat1 = Buffer.read(s, ~path+/+"./sounds/ballon-defl_var01.wav");
 ~sound42cat2 = Buffer.read(s, ~path+/+"./sounds/ballon-defl_var02.wav");
@@ -38,7 +38,7 @@
 
 //amplitude configuration
 ~ampfactor = 0.neg;
-~ampfactorcat = 20.neg;
+~ampfactorcat = 5.neg;
 //send amplitude config to bela
 n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
 n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 

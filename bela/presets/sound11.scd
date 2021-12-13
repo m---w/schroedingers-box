@@ -10,7 +10,7 @@
 
 ~addsound = false;
 ~outcome = false;
-~voices = 5;
+~voices = 1;
 
 //amplitude configuration
 ~ampfactor = 1.neg;

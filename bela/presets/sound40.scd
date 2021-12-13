@@ -12,7 +12,7 @@
 
 //buffer load and initialisation
 ~soundstopped = 0; //do not play cat on every detected impact
-~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
+ 
 //secondary sound
 ~sound40cat1 = Buffer.read(s, ~path+/+"./sounds/lion_var01.wav");
 ~sound40cat2 = Buffer.read(s, ~path+/+"./sounds/lion_var02.wav");
@@ -35,13 +35,13 @@
 
 //amplitude configuration
 ~ampfactor = 9.neg;
-~ampfactorcat = 20.neg;
+~ampfactorcat = 0.neg;
 //send amplitude config to bela
 n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
 n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 
 
 //secondary cuttoff freq
-~secondaryCutoff = 2021;
+~secondaryCutoff = 20021;
 
 //Comb Filter config
 ~combFilterDryWet = 1.0;

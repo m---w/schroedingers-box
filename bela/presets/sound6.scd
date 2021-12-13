@@ -8,7 +8,7 @@
 
 //buffer load and initialisation
 ~soundstopped = 0; //do not play cat on every detected impact
-~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
+ 
 //secondary sound
 ~sound6cat1 = Buffer.readChannel(s, ~path+/+"./sounds/new-cat_var01.wav", channels:0);
 ~sound6cat2 = Buffer.readChannel(s, ~path+/+"./sounds/new-cat_var02.wav", channels:0);
@@ -30,7 +30,7 @@
 ~voices = 5;
 
 //amplitude configuration
-~ampfactor = 7.5.neg;
+~ampfactor = 9.5.neg;
 ~ampfactorcat = 20.neg;
 //send amplitude config to bela
 n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela

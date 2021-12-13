@@ -11,7 +11,7 @@
 
 //buffer load and initialisation
 ~soundstopped = 0; //do not play cat on every detected impact
-~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
+ 
 //secondary sound
 ~sound51cat1 = Buffer.readChannel(s, ~path+/+"./sounds/silly-duck_var01.wav", channels:0);
 ~sound51cat2 = Buffer.readChannel(s, ~path+/+"./sounds/silly-duck_var02.wav", channels:0);

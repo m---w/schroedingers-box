@@ -11,7 +11,7 @@
 
 //buffer load and initialisation
 ~soundstopped = 0; //do not play cat on every detected impact
-~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
+ 
 //secondary sound
 ~sound45cat1 = Buffer.readChannel(s, ~path+/+"./sounds/noodles-shake_var01.wav", channels:0);
 ~sound45cat2 = Buffer.readChannel(s, ~path+/+"./sounds/noodles-shake_var02.wav", channels:0);
@@ -31,7 +31,7 @@
 
 //amplitude configuration
 ~ampfactor = 4.5;
-~ampfactorcat = 13.neg;
+~ampfactorcat = 5.neg;
 //send amplitude config to bela
 n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
 n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 

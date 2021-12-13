@@ -308,6 +308,7 @@ OSCdef(\preset, { | msg, time |
 	~sound.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of primary sounds
 	~soundcat_sum.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of secondary sounds
 	~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
+	~secondaryMaxCount = 7; // secondary max count
 
 	// Load preset
 	if(~preset > 0){
@@ -332,6 +333,7 @@ OSCdef(\preset, { | msg, time |
 	// init secondary sound
 	p.secondary[\level] = ~ampfactorcat;
 	p.secondary[\upperCutoff] = ~secondaryCutoff;
+	p.secondary[\secondaryMaxCount] = ~secondaryMaxCount;
 	if(~addsound, {
 		~addSoundSize = ~soundcat_sum.size; // number of secondary sounds in this preset
 		~addSoundIndArray = (0..(~addSoundSize-1)); // array of secondary sound indices
@@ -353,6 +355,7 @@ OSCdef(\preset, { | msg, time |
 	n.do{|item| item.sendMsg(\bela, \outcomeDB, p.outcome[\level]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
 	n.do{|item| item.sendMsg(\bela, \combFilterDryWet, p.primary[\combFilterDryWet]) };
+	n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
 
 	//finish
 	if(~preset>=666){s.freeAll};

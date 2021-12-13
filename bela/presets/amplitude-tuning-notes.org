@@ -1,5 +1,37 @@
 #+TITLE: Amplitude tuning - test: aquarium using loudspeakers 211210
 
++++FIX 39 sound, exclude firebursts, include only a match fire sound++++ (soft, chk hard=> FIREBURST)
+
++++FiX 42 add balloon inflation, impact+fouskoma TAK + FFFTTT
+
++++ADD: secondary max count parameter add in the presets
+
++++ADD: TRUCK HORN SOUND
+
++++ADD: Mud sound (flits, like a ditch)
+
++++ADD: Snow sound impact (look freesound)
+
++++ADD: rolling wheel (TAK KRRRRRRR)
+
++++Check if lookmumnocomputer has any free sounds
+
++++ADD: electrical sound like tesla coil (TZZZZZ) even for primary sound
+
++++LAMARINA: Metal plate, experimental studio
+
++++Motorcycle: extreme acceleration
+
++++Rocket: outcome or secondary?
+
++++SHIP HORN: Include this or alternatively a 110HZ sinwave, *no onset*
+
+*FIND LONGER SOUNDS*
+
+
+
+* VALUES
+
 VOL PARAMETER (global) = 0
 
 PARAMETER: Global primary
@@ -58,3 +90,59 @@ PARAMETER: Global primary
 52. 0
 53. 7.5
 54. -2
+
+* DESCRIPTION
+1. metallic speaker stand
+2. metallic rail
+3. metallic box
+4. tympani
+5. squeaky toy
+6. wood impact | secondary: cat
+7. wooden door kick
+8. meat knife, cut impact
+9. real deal (Schrodinger's box impact w mallet)
+10. bottle impact | outcome: bottle break
+11. aluminium can, can opening
+12.
+13.
+14.
+15.
+16.
+17.
+18.
+19.
+20.
+21.
+22.
+23.
+24.
+25.
+26.
+27.
+28.
+29.
+30.
+31.
+32.
+33.
+34.
+35.
+36.
+37.
+38.
+39.
+40.
+41.
+42.
+43.
+44.
+45.
+46.
+47.
+48.
+49.
+50.
+51.
+52.
+53.
+54.

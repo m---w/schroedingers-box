@@ -14,7 +14,7 @@
 
 //buffer load and initialisation
 ~soundstopped = 0; //do not play cat on every detected impact
-~onset_sum = 0; //when there are multiple and continuous impacts then trigger cat
+ 
 //secondary sound
 ~sound53cat1 = Buffer.readChannel(s, ~path+/+"./sounds/nails-drop_var01.wav", channels:0);
 ~sound53cat2 = Buffer.readChannel(s, ~path+/+"./sounds/nails-drop_var02.wav", channels:0);
@@ -36,7 +36,7 @@
 
 //amplitude configuration
 ~ampfactor = 7.5;
-~ampfactorcat = 20.neg;
+~ampfactorcat = 0.neg;
 //send amplitude config to bela
 n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
 n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 
