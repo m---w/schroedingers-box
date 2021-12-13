@@ -311,8 +311,8 @@ OSCdef(\preset, { | msg, time |
 	// ~breakingThreshold = 0.1; // threshold for breaking glass
 	~secondaryCutoff = 20000.0; // cutoff for secondary sound
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
-	~sound.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of primary sounds
-	~soundcat_sum.do{|item| if(item.notNil&&item.bufnum.notNil, {item.free})}; // free buffers of secondary sounds
+	~sound.do{|item| if(item.notNil, {item.free})}; // free buffers of primary sounds
+	~soundcat_sum.do{|item| if(item.notNil, {item.free})}; // free buffers of secondary sounds
 	~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
 	~secondaryMaxCount = 7; // secondary max count
 
@@ -406,7 +406,7 @@ OSCdef(\preset, { | msg, time |
 		// Random decision (tune inMin and inMax to set minimum and maximum number of hits for 0% and 100% chance, respectively)
 		if( ~onsetCounter.lincurve(inMin: q[\secondaryMinCount], inMax: q[\secondaryMaxCount], outMin: 0.0, outMax: 1.0, curve: q[\secondaryCountCurve], clip: \minmax).coin ) {
 			// Trigger new secondary sound
-			p.secondary[\bufnum] = ~soundcat_sum[~chooseAddSound.()].bufnum;
+			p.secondary[\bufnum] = ~soundcat_sum[~chooseAddSound.()];
 			p.secondary[\rate] = ~randRate.();
 			~secondaryPossible = false; // block secondary sound triggers until the synth has started
 			fork{
@@ -426,7 +426,7 @@ OSCdef(\preset, { | msg, time |
 // Primary sound
 ~newPrimarySound = {
 	// set parameters
-	p.primary[\bufnum] = ~sound[~chooseSound.()].bufnum;
+	p.primary[\bufnum] = ~sound[~chooseSound.()];
 	p.primary[\rate] = 1.0; // pitch is controlled by position
 	p.primary[\combFiltFreq] = (q[\combFiltMinFreq]*q[\combFiltMaxFreq]).sqrt; // comb filter is controlled by position. just set it to the geometric mean.
 	// p.primary[\vel] = q[\defaultVel];
@@ -437,14 +437,14 @@ OSCdef(\preset, { | msg, time |
 // Primary sound TEST
 ~newPrimarySoundTest = {
 	// set parameters
-	p.primary[\bufnum] = ~sound[~chooseSound.()].bufnum;
+	~globalvel = q[\testOnsetVel];
+	p.primary[\bufnum] = ~sound[~chooseSound.()];
 	p.primary[\rate] = ~posToRate.([q[\testOnsetPosX],q[\testOnsetPosY]]); // map position to playback speed
 	p.primary[\combFiltFreq] = ~posToCombFreq.([q[\testOnsetPosX],q[\testOnsetPosY]]); // map position to filter frequency
 	p.primary[\vel] = q[\testOnsetVel];
 	// play voice
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
 	// Break glass
-	~globalvel = q[\testOnsetVel];
 	~maybeTriggerOutcome.();
 };
 
@@ -498,7 +498,7 @@ OSCdef(\preset, { | msg, time |
 			v.set([\gate, 0], lat: nil);
 			// 2. Trigger new breaking sound
 			p.outcome[\vel] = ~globalvel; // set velocity to global velocity
-			p.outcome[\bufnum] = ~soundcat_sum[~chooseAddSound.()].bufnum; // choose random sample
+			p.outcome[\bufnum] = ~soundcat_sum[~chooseAddSound.()]; // choose random sample
 			p.outcome[\rate] = ~randRate.(); // choose random playback rate
 			x[\outcome] = Synth.new(\outcome, p.outcome.asKeyValuePairs, addAction: \addToHead); // create synth
 			// ~outcomePossible = false; // outcome not possible anymore // WARNING: outcome is always possible!
