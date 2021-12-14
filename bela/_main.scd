@@ -231,11 +231,17 @@ q = (); // other parameters
 	x[\tt].free;
 	x[\secondary].free;
 	x[\outcome].free;
+	x[\od].free;
+	x[\master].free;
 	v.panic;
 	// set master level to zero
 	p.master[\masterLevel] = inf.neg;
 	x[\master].set(\masterLevel, p.master[\masterLevel]);
+	q[\od] = 0;
+	q[\output] = 0;
 	n.do{|item| item.sendMsg(\bela, \masterLevel, p.master[\masterLevel]) };
+	n.do{|item| item.sendMsg(\bela, \od, q[\od]) };
+	n.do{|item| item.sendMsg(\bela, \output, q[\output]) };
 });
 
 ~oscSetFunc.(\triggerOnset, {|val, addr|
@@ -286,6 +292,33 @@ q = (); // other parameters
 	);
 });
 
+~oscSetFunc.(\od, {|val, addr|
+	q[\od] = val;
+	if(
+		val==1,
+		{if(x[\od].isPlaying, {}, {
+			x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
+		};);},
+		{
+			x[\od].free;
+		}
+	);
+});
+
+~oscSetFunc.(\output, {|val, addr|
+	q[\output] = val;
+	if(
+		val==1,
+		{if(x[\master].isPlaying, {}, {
+			x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
+		};);},
+		{
+			x[\master].free;
+		}
+	);
+});
+
+
 
 /*===================== SOUND SELECTION =====================*/
 
@@ -328,7 +361,7 @@ OSCdef(\preset, { | msg, time |
 
 	// init primary sound
 	p.primary[\level] = ~ampfactor;
-	p.primary[\combFilterDryWet] = ~combFilterDryWet;
+	p.primary[\combFiltDryWet] = ~combFilterDryWet;
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
@@ -360,7 +393,7 @@ OSCdef(\preset, { | msg, time |
 	n.do{|item| item.sendMsg(\bela, \secondaryDB, p.secondary[\level]) };
 	n.do{|item| item.sendMsg(\bela, \outcomeDB, p.outcome[\level]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
-	n.do{|item| item.sendMsg(\bela, \combFilterDryWet, p.primary[\combFilterDryWet]) };
+	n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
 
 	//finish
@@ -872,7 +905,6 @@ s.waitForBoot{
 	1.wait; // wait a second
 
 	// start those synths that should always be running
-	x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 	x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
 
 

@@ -61,6 +61,9 @@ e.fbFloorDB = 10.0.neg; // is a lower limit, connected to the idea of how quiet 
 e.fbMingap = 40; // specifies a minimum gap (in FFT frames) between onset detections, a brute-force way to prevent too many doubled detections.
 e.fbMedianspan = 22; // specifies the size (in FFT frames) of the median window used for smoothing the detection function before triggering.
 
+e.od = 1; // toggle onset detection
+e.output = 1; // toggle output synth
+
 // Velocity detection
 e.velDelay = 0.0009; // delay between TBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
 e.defaultVel = 0.05; // default velocity
@@ -435,6 +438,8 @@ e.secondaryCountCurve = 3; // curve
 	});
 
 	elements[\toggles][\eq] = makeToggle.(\eq, "EQ");
+	elements[\toggles][\od] = makeToggle.(\od, "OD");
+	elements[\toggles][\output] = makeToggle.(\output, "Output");
 
 	newline.();
 
