@@ -61,8 +61,8 @@ e.fbFloorDB = 10.0.neg; // is a lower limit, connected to the idea of how quiet 
 e.fbMingap = 40; // specifies a minimum gap (in FFT frames) between onset detections, a brute-force way to prevent too many doubled detections.
 e.fbMedianspan = 22; // specifies the size (in FFT frames) of the median window used for smoothing the detection function before triggering.
 
-e.od = 1; // toggle onset detection
-e.output = 1; // toggle output synth
+//e.od = 1; // toggle onset detection
+//e.output = 1; // toggle output synth
 
 // Velocity detection
 e.velDelay = 0.0009; // delay between TBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
@@ -73,6 +73,10 @@ e.velMapInMax = 0.01; // mapping between amplitude and velocity: inMax
 e.velMapOutMin = 0.005; // mapping between amplitude and velocity: outMin
 e.velMapOutMax = 1; // mapping between amplitude and velocity: outMax
 e.velMapCurve = 4.0.neg; // mapping between amplitude and velocity: curve
+e.velEnvDur = 0.04; // release time of velocity-controlled high-shelf
+e.velPeakLevel = 10.0; // peak level in dB for velocity-controlled high-shef
+e.velPeakMapCurve = 0.0;
+e.velPeakMapZeroDB = -3.0;
 
 e.inGain1 = -9.2;
 e.inGain2 = -0.6;
@@ -184,6 +188,10 @@ e.secondaryCountCurve = 3; // curve
 		[-20, 20.0, \lin, 0.1, "dB", "input gain 2", 1.0, \inGain2],
 		[-20, 20.0, \lin, 0.1, "dB", "input gain 3", 1.0, \inGain3],
 		[-20, 20.0, \lin, 0.1, "dB", "input gain 4", 1.0, \inGain4],
+		[0.0, 1000, \lin, 0.1, "ms", "Velocity Envelope Duration", 1.0e-3, \velEnvDur],
+		[0.0, 60, \lin, 0.1, "dB", "Velocity Envelope Peak Level", 1.0, \velPeakLevel],
+		[-10, 10, \lin, 0.1, "", "Velocity Peak Map: curve", 1.0, \velPeakMapCurve],
+		[-20.0, 0.0, \lin, 0.1, "dB", "Velocity Envelope Peak Zero Level", 1.0, \velPeakMapZeroDB],
 	];
 
 	// Preset
@@ -438,8 +446,8 @@ e.secondaryCountCurve = 3; // curve
 	});
 
 	elements[\toggles][\eq] = makeToggle.(\eq, "EQ");
-	elements[\toggles][\od] = makeToggle.(\od, "OD");
-	elements[\toggles][\output] = makeToggle.(\output, "Output");
+	//elements[\toggles][\od] = makeToggle.(\od, "OD");
+	//elements[\toggles][\output] = makeToggle.(\output, "Output");
 
 	newline.();
 

@@ -26,6 +26,8 @@ if(~hostname==\bela, { // If running on Bela
 	"Bela recognized itself as Bela.".postln;
 }, { // If running elsewhere (debug)
 	~debugMode = true;
+	s.options.numInputBusChannels = 4;
+	s.options.numOutputBusChannels = 8;
 	n = [ NetAddr("localhost", 57120) ];
 	"No Bela detected. --> Debug mode.".postln;
 });
@@ -124,7 +126,9 @@ q = (); // other parameters
 ~oscSetq.(\testOnsetPosX);
 ~oscSetq.(\testOnsetPosY);
 ~oscSetq.(\defaultVel);
-
+~oscSetq.(\velPeakLevel);
+~oscSetq.(\velPeakMapCurve);
+~oscSetq.(\velPeakMapZeroDB);
 
 // OSC Receiver function for synth parameters
 ~oscSetp = { |dict, key, addr, printflag=true|
@@ -170,6 +174,7 @@ q = (); // other parameters
 ~oscSetp.(\primary, \velUpdateLag, \velUpdateLag);
 ~oscSetp.(\primary, \combFiltDryWet, \combFiltDryWet);
 ~oscSetp.(\primary, \level, \primaryDB);
+~oscSetp.(\primary, \velEnvDur, \velEnvDur);
 
 // Secondary Sound
 ~oscSetp.(\secondary, \upperCutoff, \secondaryCutoff);
@@ -228,20 +233,21 @@ q = (); // other parameters
 
 ~oscSetFunc.(\panic, {|val, addr|
 	// free synths
+	v.panic;
+	v.free;
+	//x[\master].free;
 	x[\tt].free;
 	x[\secondary].free;
 	x[\outcome].free;
-	x[\od].free;
-	x[\master].free;
-	v.panic;
+	// x[\od].free;
 	// set master level to zero
 	p.master[\masterLevel] = inf.neg;
 	x[\master].set(\masterLevel, p.master[\masterLevel]);
-	q[\od] = 0;
-	q[\output] = 0;
+	//q[\od] = 0;
+	//q[\output] = 0;
 	n.do{|item| item.sendMsg(\bela, \masterLevel, p.master[\masterLevel]) };
-	n.do{|item| item.sendMsg(\bela, \od, q[\od]) };
-	n.do{|item| item.sendMsg(\bela, \output, q[\output]) };
+	//n.do{|item| item.sendMsg(\bela, \od, q[\od]) };
+	//n.do{|item| item.sendMsg(\bela, \output, q[\output]) };
 });
 
 ~oscSetFunc.(\triggerOnset, {|val, addr|
@@ -292,6 +298,7 @@ q = (); // other parameters
 	);
 });
 
+/*
 ~oscSetFunc.(\od, {|val, addr|
 	q[\od] = val;
 	if(
@@ -317,7 +324,7 @@ q = (); // other parameters
 		}
 	);
 });
-
+*/
 
 
 /*===================== SOUND SELECTION =====================*/
@@ -471,6 +478,7 @@ OSCdef(\preset, { | msg, time |
 ~newPrimarySoundTest = {
 	// set parameters
 	~globalvel = q[\testOnsetVel];
+	~mapVelPeakLevel.();
 	p.primary[\bufnum] = ~sound[~chooseSound.()];
 	p.primary[\rate] = ~posToRate.([q[\testOnsetPosX],q[\testOnsetPosY]]); // map position to playback speed
 	p.primary[\combFiltFreq] = ~posToCombFreq.([q[\testOnsetPosX],q[\testOnsetPosY]]); // map position to filter frequency
@@ -547,6 +555,11 @@ OSCdef(\preset, { | msg, time |
 	~lastvoice.set([\vel, p.primary[\vel]]);
 };
 
+~mapVelPeakLevel = {
+	// p.primary[\velPeakLevel] = ~globalvel.lincurve(q[\velMapInMin], q[\velMapInMax], 0.0, q[\velPeakLevel], curve: q[\velPeakMapCurve], clip: \minmax);
+	p.primary[\velPeakLevel] = ~globalvel.ampdb.lincurve(2.0*q[\velPeakMapZeroDB], 0.0, q[\velPeakLevel].neg, q[\velPeakLevel], clip: \minmax);
+};
+
 
 // ONSET DETECTION
 ~oscReceiverOD = OSCFunc({ |msg, time|
@@ -558,6 +571,7 @@ OSCdef(\preset, { | msg, time |
 
 		// Triggering, Cancelling, and Velocity update LOGIC
 		switch (id,
+			/*
 			0, { // False Alarm Cancellation
 				if(~tbodTriggered&&~fbodAgrees.not, {
 					~lastvoice.set([\gate, 0]);
@@ -568,9 +582,11 @@ OSCdef(\preset, { | msg, time |
 				~tbodTriggered = false;
 				~fbodAgrees = false;
 			},
+			*/
 			1, { // TBOD trigger new
 				~globalvel = val;
 				~mapVel.();
+				~mapVelPeakLevel.();
 				~lastvoice = ~newPrimarySound.(); // trigger new primary sound
 				~maybeTriggerOutcome.(); // maybe trigger breaking sound
 				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
@@ -589,6 +605,7 @@ OSCdef(\preset, { | msg, time |
 				}, { // trigger new
 					~globalvel = q[\defaultVel];
 					~mapVel.();
+					~mapVelPeakLevel.();
 					~lastvoice = ~newPrimarySound.(); // trigger new primary sound
 					~maybeTriggerOutcome.(); // maybe trigger breaking sound
 					~maybeNewSecondarySound.(); // maybe trigger new secondary sound
@@ -597,6 +614,7 @@ OSCdef(\preset, { | msg, time |
 					});
 				});
 			},
+			/*
 			3, { // Velocity update
 				~globalvel = val;
 				~mapVel.();
@@ -606,6 +624,7 @@ OSCdef(\preset, { | msg, time |
 					("Velocity update:"+val).postln;
 				});
 			},
+			*/
 			// Source Localization:
 			4, { // Velocity update, Channel 1
 				~globalvels[0] = val;
@@ -685,14 +704,23 @@ s.waitForBoot{
 		rate = 1.0,
 		combFiltDryWet = -1.0,
 		combFiltFreq = 1000.0,
-		velUpdateLag = 0.001;
+		velUpdateLag = 0.001,
+		velEnvDur = 0.005,
+		velPeakLevel = 20.0;
 
-		var sig, comb;
+		var sig, comb, velEnv;
 
 		sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 2); // play sample
 		comb = sig - DelayN.ar(sig, maxdelaytime: 0.1, delaytime: combFiltFreq.reciprocal); // comb filter
 		sig = XFade2.ar(sig, comb, combFiltDryWet); // crossfade between dry and comb-filtered
-		sig = sig * EnvGen.ar(Env.asr(0.0, 1.0, 0.005), gate: gate, doneAction:2); // apply release envelope
+
+		velEnv = Line.kr(start: velPeakLevel, end: 0.0, dur: velEnvDur);
+		// velEnv = EnvGen.kr(Env(levels: [velPeakLevel, 0.0], times: [velEnvDur], curve: 'lin'), gate: gate);
+		// sig2 = BPeakEQ.ar(sig, freq: 10000.0, rq: 10.0, db: 10.0);
+		sig = BHiShelf.ar(sig, freq: 5000.0, rs: 10.0, db: velEnv);
+
+		sig = sig * EnvGen.kr(Env.cutoff(releaseTime: 0.005, level: 1.0, curve: -4.0), gate: gate, doneAction: 2); // apply release envelope
+		// sig = sig * EnvGen.kr(Env.asr(0.0, 1.0, 0.005), gate: gate, doneAction: 2); // apply release envelope
 		sig = vel * sig * level.dbamp; // apply velocity and master level
 		Out.ar(busnum, sig); // play to bus
 
@@ -904,8 +932,8 @@ s.waitForBoot{
 
 	1.wait; // wait a second
 
-	// start those synths that should always be running
 	x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
+	x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 
 
 	// request parameters from GUI
