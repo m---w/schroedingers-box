@@ -356,6 +356,7 @@ OSCdef(\preset, { | msg, time |
 	~soundcat_sum.do{|item| if(item.notNil, {item.free})}; // free buffers of secondary sounds
 	~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
 	~secondaryMaxCount = 7; // secondary max count
+	~hpfPrimary = 20.0; // default value for highpass filter of primary sound
 
 	// Load preset
 	if(~preset > 0){
@@ -368,14 +369,18 @@ OSCdef(\preset, { | msg, time |
 	};
 
 	// init primary sound
-	p.primary[\level] = ~ampfactor;
-	p.primary[\combFiltDryWet] = ~combFilterDryWet;
+	p.primary[\level] = ~ampfactor; // map preset variable to synth variable
+	p.primary[\combFiltDryWet] = ~combFilterDryWet; // map preset variable to synth variable
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
 	v = Voicer.new(voices: ~voices, things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
 	v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 	v.stealer = \preferLate; // set voice stealing algorithm
+
+	// init master
+	p.master[\hpfPrimary] = ~hpfPrimary; // map preset variable to synth variable
+	x[\master].set([\hpfPrimary, p.master[\hpfPrimary]]); // set hpf cutoff of primary sound in master synth
 
 	// init secondary sound
 	p.secondary[\level] = ~ampfactorcat;
@@ -402,7 +407,7 @@ OSCdef(\preset, { | msg, time |
 	n.do{|item| item.sendMsg(\bela, \outcomeDB, p.outcome[\level]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
 	n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
-	n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.primary[\hpfPrimary]) };
+	n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.master[\hpfPrimary]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
 
 	//finish
@@ -789,7 +794,7 @@ s.waitForBoot{
 
 		var primary, secondary, outcome, master, out;
 
-		primary = HPF.ar(In.ar(primaryBus, numChannels: 1), hpfPrimary) * primaryLevel.dbamp; // read primary bus and apply level
+		primary = Hip.ar(In.ar(primaryBus, numChannels: 1), hpfPrimary) * primaryLevel.dbamp; // read primary bus and apply level
 		secondary = In.ar(secondaryBus, numChannels: 1) * secondaryLevel.dbamp; // read secondary bus and apply level
 		outcome = In.ar(outcomeBus, numChannels: 1) * outcomeLevel.dbamp; // read outcome bus and apply level
 
@@ -829,14 +834,6 @@ s.waitForBoot{
 		var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
 		var nfft = 256; // FFT size in samples
 		var frameDur = (nfft/SampleRate.ir)*1.1; // duration of one fft frame in seconds, plus safety of 10 percent. 5.4ms at 48kHz and 256samp fft size.
-		var minusTwoPiT = 2.0.neg*pi/SampleRate.ir; // pre-computation
-		var lpf1CoeffA = exp(tbLpf1Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf1)
-		var lpf2CoeffA = exp(tbLpf2Freq*minusTwoPiT); // feedback coefficient for 1st order lowpass filter (leaky integrator) (lpf2)
-		var lpf1CoeffAm = 1.0-lpf1CoeffA; // pre-computation
-		var lpf2CoeffAm = 1.0-lpf2CoeffA; // pre-computation
-		var hipCoeffsb1 = exp(tbHpfFreq*minusTwoPiT); // coeff b1 for hpf
-		var hipCoeffsa0 = 0.5+(0.5*hipCoeffsb1); // coeff a0 for hpf
-		var hipCoeffsa1 = hipCoeffsa0.neg; // coeff a1 for hpf
 
 		sigRaw = SoundIn.ar([0,1,2,3]) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels, high-pass filtered
 		sigRawSum = sigRaw.sum; // mono mix version
@@ -846,12 +843,12 @@ s.waitForBoot{
 
 
 		//=== TBOD ===
-		sighpf = FOS.ar(sigRaw, hipCoeffsa0, hipCoeffsa1, hipCoeffsb1); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
+		sighpf = Hip.ar(sigRaw, tbHpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
 		energies = sighpf.squared; // Squaring (get signal energy)
 		energy = energies.sum; // add up all energies
-		lpf1 = Integrator.ar(lpf1CoeffAm*energy, lpf1CoeffA); // Smoothing 1. Turchet2018: 25
+		lpf1 = Lop.ar(energy, tbLpf1Freq); // Smoothing 1. Turchet2018: 25
 		derivative = Slope.ar(lpf1); // 1st derivative = slope
-		lpf2 = Integrator.ar(lpf2CoeffAm*derivative, lpf2CoeffA); // Smoothing 2. Turchet2018: 25
+		lpf2 = Lop.ar(energy, tbLpf2Freq); // Smoothing 2. Turchet2018: 25
 		// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 		tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
 		tbTrig = Trig.ar(Schmidt.ar(tsub, tbThreshDB.dbamp, tbThreshLoDB.dbamp), tbRefPeriod); // thresholding with high and low threshold

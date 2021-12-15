@@ -8,12 +8,14 @@ SuperCollider Patch
 
 (
 Platform.case(
-    \osx,       { "OSX".postln;
+    \osx, {
+		"Running on OSX.".postln;
 		~localMode = "ping -c 1 bela.local; echo $?".unixCmdGetStdOut.asInteger==68;
 	},
-    \linux,     { "Linux".postln;
+    \linux, {
+		"Running on Linux.".postln;
 		~localMode = "ping -c 1 bela.local; echo $?".unixCmdGetStdOut.asInteger==2; // Check if Bela is reachable (false=Bela, true=local)
-	},
+	};
 );
 
 if(~localMode, {
