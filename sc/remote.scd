@@ -160,10 +160,10 @@ e.secondaryCountCurve = 3; // curve
 	var sliderListTBOD = [
 		[-180, 0.0, \lin, 1.0, "dB", "TBOD threshold", 1.0, \tbThreshDB],
 		[-180, 0.0, \lin, 1.0, "dB", "TBOD lower threshold", 1.0, \tbThreshLoDB],
-		[80.0, 8000.0, \exp, 1.0, "Hz", "HPF cutoff", 1.0, \tbHpfFreq],
-		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 1 cutoff", 1.0, \tbLpf1Freq],
-		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 2 cutoff", 1.0, \tbLpf2Freq],
-		[0.1, 500.0, \exp, 1.0, "ms", "TBOD refractory period", 1.0e-3, \tbRefPeriod],
+		[80.0, 8000.0, \exp, 1.0, "Hz", "HPF Cutoff", 1.0, \tbHpfFreq],
+		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 1 Cutoff", 1.0, \tbLpf1Freq],
+		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 2 Cutoff", 1.0, \tbLpf2Freq],
+		[0.1, 500.0, \exp, 1.0, "ms", "TBOD Refractory Period", 1.0e-3, \tbRefPeriod],
 		// [0.0, 32.0, \lin, 1.0, "FFT frames", "False Alarm Cancellation delay", 1.0, \cancelDel],
 	];
 
@@ -178,24 +178,20 @@ e.secondaryCountCurve = 3; // curve
 	];
 	*/
 
-	// Velocity Detection
+	// Velocity Detection and Sound Localization
 	var sliderListVelocity = [
-		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Delay", 1.0e-3, \velDelay],
+		[-20, 20.0, \lin, 0.1, "dB", "Input Gain Ch. 1", 1.0, \inGain1],
+		[-20, 20.0, \lin, 0.1, "dB", "Input Gain Ch. 2", 1.0, \inGain2],
+		[-20, 20.0, \lin, 0.1, "dB", "Input Gain Ch. 3", 1.0, \inGain3],
+		[-20, 20.0, \lin, 0.1, "dB", "Input Gain Ch. 4", 1.0, \inGain4],
+		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Waiting Time", 1.0e-3, \velDelay],
 		// [0.1, 50.0, \exp, 0.1, "ms", "Velocity Update Lag", 1.0e-3, \velUpdateLag],
-		[0.0001, 1.0, \exp, 0.0, "", "Default Velocity", 1.0, \defaultVel],
+		// [0.0001, 1.0, \exp, 0.0, "", "Default Velocity", 1.0, \defaultVel],
 		[0.001, 1000.0, \exp, 0.0, "1e-3", "Velocity Map: inMin", 1.0e-3, \velMapInMin],
 		[0.001, 1000.0, \exp, 0.0, "1e-3", "Velocity Map: inMax", 1.0e-3, \velMapInMax],
 		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMin", 1.0, \velMapOutMin],
 		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMax", 1.0, \velMapOutMax],
 		[-10, 10, \lin, 0.1, "", "Velocity Map: curve", 1.0, \velMapCurve],
-		[-20, 20.0, \lin, 0.1, "dB", "input gain 1", 1.0, \inGain1],
-		[-20, 20.0, \lin, 0.1, "dB", "input gain 2", 1.0, \inGain2],
-		[-20, 20.0, \lin, 0.1, "dB", "input gain 3", 1.0, \inGain3],
-		[-20, 20.0, \lin, 0.1, "dB", "input gain 4", 1.0, \inGain4],
-		[0.0, 1000, \lin, 0.1, "ms", "Velocity Envelope Duration", 1.0e-3, \velEnvDur],
-		[0.0, 60, \lin, 0.1, "dB", "Velocity Envelope Peak Level", 1.0, \velPeakLevel],
-		[-10, 10, \lin, 0.1, "", "Velocity Peak Map: curve", 1.0, \velPeakMapCurve],
-		[-20.0, 0.0, \lin, 0.1, "dB", "Velocity Envelope Peak Zero Level", 1.0, \velPeakMapZeroDB],
 	];
 
 	// Preset
@@ -206,6 +202,7 @@ e.secondaryCountCurve = 3; // curve
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Secondary Sound Upper Cutoff", 1.0, \secondaryCutoff],
 		[-1.0, 1.0, \lin, 0.0, "", "Comb Filter Dry/Wet", 1.0, \combFiltDryWet],
 		[1e-3, 300.0, \lin, 1.0, "Hz", "HPF cutoff primary", 1.0, \hpfPrimary],
+		[1, 50, \lin, 1, "", "Secondary Max Count", 1.0, \secondaryMaxCount],
 	];
 
 	// Master
@@ -215,7 +212,7 @@ e.secondaryCountCurve = 3; // curve
 		[-60.0, 30.0, \lin, 0.0, "dB", "Global outcome sound level", 1.0, \outcomeMasterDB],
 		[20.0, 20000.0, \exp, 0.1, "Hz", "Master HPF Cutoff", 1.0, \masterHPF],
 		[20.0, 20000.0, \exp, 0.1, "Hz", "Master LPF Cutoff", 1.0, \masterLPF],
-		[-60.0, 30.0, \lin, 0.0, "dB", "Global Master Level", 1.0, \masterLevel],
+		[-60.0, 30.0, \lin, 0.0, "dB", "GLOBAL MASTER LEVEL", 1.0, \masterLevel],
 	];
 
 	// Test Tone Generator
@@ -223,25 +220,28 @@ e.secondaryCountCurve = 3; // curve
 		[-80.0, 0.0, \lin, 0.1, "dB", "Noise Volume", 1.0, \noiseMasterDB],
 		[-80.0, 0.0, \lin, 0.1, "dB", "Sine Volume", 1.0, \sineMasterDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Sine Frequency", 1.0, \testFreq],
-		[0.001, 1.0, \exp, 0.0, "", "Test Onset velocity", 1.0, \testOnsetVel],
-		[1.0, 10.0, \lin, 0.0, "", "Test Onset Freq", 1.0, \testOnsetFreq],
+		[0.001, 1.0, \exp, 0.0, "", "Test Onset Velocity", 1.0, \testOnsetVel],
+		[1.0, 10.0, \lin, 0.0, "", "Test Onset Hit Freq", 1.0, \testOnsetFreq],
 		[-1.0, 1.0, \lin, 0.0, "", "Test Onset Pos X", 1.0, \testOnsetPosX],
 		[-1.0, 1.0, \lin, 0.0, "", "Test Onset Pos Y", 1.0, \testOnsetPosY],
 	];
 
 	// Sound
 	var sliderListSound = [
-		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Min Frequency", 1.0, \combFiltMinFreq],
-		[20.0, 20000.0, \exp, 1.0, "Hz", "Comb-filter Max Frequency", 1.0, \combFiltMaxFreq],
-		[0.0, 10.0, \lin, 0.1, "%", "Playback Rate Randomization", 1.0e-2, \playbackRand],
-		[0.001, 1.0, \exp, 0.0, "", "Breaking Threshold", 1.0, \breakingThreshold],
-		[0.0, 5.0, \lin, 0.1, "s", "Min Delay for Secondary Sound", 1.0, \secondaryMinDel],
-		[0.0, 5.0, \lin, 0.1, "s", "Max Delay for Secondary Sound", 1.0, \secondaryMaxDel],
-		[0, 10, \lin, 1, "", "Secondary Min Count", 1.0, \secondaryMinCount],
-		[1, 50, \lin, 1, "", "Secondary Max Count", 1.0, \secondaryMaxCount],
-		[-10, 10, \lin, 0.1, "", "Secondary Count Curve", 1.0, \secondaryCountCurve],
-		[1.0, 2.0, \exp, 0.0, "", "Source Position: Max Playback Rate", 1.0, \slMaxPlaybackRate],
-		[1.0, 10.0, \exp, 0.0, "", "Source Localization: Max Ratio", 1.0, \slMaxRatio],
+		[0.0, 1000, \lin, 0.1, "ms", "HF Boost Envelope Duration", 1.0e-3, \velEnvDur],
+		[0.0, 60, \lin, 0.1, "dB", "HF Boost Peak Level", 1.0, \velPeakLevel],
+		[-10, 10, \lin, 0.1, "", "HF Boost Mapping Curve", 1.0, \velPeakMapCurve],
+		[-20.0, 0.0, \lin, 0.1, "dB", "HF Boost Neutral Velocity", 1.0, \velPeakMapZeroDB],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Comb-filter Min Freq", 1.0, \combFiltMinFreq],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Comb-filter Max Freq", 1.0, \combFiltMaxFreq],
+		// [0.0, 10.0, \lin, 0.1, "%", "Playback Rate Randomization", 1.0e-2, \playbackRand],
+		[0.001, 1.0, \exp, 0.0, "", "Breaking/Outcome Threshold", 1.0, \breakingThreshold],
+		[0.0, 5.0, \lin, 0.1, "s", "Secondary: Min Delay", 1.0, \secondaryMinDel],
+		[0.0, 5.0, \lin, 0.1, "s", "Secondary: Max Delay", 1.0, \secondaryMaxDel],
+		[0, 10, \lin, 1, "", "Secondary: Min Count", 1.0, \secondaryMinCount],
+		[-10, 10, \lin, 0.1, "", "Secondary: Probability Curve", 1.0, \secondaryCountCurve],
+		[1.0, 2.0, \exp, 0.0, "", "Source Pos: Max Playback Rate", 1.0, \slMaxPlaybackRate],
+		[1.0, 10.0, \exp, 0.0, "", "Source Pos: Max Amplitude Ratio", 1.0, \slMaxRatio],
 	];
 
 	// convert to dictionary, to address them by name
@@ -313,6 +313,7 @@ e.secondaryCountCurve = 3; // curve
 	elements[\master] = ();
 	elements[\test] = ();
 	elements[\sound] = ();
+	elements[\toggles] = ();
 
 	// Window
 	elements[\w] = Window("Schrödinger's GUI", Rect(400,400,900,900), scroll: true)
@@ -337,80 +338,11 @@ e.secondaryCountCurve = 3; // curve
 	.stringColor_(Color.white);
 
 
-	heading.("TBOD");
-	newline.();
-	makeSliders.(elements[\tbod], sliderDictTBOD, sliderListTBOD.flop.last, Color.red);
-	newline.();
-
-	/*
-	heading.("FBOD");
-	newline.();
-	makeSliders.(elements[\fbod], sliderDictFBOD, sliderListFBOD.flop.last);
-	newline.();
-	*/
-
-	heading.("Velocity detection");
-	newline.();
-	makeSliders.(elements[\velocity], sliderDictVelocity, sliderListVelocity.flop.last, Color.blue);
-	newline.();
-
-	heading.("Preset Settings");
-	newline.();
-	makeSliders.(elements[\presetParams], sliderDictPresetParams, sliderListPresetParams.flop.last, Color.yellow);
-	newline.();
-
-	heading.("Master");
-	newline.();
-	makeSliders.(elements[\master], sliderDictMaster, sliderListMaster.flop.last, Color.green);
-	elements.master.masterLevel.setColors(knobColor: Color.red);
-	newline.();
-
-	heading.("Sound");
-	newline.();
-	makeSliders.(elements[\sound], sliderDictSound, sliderListSound.flop.last, Color.magenta);
-	newline.();
-
-	heading.("Test Signal Generator");
-	newline.();
-	makeSliders.(elements[\test], sliderDictTest, sliderListTest.flop.last, Color.cyan);
-	newline.();
-
-	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,80,22))
-	.states_([["On/Off", Color.white, Color.gray], ["On/Off", Color.gray, Color.green]])
-	.action_({|obj|
-		var val = obj.value;
-		e[\toggleMaster] = val.asInteger; // update value in settings dictionary
-		o.sendMsg('/toggleMaster', e[\toggleMaster]); // send updated value via OSC
-		("toggleMaster:"+e[\toggleMaster]).postln; // print message
-	});
-
-	elements[\playChirp] = Button(elements[\w], Rect(0,0,80,22))
-	.states_([["Play Chirp", Color.white, Color.gray]])
-	.action_({|obj|
-		o.sendMsg('/playChirp', \play); // send updated value via OSC
-		"playChirp: play".postln; // print message
-	});
-
-	elements[\toggles] = ();
-
-
-	[[\toggleSine, "Sine"], [\toggleNoise, "Noise"], [\record, "Record"]].do{ |item|
-		elements[\toggles][item[0].asSymbol] = makeToggle.(item[0].asSymbol, item[1]);
-	};
-
-	newline.();
-
-	( 4.collect{|i| i=i+1; [\toggle++i, "Ch."+i]} ++ 4.collect{|i| i=i+1; [\flip++i, "Flip Ch."+i]} ).do{ |item|
-		elements[\toggles][item[0].asSymbol] = makeToggle.(item[0].asSymbol, item[1]);
-	};
-
-	newline.();
-
 	heading.("Participant and Sound Selection");
 	newline.();
 	elements[\preset] = EZNumber(elements[\w].view, 180@22, "  Preset  ",
 		ControlSpec(minval: -1, maxval: 666, step: 1, default: e[\preset]),
-		labelWidth: 120, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
+		labelWidth: 120, unitWidth: 0, initVal: e[\preset], numberWidth: 70, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
 	.font_(Font("Helvetica", 14))
 	.action_({ |ez|
@@ -421,7 +353,7 @@ e.secondaryCountCurve = 3; // curve
 
 	elements[\participantID] = EZNumber(elements[\w].view, 180@22, "  Participant ID  ",
 		ControlSpec(minval: 0, maxval: 666, step: 1, default: e[\participantID]),
-		labelWidth: 120, unitWidth: 0, initVal: e[\preset], numberWidth: 60, layout: \horz, initAction: true)
+		labelWidth: 120, unitWidth: 0, initVal: e[\preset], numberWidth: 70, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
 	.font_(Font("Helvetica", 14))
 	.action_({ |ez|
@@ -458,6 +390,77 @@ e.secondaryCountCurve = 3; // curve
 	//elements[\toggles][\output] = makeToggle.(\output, "Output");
 
 	newline.();
+
+	heading.("Master");
+	newline.();
+	makeSliders.(elements[\master], sliderDictMaster, sliderListMaster.flop.last, Color.red);
+	elements.master.masterLevel.setColors(knobColor: Color.red);
+	newline.();
+
+
+	heading.("TBOD");
+	newline.();
+	makeSliders.(elements[\tbod], sliderDictTBOD, sliderListTBOD.flop.last, Color.yellow);
+	newline.();
+
+	heading.("Sound");
+	newline.();
+	makeSliders.(elements[\sound], sliderDictSound, sliderListSound.flop.last, Color.blue);
+	newline.();
+
+	/*
+	heading.("FBOD");
+	newline.();
+	makeSliders.(elements[\fbod], sliderDictFBOD, sliderListFBOD.flop.last);
+	newline.();
+	*/
+
+	heading.("Velocity detection");
+	newline.();
+	makeSliders.(elements[\velocity], sliderDictVelocity, sliderListVelocity.flop.last, Color.green);
+	newline.();
+
+	heading.("Preset Settings");
+	newline.();
+	makeSliders.(elements[\presetParams], sliderDictPresetParams, sliderListPresetParams.flop.last, Color.magenta);
+	newline.();
+
+
+	heading.("Test Signal Generator");
+	newline.();
+	makeSliders.(elements[\test], sliderDictTest, sliderListTest.flop.last, Color.cyan);
+	newline.();
+
+	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,80,22))
+	.states_([["On/Off", Color.white, Color.gray], ["On/Off", Color.gray, Color.green]])
+	.action_({|obj|
+		var val = obj.value;
+		e[\toggleMaster] = val.asInteger; // update value in settings dictionary
+		o.sendMsg('/toggleMaster', e[\toggleMaster]); // send updated value via OSC
+		("toggleMaster:"+e[\toggleMaster]).postln; // print message
+	});
+
+	elements[\playChirp] = Button(elements[\w], Rect(0,0,80,22))
+	.states_([["Play Chirp", Color.white, Color.gray]])
+	.action_({|obj|
+		o.sendMsg('/playChirp', \play); // send updated value via OSC
+		"playChirp: play".postln; // print message
+	});
+
+
+	[[\toggleSine, "Sine"], [\toggleNoise, "Noise"], [\record, "Record"]].do{ |item|
+		elements[\toggles][item[0].asSymbol] = makeToggle.(item[0].asSymbol, item[1]);
+	};
+
+	newline.();
+
+	( 4.collect{|i| i=i+1; [\toggle++i, "Ch."+i]} ++ 4.collect{|i| i=i+1; [\flip++i, "Flip Ch."+i]} ).do{ |item|
+		elements[\toggles][item[0].asSymbol] = makeToggle.(item[0].asSymbol, item[1]);
+	};
+
+	newline.();
+
+
 
 	// just write something in the end to have some space below buttons
 	StaticText(elements[\w].view, 878@24)
