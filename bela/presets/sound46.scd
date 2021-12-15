@@ -22,3 +22,6 @@ n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB
 
 //Comb Filter config
 ~combFilterDryWet = 1.0.neg;
+
+//hpf primary
+~hpfPrimary = 100.0;

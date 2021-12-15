@@ -28,8 +28,21 @@
 
 *FIND LONGER SOUNDS*
 
-*see other sounds with need for a hpf*
+Sounds for HPF
+aluminum overtones
+book pages chattering
+cage bars?
+cartoon outcome
+cat scratch
+fan wire rattle
+sackl-impact_var
+lamarina_var01
+noodles top
+plastic container
+
 *apply hpf*
+
+
 
 * VALUES
 
