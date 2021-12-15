@@ -164,10 +164,11 @@ e.secondaryCountCurve = 3; // curve
 		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 1 cutoff", 1.0, \tbLpf1Freq],
 		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 2 cutoff", 1.0, \tbLpf2Freq],
 		[0.1, 500.0, \exp, 1.0, "ms", "TBOD refractory period", 1.0e-3, \tbRefPeriod],
-		[0.0, 32.0, \lin, 1.0, "FFT frames", "False Alarm Cancellation delay", 1.0, \cancelDel],
+		// [0.0, 32.0, \lin, 1.0, "FFT frames", "False Alarm Cancellation delay", 1.0, \cancelDel],
 	];
 
 	// FBOD
+	/*
 	var sliderListFBOD = [
 		[-40, 40.0, \lin, 1.0, "dB", "FBOD threshold", 1.0, \fbThreshDB],
 		[0.1, 10.0, \exp, 0.1, "s", "Relax Time", 1.0, \fbRelaxtime],
@@ -175,11 +176,12 @@ e.secondaryCountCurve = 3; // curve
 		[0.0, 100.0, \lin, 1.0, "FFT frames", "MinGap", 1.0, \fbMingap],
 		[0.0, 30.0, \lin, 1.0, "FFT frames", "MedianSpan", 1.0, \fbMedianspan],
 	];
+	*/
 
 	// Velocity Detection
 	var sliderListVelocity = [
 		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Delay", 1.0e-3, \velDelay],
-		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Update Lag", 1.0e-3, \velUpdateLag],
+		// [0.1, 50.0, \exp, 0.1, "ms", "Velocity Update Lag", 1.0e-3, \velUpdateLag],
 		[0.0001, 1.0, \exp, 0.0, "", "Default Velocity", 1.0, \defaultVel],
 		[0.001, 1000.0, \exp, 0.0, "1e-3", "Velocity Map: inMin", 1.0e-3, \velMapInMin],
 		[0.001, 1000.0, \exp, 0.0, "1e-3", "Velocity Map: inMax", 1.0e-3, \velMapInMax],
@@ -244,7 +246,7 @@ e.secondaryCountCurve = 3; // curve
 
 	// convert to dictionary, to address them by name
 	var sliderDictTBOD = ().putPairs([sliderListTBOD.flop.last,sliderListTBOD].flop.flatten);
-	var sliderDictFBOD = ().putPairs([sliderListFBOD.flop.last,sliderListFBOD].flop.flatten);
+	//var sliderDictFBOD = ().putPairs([sliderListFBOD.flop.last,sliderListFBOD].flop.flatten);
 	var sliderDictVelocity = ().putPairs([sliderListVelocity.flop.last,sliderListVelocity].flop.flatten);
 	var sliderDictPresetParams = ().putPairs([sliderListPresetParams.flop.last,sliderListPresetParams].flop.flatten);
 	var sliderDictMaster = ().putPairs([sliderListMaster.flop.last,sliderListMaster].flop.flatten);
@@ -253,12 +255,13 @@ e.secondaryCountCurve = 3; // curve
 
 
 	// slider creation function
-	var makeSlider = { |item|
+	var makeSlider = { |item, sliderBackground=0|
 		EZSlider(elements[\w].view, 878@22, "  "++item[5]++"  ",
 			ControlSpec(minval: item[0], maxval: item[1], warp: item[2], step: item[3], default: e[item[7]]/item[6], units: item[4]),
-			labelWidth: 250, unitWidth: 100, initVal: e[item[7]]/item[6], numberWidth: 60, layout: \horz, initAction: true)
-		.setColors(Color.grey, Color.white)
+			labelWidth: 250, unitWidth: 50, initVal: e[item[7]]/item[6], numberWidth: 70, layout: \horz, initAction: true)
+		.setColors(Color.grey, Color.white, sliderBackground)
 		.font_(Font("Helvetica", 14))
+		.round_(0.001)
 		.action_({ |ez|
 			e[item[7]] = ez.value*item[6]; // update value in settings dictionary
 			o.sendMsg('/'++item[7], e[item[7]]); // send updated value via OSC
@@ -281,9 +284,9 @@ e.secondaryCountCurve = 3; // curve
 	};
 
 	// function that creates sliders called by their name
-	var makeSliders = {|target, dict, keys|
+	var makeSliders = {|target, dict, keys, sliderBackground=0|
 		keys.asArray.do{|key|
-			target[key] = makeSlider.(dict[key]);
+			target[key] = makeSlider.(dict[key], sliderBackground);
 		};
 	};
 
@@ -291,7 +294,7 @@ e.secondaryCountCurve = 3; // curve
 	var heading = { |text|
 		StaticText(elements[\w].view, 878@24)
 		.string_(text++":")
-		.font_(Font("Helvetica", 14))
+		.font_(Font("Helvetica", 18))
 		.stringColor_(Color.white)
 		;
 	};
@@ -330,44 +333,46 @@ e.secondaryCountCurve = 3; // curve
 	StaticText(elements[\w].view, 878@24)
 	.align_(\center)
 	.string_("Remote for Schrödinger's Box")
-	.font_(Font("Helvetica", 14, bold: true))
+	.font_(Font("Helvetica", 18, bold: true))
 	.stringColor_(Color.white);
 
 
 	heading.("TBOD");
 	newline.();
-	makeSliders.(elements[\tbod], sliderDictTBOD, sliderListTBOD.flop.last);
+	makeSliders.(elements[\tbod], sliderDictTBOD, sliderListTBOD.flop.last, Color.red);
 	newline.();
 
+	/*
 	heading.("FBOD");
 	newline.();
 	makeSliders.(elements[\fbod], sliderDictFBOD, sliderListFBOD.flop.last);
 	newline.();
+	*/
 
 	heading.("Velocity detection");
 	newline.();
-	makeSliders.(elements[\velocity], sliderDictVelocity, sliderListVelocity.flop.last);
+	makeSliders.(elements[\velocity], sliderDictVelocity, sliderListVelocity.flop.last, Color.blue);
 	newline.();
 
 	heading.("Preset Settings");
 	newline.();
-	makeSliders.(elements[\presetParams], sliderDictPresetParams, sliderListPresetParams.flop.last);
+	makeSliders.(elements[\presetParams], sliderDictPresetParams, sliderListPresetParams.flop.last, Color.yellow);
 	newline.();
 
 	heading.("Master");
 	newline.();
-	makeSliders.(elements[\master], sliderDictMaster, sliderListMaster.flop.last);
+	makeSliders.(elements[\master], sliderDictMaster, sliderListMaster.flop.last, Color.green);
 	elements.master.masterLevel.setColors(knobColor: Color.red);
 	newline.();
 
 	heading.("Sound");
 	newline.();
-	makeSliders.(elements[\sound], sliderDictSound, sliderListSound.flop.last);
+	makeSliders.(elements[\sound], sliderDictSound, sliderListSound.flop.last, Color.magenta);
 	newline.();
 
 	heading.("Test Signal Generator");
 	newline.();
-	makeSliders.(elements[\test], sliderDictTest, sliderListTest.flop.last);
+	makeSliders.(elements[\test], sliderDictTest, sliderListTest.flop.last, Color.cyan);
 	newline.();
 
 	elements[\toggleMaster] = Button(elements[\w], Rect(0,0,80,22))
@@ -467,9 +472,11 @@ e.secondaryCountCurve = 3; // curve
 		elements.tbod.keysValuesDo{|key,item|
 			elements.tbod[key].value = e[key]/sliderDictTBOD[key][6];
 		};
+		/*
 		elements.fbod.keysValuesDo{|key,item|
 			elements.fbod[key].value = e[key]/sliderDictFBOD[key][6];
 		};
+		*/
 		elements.velocity.keysValuesDo{|key,item|
 			elements.velocity[key].value = e[key]/sliderDictVelocity[key][6];
 		};
@@ -499,9 +506,11 @@ e.secondaryCountCurve = 3; // curve
 		elements.tbod.keysValuesDo{|key,item|
 			elements.tbod[key].doAction;
 		};
+		/*
 		elements.fbod.keysValuesDo{|key,item|
 			elements.fbod[key].doAction;
 		};
+		*/
 		elements.velocity.keysValuesDo{|key,item|
 			elements.velocity[key].doAction;
 		};
