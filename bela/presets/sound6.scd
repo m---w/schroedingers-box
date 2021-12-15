@@ -19,8 +19,13 @@
 ~sound6cat7 = Buffer.readChannel(s, ~path+/+"./sounds/new-cat_var07.wav", channels:0);
 ~sound6cat8 = Buffer.readChannel(s, ~path+/+"./sounds/new-cat_var08.wav", channels:0);
 ~sound6cat9 = Buffer.readChannel(s, ~path+/+"./sounds/new-cat_var09.wav", channels:0);
+~sound6cat10 = Buffer.readChannel(s, ~path+/+"./sounds/cat-scratch_var01.wav", channels:0);
+~sound6cat11 = Buffer.readChannel(s, ~path+/+"./sounds/cat-scratch_var02.wav", channels:0);
+~sound6cat12 = Buffer.readChannel(s, ~path+/+"./sounds/cat-scratch_var03.wav", channels:0);
+~sound6cat13 = Buffer.readChannel(s, ~path+/+"./sounds/cat-scratch_var04.wav", channels:0);
+~sound6cat14 = Buffer.readChannel(s, ~path+/+"./sounds/cat-scratch_var05.wav", channels:0);
 
-~soundcat_sum = [~sound6cat1, ~sound6cat2, ~sound6cat3, ~sound6cat4, ~sound6cat5, ~sound6cat6, ~sound6cat7, ~sound6cat8, ~sound6cat9];
+~soundcat_sum = [~sound6cat1, ~sound6cat2, ~sound6cat3, ~sound6cat4, ~sound6cat5, ~sound6cat6, ~sound6cat7, ~sound6cat8, ~sound6cat9, ~sound6cat10, ~sound6cat11, ~sound6cat12, ~sound6cat13, ~sound6cat14];
 
 //secondary sound flag 
 ~addsound = true;

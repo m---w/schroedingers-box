@@ -89,7 +89,7 @@ e.secondaryDB = inf.neg; // secondary level in dB
 e.outcomeDB = inf.neg; // outcome level in dB
 e.secondaryCutoff = 4000.0; // Cutoff frequency of LPF for secondary sound, in Hz
 e.combFiltDryWet = 1.0; // dry/wet for comb filter
-
+e.hpfPrimary = 20;
 
 // Master
 e.primaryMasterDB = 0.0; // primary level in dB
@@ -201,6 +201,7 @@ e.secondaryCountCurve = 3; // curve
 		[-60.0, 30.0, \lin, 0.1, "dB", "Outcome sound level", 1.0, \outcomeDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Secondary Sound Upper Cutoff", 1.0, \secondaryCutoff],
 		[-1.0, 1.0, \lin, 0.0, "", "Comb Filter Dry/Wet", 1.0, \combFiltDryWet],
+		[1e-3, 300.0, \lin, 1.0, "Hz", "HPF cutoff primary", 1.0, \hpfPrimary],
 	];
 
 	// Master
@@ -531,7 +532,6 @@ e.secondaryCountCurve = 3; // curve
 
 // START GUI
 ~gui = ~schroedingersGUI.(n, e);
-
 ~gui.resend.();
 
 "Remote Patch READY".postln;

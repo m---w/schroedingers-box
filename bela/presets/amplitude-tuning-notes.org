@@ -28,7 +28,8 @@
 
 *FIND LONGER SOUNDS*
 
-
+*see other sounds with need for a hpf*
+*apply hpf*
 
 * VALUES
 
@@ -103,46 +104,46 @@ PARAMETER: Global primary
 9. real deal (Schrodinger's box impact w mallet)
 10. bottle impact | outcome: bottle break
 11. aluminium can, can opening
-12.
-13.
-14.
-15.
-16.
-17.
-18.
-19.
-20.
-21.
-22.
-23.
-24.
-25.
-26.
-27.
-28.
-29.
-30.
-31.
-32.
-33.
-34.
-35.
-36.
-37.
-38.
-39.
-40.
-41.
-42.
-43.
-44.
-45.
-46.
-47.
-48.
-49.
-50.
-51.
-52.
-53.
-54.
+12. harpsi
+13. water glass
+14. physical model of a string
+15. thesis (artificial)
+16. finger snap
+17. plastic container
+18. spray
+19. bell (physical model)
+20. wood impact (toing) | secondary: cheering
+21. thermo metallic impact
+22. sackl impact
+23. book page chattering
+24. fan scissors
+25. fan rattle
+26. Davor spring wire
+27. my toaster
+28. cough
+29. music stand rattle
+30. fan wire rattle
+31. microwave ding
+32. impact | cartoon outcome (toing - crash)
+33. chaotic drop => greyhole
+34. water | outcome: water
+35. punching | secondary: vocal feedback (ouch)
+36. metal plate rattling at KHG
+37. drums
+38. axe
+39. match strike | outcome: match light
+40. cage bars | secondary: lion
+41. sk8board
+42. thermo | secondary: balloons
+43. stapler | secondary: pin drop
+44. stapler rattling feedback
+45. noodles metallic top | secondary: noodles shake
+46. aluminium toing overtones
+47. metallic box with nuts inside
+48. plastic bag pop | various plastic bag feedback
+49. click | secondary: boiler
+50. coolness (artificial sound)
+51. popping | secondary: party horn
+52. impact | electric toy duck
+53. aluminium toing | secondary nail drop on table
+54. plastic bag crumbling sound

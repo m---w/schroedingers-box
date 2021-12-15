@@ -175,6 +175,7 @@ q = (); // other parameters
 ~oscSetp.(\primary, \combFiltDryWet, \combFiltDryWet);
 ~oscSetp.(\primary, \level, \primaryDB);
 ~oscSetp.(\primary, \velEnvDur, \velEnvDur);
+~oscSetp.(\master, \hpfPrimary, \hpfPrimary);
 
 // Secondary Sound
 ~oscSetp.(\secondary, \upperCutoff, \secondaryCutoff);
@@ -401,6 +402,7 @@ OSCdef(\preset, { | msg, time |
 	n.do{|item| item.sendMsg(\bela, \outcomeDB, p.outcome[\level]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
 	n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
+	n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.primary[\hpfPrimary]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
 
 	//finish
@@ -782,11 +784,12 @@ s.waitForBoot{
 		irbufnum = 0,
 		partConvFFTSize = 128,
 		eq = 1,
-		masterLevel = inf.neg;
+		masterLevel = inf.neg,
+		hpfPrimary = 20;
 
 		var primary, secondary, outcome, master, out;
 
-		primary = In.ar(primaryBus, numChannels: 1) * primaryLevel.dbamp; // read primary bus and apply level
+		primary = HPF.ar(In.ar(primaryBus, numChannels: 1), hpfPrimary) * primaryLevel.dbamp; // read primary bus and apply level
 		secondary = In.ar(secondaryBus, numChannels: 1) * secondaryLevel.dbamp; // read secondary bus and apply level
 		outcome = In.ar(outcomeBus, numChannels: 1) * outcomeLevel.dbamp; // read outcome bus and apply level
 
