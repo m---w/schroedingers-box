@@ -12,7 +12,7 @@
 ~voices = 1;
 
 //amplitude configuration
-~ampfactor = 6.0;
+~ampfactor = 9.0;
 ~ampfactorcat = inf.neg;
 
 

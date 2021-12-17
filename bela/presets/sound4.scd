@@ -1,11 +1,13 @@
-~sound4var1 = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var1.wav", channels:1);
-~sound4var2 = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var2.wav", channels:1);
-~sound4var3 = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var3.wav", channels:1);
-~sound4var4 = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var4.wav", channels:1);
-~sound4var5 = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var5.wav", channels:1);
-~sound4var6 = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var6.wav", channels:1);
 
-~sound = [~sound4var1, ~sound4var2, ~sound4var3, ~sound4var4, ~sound4var5, ~sound4var6];
+~sound = Array.newClear(6);
+
+~sound[0] = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var1.wav", channels:1);
+~sound[1] = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var2.wav", channels:1);
+~sound[2] = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var3.wav", channels:1);
+~sound[3] = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var4.wav", channels:1);
+~sound[4] = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var5.wav", channels:1);
+~sound[5] = Buffer.readChannel(s, ~path+/+"./sounds/timpani_bends1_var6.wav", channels:1);
+
 
 ~addsound = false;
 ~outcome = false;
@@ -14,9 +16,7 @@
 //amplitude configuration
 ~ampfactor = 2;
 ~ampfactorcat = inf.neg;
-//send amplitude config to bela
-n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
-n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB
+
 
 //Comb Filter config
-~combFilterDryWet = 1.0.neg;
+~combFilterDryWet = 0.0.neg;

@@ -77,20 +77,19 @@ e.velMapOutMax = 1; // mapping between amplitude and velocity: outMax
 e.velMapCurve = 4.0.neg; // mapping between amplitude and velocity: curve
 e.velEnvDur = 0.04; // release time of velocity-controlled high-shelf
 e.velPeakLevel = 10.0; // peak level in dB for velocity-controlled high-shef
-e.velPeakMapCurve = 0.0;
-e.velPeakMapZeroDB = -3.0;
-
-e.inGain1 = -9.2;
-e.inGain2 = -0.6;
-e.inGain3 = 0.0;
-e.inGain4 = 2.5;
+e.velPeakMapCurve = 0.0; // HF Boost Curve Parameter
+e.velPeakMapZeroDB = -5.0; // HF Boost 0dB value. At the given value in dB there will be no HF boost. Above will be HF boost, below will be HF cut.
+e.inGain1 = -9.2; // input gain of Mic Channel 1
+e.inGain2 = -0.6; // input gain of Mic Channel 2
+e.inGain3 = 0.0; // input gain of Mic Channel 3
+e.inGain4 = 2.5; // input gain of Mic Channel 4
 
 // Preset Settings
 e.primaryDB = inf.neg; // primary level in dB
 e.secondaryDB = inf.neg; // secondary level in dB
 e.outcomeDB = inf.neg; // outcome level in dB
 e.secondaryCutoff = 4000.0; // Cutoff frequency of LPF for secondary sound, in Hz
-e.combFiltDryWet = 1.0; // dry/wet for comb filter
+e.combFiltDryWet = 0.0; // dry/wet for comb filter
 e.hpfPrimary = 20;
 
 // Master
@@ -121,14 +120,15 @@ e.flip3 = 0; // output channel 3 flip phase
 e.flip4 = 0; // output channel 4 flip phase
 
 // Primary Sound
-e.combFiltMinFreq = 100.0; // minimum combfilter frequency in Hz
-e.combFiltMaxFreq = 5000.0; // maximum combfilter frequency in Hz
+e.combFiltMinFreq = 2000.0; // minimum combfilter frequency in Hz
+e.combFiltMaxFreq = 10000.0; // maximum combfilter frequency in Hz
 e.slMaxPlaybackRate = 1.1; // max playback rate, as controlled by source localization
 
 
 // Source Localization
 e.slMaxRatio = 2.0; // maximum amplitude ratio for source localization
 
+// Parameters of the test signal generator
 e.testOnsetPosX = 0.0;
 e.testOnsetPosY = 0.0;
 e.testOnsetVel = 0.5;

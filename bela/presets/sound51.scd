@@ -7,8 +7,6 @@
 //playback array
 ~sound = [~sound51var1, ~sound51var2, ~sound51var3, ~sound51var4];
 
-//buffer load and initialisation
-~soundstopped = 0; //do not play cat on every detected impact
  
 //secondary sound
 ~sound51cat1 = Buffer.readChannel(s, ~path+/+"./sounds/party-trompete_var01.wav", channels:0);
@@ -30,9 +28,6 @@
 //amplitude configuration
 ~ampfactor = 0.neg;
 ~ampfactorcat = 20;
-//send amplitude config to bela
-n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
-n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 
 
 //Comb Filter config
 ~combFilterDryWet = 1.0.neg;

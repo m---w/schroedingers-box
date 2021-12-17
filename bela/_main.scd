@@ -78,7 +78,6 @@ OSCdef(\preset, { | msg, time |
 	~ampfactorcat = inf.neg; // secondary sound level
 	~ampfactoroutcome = inf.neg; // outcome sound level
 	~outcomePossible = true; // outcome didn't happen yet?
-	// ~breakingThreshold = 0.1; // threshold for breaking glass
 	~secondaryCutoff = 20000.0; // cutoff for secondary sound
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
 	~sound.do{|item| if(item.notNil, {item.free})}; // free buffers of primary sounds
@@ -96,6 +95,9 @@ OSCdef(\preset, { | msg, time |
 		~sound = [~dummybuffer, ~dummybuffer];
 		~soundcat_sum = [~dummybuffer, ~dummybuffer];
 	};
+
+	// QUICK HACK: DEACTIVATE COMB FILTER:
+	~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
 
 	// init primary sound
 	p.primary[\level] = ~ampfactor; // map preset variable to synth variable
@@ -140,7 +142,7 @@ OSCdef(\preset, { | msg, time |
 	n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
 
 	//finish
-	if(~preset>=666){s.freeAll};
+	// if(~preset>=666){s.freeAll};
 
 },'/preset');
 

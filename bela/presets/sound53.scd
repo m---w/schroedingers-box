@@ -11,9 +11,6 @@
 
 //playback array
 ~sound = [~sound53var1, ~sound53var2, ~sound53var3, ~sound53var4, ~sound53var5, ~sound53var6, ~sound53var7, ~sound53var8];
-
-//buffer load and initialisation
-~soundstopped = 0; //do not play cat on every detected impact
  
 //secondary sound
 ~sound53cat1 = Buffer.readChannel(s, ~path+/+"./sounds/nails-drop_var01.wav", channels:0);
@@ -37,9 +34,8 @@
 //amplitude configuration
 ~ampfactor = 7.5;
 ~ampfactorcat = 0.neg;
-//send amplitude config to bela
-n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
-n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 
 
 //Comb Filter config
 ~combFilterDryWet = 1.0;
+
+~secondaryMaxCount = 4;

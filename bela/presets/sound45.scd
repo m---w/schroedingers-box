@@ -10,7 +10,6 @@
 ~sound = [~sound45var1, ~sound45var2, ~sound45var3, ~sound45var4, ~sound45var5, ~sound45var6, ~sound45var7];
 
 //buffer load and initialisation
-~soundstopped = 0; //do not play cat on every detected impact
  
 //secondary sound
 ~sound45cat1 = Buffer.readChannel(s, ~path+/+"./sounds/noodles-shake_var01.wav", channels:0);
@@ -32,12 +31,11 @@
 //amplitude configuration
 ~ampfactor = 4.5;
 ~ampfactorcat = 5.neg;
-//send amplitude config to bela
-n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
-n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 
 
 //Comb Filter config
 ~combFilterDryWet = 1.0;
 
 //hpf primary
-~hpfPrimary = 100.0;
+~hpfPrimary = 200.0;
+
+~secondaryMaxCount = 3;

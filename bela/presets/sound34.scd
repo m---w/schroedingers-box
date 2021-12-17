@@ -26,9 +26,6 @@
 //amplitude configuration
 ~ampfactor = 12;
 ~ampfactorcat = 10;
-//send amplitude config to bela
-n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
-n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 
 
 //Comb Filter config
 ~combFilterDryWet = 1.0.neg;

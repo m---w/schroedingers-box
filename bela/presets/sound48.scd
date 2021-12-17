@@ -10,8 +10,6 @@
 //playback array
 ~sound = [~sound48var1, ~sound48var2, ~sound48var3, ~sound48var4, ~sound48var5, ~sound48var6];
 
-//buffer load and initialisation
-~soundstopped = 0; //do not play cat on every detected impact
  
 //secondary sound
 ~sound48cat1 = Buffer.readChannel(s, ~path+/+"./sounds/sackl-movement_var01.wav", channels:0);
@@ -34,9 +32,6 @@
 //amplitude configuration
 ~ampfactor = 4.5;
 ~ampfactorcat = 5;
-//send amplitude config to bela
-n.do{|item| item.sendMsg(\bela, \mainDB, ~ampfactor) }; // send mainDB config to Bela
-n.do{|item| item.sendMsg(\bela, \catDB, ~ampfactorcat) }; // send catDB 
 
 //Comb Filter config
 ~combFilterDryWet = 1.0.neg;
