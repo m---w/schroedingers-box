@@ -89,7 +89,7 @@ e.primaryDB = inf.neg; // primary level in dB
 e.secondaryDB = inf.neg; // secondary level in dB
 e.outcomeDB = inf.neg; // outcome level in dB
 e.secondaryCutoff = 4000.0; // Cutoff frequency of LPF for secondary sound, in Hz
-e.combFiltDryWet = 0.0; // dry/wet for comb filter
+e.eqGain = 4.0; // dry/wet for comb filter. From 0 to 1
 e.hpfPrimary = 20;
 
 // Master
@@ -120,8 +120,8 @@ e.flip3 = 0; // output channel 3 flip phase
 e.flip4 = 0; // output channel 4 flip phase
 
 // Primary Sound
-e.combFiltMinFreq = 2000.0; // minimum combfilter frequency in Hz
-e.combFiltMaxFreq = 10000.0; // maximum combfilter frequency in Hz
+e.eqMinFreq = 200.0; // minimum eq frequency in Hz
+e.eqMaxFreq = 2000.0; // maximum eq frequency in Hz
 e.slMaxPlaybackRate = 1.1; // max playback rate, as controlled by source localization
 
 
@@ -200,7 +200,6 @@ e.secondaryCountCurve = 3; // curve
 		[-60.0, 30.0, \lin, 0.1, "dB", "Secondary sound level", 1.0, \secondaryDB],
 		[-60.0, 30.0, \lin, 0.1, "dB", "Outcome sound level", 1.0, \outcomeDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Secondary Sound Upper Cutoff", 1.0, \secondaryCutoff],
-		[-1.0, 1.0, \lin, 0.0, "", "Comb Filter Dry/Wet", 1.0, \combFiltDryWet],
 		[1e-3, 300.0, \lin, 1.0, "Hz", "HPF cutoff primary", 1.0, \hpfPrimary],
 		[1, 50, \lin, 1, "", "Secondary Max Count", 1.0, \secondaryMaxCount],
 	];
@@ -232,8 +231,8 @@ e.secondaryCountCurve = 3; // curve
 		[0.0, 60, \lin, 0.1, "dB", "HF Boost Peak Level", 1.0, \velPeakLevel],
 		[-10, 10, \lin, 0.1, "", "HF Boost Mapping Curve", 1.0, \velPeakMapCurve],
 		[-20.0, 0.0, \lin, 0.1, "dB", "HF Boost Neutral Velocity", 1.0, \velPeakMapZeroDB],
-		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Comb-filter Min Freq", 1.0, \combFiltMinFreq],
-		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Comb-filter Max Freq", 1.0, \combFiltMaxFreq],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Min Freq", 1.0, \eqMinFreq],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Max Freq", 1.0, \eqMaxFreq],
 		// [0.0, 10.0, \lin, 0.1, "%", "Playback Rate Randomization", 1.0e-2, \playbackRand],
 		[0.001, 1.0, \exp, 0.0, "", "Breaking/Outcome Threshold", 1.0, \breakingThreshold],
 		[0.0, 5.0, \lin, 0.1, "s", "Secondary: Min Delay", 1.0, \secondaryMinDel],
@@ -242,6 +241,7 @@ e.secondaryCountCurve = 3; // curve
 		[-10, 10, \lin, 0.1, "", "Secondary: Probability Curve", 1.0, \secondaryCountCurve],
 		[1.0, 2.0, \exp, 0.0, "", "Source Pos: Max Playback Rate", 1.0, \slMaxPlaybackRate],
 		[1.0, 10.0, \exp, 0.0, "", "Source Pos: Max Amplitude Ratio", 1.0, \slMaxRatio],
+		[0.0, 12.0, \lin, 0.0, "dB", "Peaking EQ Level", 1.0, \eqGain],´
 	];
 
 	// convert to dictionary, to address them by name

@@ -82,7 +82,8 @@ OSCdef(\preset, { | msg, time |
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
 	~sound.do{|item| if(item.notNil, {item.free})}; // free buffers of primary sounds
 	~soundcat_sum.do{|item| if(item.notNil, {item.free})}; // free buffers of secondary sounds
-	~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
+	//~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
+	// ~eqGain = q[\eqGain]; // goes from 0 to 1!
 	~secondaryMaxCount = 7; // secondary max count
 	~hpfPrimary = 20.0; // default value for highpass filter of primary sound
 
@@ -96,12 +97,10 @@ OSCdef(\preset, { | msg, time |
 		~soundcat_sum = [~dummybuffer, ~dummybuffer];
 	};
 
-	// QUICK HACK: DEACTIVATE COMB FILTER:
-	~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
-
 	// init primary sound
 	p.primary[\level] = ~ampfactor; // map preset variable to synth variable
-	p.primary[\combFiltDryWet] = ~combFilterDryWet; // map preset variable to synth variable
+	// p.primary[\combFiltDryWet] = ~combFilterDryWet; // map preset variable to synth variable
+	// p.primary[\eqGain] = ~eqGain;
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
@@ -137,7 +136,8 @@ OSCdef(\preset, { | msg, time |
 	n.do{|item| item.sendMsg(\bela, \secondaryDB, p.secondary[\level]) };
 	n.do{|item| item.sendMsg(\bela, \outcomeDB, p.outcome[\level]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
-	n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
+	// n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
+	// n.do{|item| item.sendMsg(\bela, \eqDryWet, p.primary[\eqDryWet]) };
 	n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.master[\hpfPrimary]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
 

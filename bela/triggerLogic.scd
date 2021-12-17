@@ -74,8 +74,12 @@
 	~mapVelPeakLevel.();
 	p.primary[\bufnum] = ~sound[~chooseSound.()];
 	p.primary[\rate] = ~posToRate.([q[\testOnsetPosX],q[\testOnsetPosY]]); // map position to playback speed
+	/*
 	p.primary[\combFiltFreq1] = ~posToCombFreq.(q[\testOnsetPosX]); // map position to filter frequency
 	p.primary[\combFiltFreq2] = ~posToCombFreq.(q[\testOnsetPosY]); // map position to filter frequency
+	*/
+	p.primary[\eqFreq1] = ~posToEQFreq.(q[\testOnsetPosX]); // map position to filter frequency
+	p.primary[\eqFreq2] = ~posToEQFreq.(q[\testOnsetPosY]); // map position to filter frequency
 	// play voice
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
 	// Break glass
@@ -89,10 +93,17 @@
 	sourcePos.sum.linexp(inMin: -2.0, inMax: 2.0, outMin: q[\slMinPlaybackRate], outMax: q[\slMaxPlaybackRate], clip: \minmax); // map position to playback speed
 };
 
+/*
 ~posToCombFreq = {|sourcePos|
 	sourcePos.linexp(inMin: -2.0, inMax: 2.0, outMin: q[\combFiltMinFreq], outMax: q[\combFiltMaxFreq], clip: \minmax); // map position to filter frequency
 };
+*/
 
+~posToEQFreq = {|sourcePos|
+	sourcePos.linexp(inMin: -2.0, inMax: 2.0, outMin: q[\eqMinFreq], outMax: q[\eqMaxFreq], clip: \minmax); // map position to filter frequency
+};
+
+/*
 ~updateSourcePos = {
 
 	// Position goes from -1 to +1.
@@ -111,7 +122,7 @@
 
 	// set playback rate and comb filter, respectively
 	p.primary[\rate] = ~posToRate.(~sourcePos); // map position to playback speed
-	p.primary[\combFiltFreq] = ~posToCombFreq.(~sourcePos); // map position to filter frequency
+	// p.primary[\combFiltFreq] = ~posToCombFreq.(~sourcePos); // map position to filter frequency
 
 	// update voice
 	~lastvoice.set([\rate, p.primary[\rate], \combFiltFreq, p.primary[\combFiltFreq]]);
@@ -122,6 +133,7 @@
 
 
 };
+*/
 
 
 ~maybeTriggerOutcome = {

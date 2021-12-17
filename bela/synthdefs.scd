@@ -10,18 +10,26 @@ SynthDef(\primary,{
 	bufnum = 0,
 	level = inf.neg,
 	rate = 1.0,
-	combFiltDryWet = -1.0,
-	combFiltFreq1 = 1000.0,
-	combFiltFreq2 = 4100.0,
-	velUpdateLag = 0.001,
+	eqGain = 4.0,
+	//combFiltFreq1 = 1000.0,
+	//combFiltFreq2 = 4100.0,
+	eqFreq1 = 1000.0,
+	eqFreq2 = 4100.0,
+	//velUpdateLag = 0.001,
 	velEnvDur = 0.005,
 	velPeakLevel = 20.0;
 
-	var sig, comb, comb2, velEnv;
+	var sig, velEnv;
 
 	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 2); // play sample
+
+	/*
 	comb = sig - DelayN.ar(sig, maxdelaytime: 0.1, delaytime: combFiltFreq1.reciprocal, mul: combFiltDryWet); // comb filter
 	comb2 = comb - DelayN.ar(comb, maxdelaytime: 0.1, delaytime: combFiltFreq2.reciprocal, mul: combFiltDryWet); // comb filter 2
+	*/
+
+	sig = BPeakEQ.ar(sig, freq: eqFreq1, rq: 1.0, db: eqGain);
+	sig = BPeakEQ.ar(sig, freq: eqFreq2, rq: 1.0, db: eqGain.neg);
 
 	velEnv = Line.kr(start: velPeakLevel, end: 0.0, dur: velEnvDur);
 	// velEnv = EnvGen.kr(Env(levels: [velPeakLevel, 0.0], times: [velEnvDur], curve: 'lin'), gate: gate);

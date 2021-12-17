@@ -55,8 +55,8 @@
 };
 
 // ~oscSetq.(\playbackRand);
-~oscSetq.(\combFiltMinFreq);
-~oscSetq.(\combFiltMaxFreq);
+~oscSetq.(\eqMinFreq);
+~oscSetq.(\eqMaxFreq);
 ~oscSetq.(\breakingThreshold);
 ~oscSetq.(\secondaryMinDel);
 ~oscSetq.(\secondaryMaxDel);
@@ -123,7 +123,7 @@
 
 // Primary Sound
 // ~oscSetp.(\primary, \velUpdateLag, \velUpdateLag);
-~oscSetp.(\primary, \combFiltDryWet, \combFiltDryWet);
+~oscSetp.(\primary, \eqGain, \eqGain);
 ~oscSetp.(\primary, \level, \primaryDB);
 ~oscSetp.(\primary, \velEnvDur, \velEnvDur);
 ~oscSetp.(\master, \hpfPrimary, \hpfPrimary);
