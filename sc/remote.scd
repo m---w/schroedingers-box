@@ -340,15 +340,30 @@ e.secondaryCountCurve = 3; // curve
 
 	heading.("Participant and Sound Selection");
 	newline.();
+
 	elements[\preset] = EZNumber(elements[\w].view, 180@22, "  Preset  ",
 		ControlSpec(minval: -1, maxval: 666, step: 1, default: e[\preset]),
-		labelWidth: 120, unitWidth: 0, initVal: e[\preset], numberWidth: 70, layout: \horz, initAction: true)
+		labelWidth: 60, unitWidth: 0, initVal: e[\preset], numberWidth: 70, layout: \horz, initAction: true)
 	.setColors(Color.grey, Color.white)
 	.font_(Font("Helvetica", 14))
 	.action_({ |ez|
 		e[\preset] = ez.value.asInteger; // update value in settings dictionary
 		o.sendMsg('/preset', e[\preset]); // send updated value via OSC
 		("Preset:"+e[\preset]).postln; // print message
+	});
+
+	elements[\prevPreset] = Button(elements[\w], Rect(0,0,22,22))
+	.states_([["⇦", Color.white, Color.gray]])
+	.font_(Font("Helvetica", 16))
+	.action_({|obj|
+		elements[\preset].valueAction = (e[\preset] - 1).max(-1).min(666);
+	});
+
+	elements[\nextPreset] = Button(elements[\w], Rect(0,0,22,22))
+	.states_([["⇨", Color.white, Color.gray]])
+	.font_(Font("Helvetica", 16))
+	.action_({|obj|
+		elements[\preset].valueAction = (e[\preset] + 1).max(-1).min(666);
 	});
 
 	elements[\participantID] = EZNumber(elements[\w].view, 180@22, "  Participant ID  ",
@@ -361,6 +376,20 @@ e.secondaryCountCurve = 3; // curve
 		o.sendMsg('/participantID', e[\participantID]); // send updated value via OSC
 		elements[\preset].valueAction_(1.neg); // init sample number
 		("Participant ID:"+e[\participantID]).postln; // print message
+	});
+
+	elements[\prevParticipantID] = Button(elements[\w], Rect(0,0,22,22))
+	.states_([["⇦", Color.white, Color.gray]])
+	.font_(Font("Helvetica", 16))
+	.action_({|obj|
+		elements[\participantID].valueAction = (e[\participantID] - 1).max(0).min(666);
+	});
+
+	elements[\nextParticipantID] = Button(elements[\w], Rect(0,0,22,22))
+	.states_([["⇨", Color.white, Color.gray]])
+	.font_(Font("Helvetica", 16))
+	.action_({|obj|
+		elements[\participantID].valueAction = (e[\participantID] + 1).max(0).min(666);
 	});
 
 	newline.();
