@@ -60,7 +60,9 @@
 ~newPrimarySound = {
 	// set parameters
 	p.primary[\bufnum] = ~sound[~chooseSound.()];
-	// p.primary[\rate] = 1.0; // pitch is controlled by position
+	p.primary[\rate] = 1.0; // pitch is controlled by position
+	p.primary[\eqFreq1] = ~posToEQFreq.(0.5); // map position to filter frequency
+	p.primary[\eqFreq2] = p.primary[\eqFreq1]; // map position to filter frequency
 	// p.primary[\combFiltFreq] = (q[\combFiltMinFreq]*q[\combFiltMaxFreq]).sqrt; // comb filter is controlled by position. just set it to the geometric mean.
 	// p.primary[\vel] = q[\defaultVel];
 	// play voice
@@ -128,7 +130,7 @@
 	p.primary[\eqFreq2] = ~posToEQFreq.(~sourcePos[1]); // map position to filter frequency
 
 	// update voice
-	// ~lastvoice.set([\rate, p.primary[\rate], \combFiltFreq, p.primary[\combFiltFreq]]);
+	~lastvoice.set([\rate, p.primary[\rate], \eqFreq1, p.primary[\eqFreq1], \eqFreq2, p.primary[\eqFreq2]]);
 
 	if(~debugSourcePos, {
 		("Localozation:"+~sourcePos.round(0.01)).postln;
@@ -198,9 +200,9 @@
 				~globalvel = val;
 				~mapVel.();
 				~mapVelPeakLevel.();
-				//~lastvoice = ~newPrimarySound.(); // trigger new primary sound
-				//~maybeTriggerOutcome.(); // maybe trigger breaking sound
-				//~maybeNewSecondarySound.(); // maybe trigger new secondary sound
+				~lastvoice = ~newPrimarySound.(); // trigger new primary sound
+				~maybeTriggerOutcome.(); // maybe trigger breaking sound
+				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 				if(~debugOnsets, {
 					("TBOD: new onset. Vel:"+val).postln;
 				});
@@ -251,9 +253,6 @@
 			7, { // Velocity update, Channel 4
 				~globalvels[3] = val;
 				~updateSourcePos.(); // update source position
-				~lastvoice = ~newPrimarySound.(); // trigger new primary sound
-				~maybeTriggerOutcome.(); // maybe trigger breaking sound
-				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 				if(~debugSourcePos, {
 					("Source Localization: Velocities (dB rel to mean):"+(~globalvels/~globalvel).ampdb.round(1.0)).postln;
 				});
