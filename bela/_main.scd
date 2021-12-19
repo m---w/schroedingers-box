@@ -1,7 +1,7 @@
 /*
-Schroedinger's Box
-Main SuperCollider Patch
-2021 Jason Svoronos-Kanavas, Marian Weger
+	Schroedinger's Box
+	Main SuperCollider Patch
+	2021 Jason Svoronos-Kanavas, Marian Weger
 */
 
 /*===================== BELA SETUP =====================*/
