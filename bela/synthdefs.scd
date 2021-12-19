@@ -17,7 +17,8 @@ SynthDef(\primary,{
 	eqFreq2 = 4100.0,
 	//velUpdateLag = 0.001,
 	velEnvDur = 0.005,
-	velPeakLevel = 20.0;
+	velPeakLevel = 20.0,
+	eqRQ = 0.1;
 
 	var sig, velEnv;
 
@@ -28,8 +29,8 @@ SynthDef(\primary,{
 	comb2 = comb - DelayN.ar(comb, maxdelaytime: 0.1, delaytime: combFiltFreq2.reciprocal, mul: combFiltDryWet); // comb filter 2
 	*/
 
-	sig = BPeakEQ.ar(sig, freq: eqFreq1, rq: 1.0, db: eqGain);
-	sig = BPeakEQ.ar(sig, freq: eqFreq2, rq: 1.0, db: eqGain.neg);
+	sig = BPeakEQ.ar(sig, freq: eqFreq1, rq: eqRQ, db: eqGain);
+	sig = BPeakEQ.ar(sig, freq: eqFreq2, rq: eqRQ, db: eqGain.neg);
 
 	velEnv = Line.kr(start: velPeakLevel, end: 0.0, dur: velEnvDur);
 	// velEnv = EnvGen.kr(Env(levels: [velPeakLevel, 0.0], times: [velEnvDur], curve: 'lin'), gate: gate);

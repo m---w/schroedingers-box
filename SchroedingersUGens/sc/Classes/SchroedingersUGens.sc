@@ -12,8 +12,10 @@ Hip : Filter {
 Lop : Filter {
 	*ar { arg in, freq = 400.0, mul = 1.0, add = 0.0;
 		var coeff = exp(6.2831853071796.neg*freq/SampleRate.ir);
-		var coeffInv = 1.0 - coeff;
-		^Integrator.ar(coeffInv*in, coeff, mul, add);
+		// var coeffInv = 1.0 - coeff;
+		// ^Integrator.ar(coeffInv*in, coeff, mul, add);
+		^OnePole.ar(in, coeff, mul, add);
 	}
 }
+
 

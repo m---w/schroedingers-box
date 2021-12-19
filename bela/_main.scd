@@ -6,7 +6,7 @@
 
 /*===================== BELA SETUP =====================*/
 
-s = Server.default;
+s = Server.local;
 ~hostname = "hostname".unixCmdGetStdOut.replace("\n","").asSymbol; // get system hostname
 ~path = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
 
@@ -73,7 +73,7 @@ OSCdef(\preset, { | msg, time |
 	// load default settings (these may be defined in the preset)
 	~addsound = false; // secondary sound on/off
 	~outcome = false; // outcome sound on/off
-	~voices = 2; // number of simultaneous voices (polyphony)
+	~voices = 3; // number of simultaneous voices (polyphony)
 	~ampfactor = 0.0; // primary sound level
 	~ampfactorcat = inf.neg; // secondary sound level
 	~ampfactoroutcome = inf.neg; // outcome sound level
@@ -104,8 +104,8 @@ OSCdef(\preset, { | msg, time |
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
-	// WARNING: number of voices limited to 2
-	v = Voicer.new(voices: ~voices.min(2), things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
+	// WARNING: number of voices limited to 3
+	v = Voicer.new(voices: ~voices.min(3), things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
 	v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 	v.stealer = \preferLate; // set voice stealing algorithm
 

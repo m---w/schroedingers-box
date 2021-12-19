@@ -124,6 +124,7 @@
 // Primary Sound
 // ~oscSetp.(\primary, \velUpdateLag, \velUpdateLag);
 ~oscSetp.(\primary, \eqGain, \eqGain);
+~oscSetp.(\primary, \eqRQ, \eqRQ);
 ~oscSetp.(\primary, \level, \primaryDB);
 ~oscSetp.(\primary, \velEnvDur, \velEnvDur);
 ~oscSetp.(\master, \hpfPrimary, \hpfPrimary);

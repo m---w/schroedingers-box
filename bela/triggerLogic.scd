@@ -102,7 +102,7 @@
 */
 
 ~posToEQFreq = {|sourcePos|
-	sourcePos.linexp(inMin: -2.0, inMax: 2.0, outMin: q[\eqMinFreq], outMax: q[\eqMaxFreq], clip: \minmax); // map position to filter frequency
+	sourcePos.linexp(inMin: -1.0, inMax: 1.0, outMin: q[\eqMinFreq], outMax: q[\eqMaxFreq], clip: \minmax); // map position to filter frequency
 };
 
 
