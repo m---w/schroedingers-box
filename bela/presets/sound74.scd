@@ -6,7 +6,7 @@
 ~addsound = false;
 ~outcome = false;
 ~voices = 2;
-~ampfactor = 0.0;
+~ampfactor = 8.0;
 ~ampfactorcat = inf.neg;
 
 
