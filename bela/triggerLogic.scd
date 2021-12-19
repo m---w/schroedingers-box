@@ -61,7 +61,7 @@
 	// set parameters
 	p.primary[\bufnum] = ~sound[~chooseSound.()];
 	p.primary[\rate] = 1.0; // pitch is controlled by position
-	p.primary[\eqFreq1] = ~posToEQFreq.(0.5); // map position to filter frequency
+	p.primary[\eqFreq1] = (q[\eqMinFreq]*q[\eqMaxFreq]).sqrt; // map position to filter frequency
 	p.primary[\eqFreq2] = p.primary[\eqFreq1]; // map position to filter frequency
 	// p.primary[\combFiltFreq] = (q[\combFiltMinFreq]*q[\combFiltMaxFreq]).sqrt; // comb filter is controlled by position. just set it to the geometric mean.
 	// p.primary[\vel] = q[\defaultVel];
@@ -111,16 +111,16 @@
 	// Position goes from -1 to +1.
 
 	// Channel mapping:
-	//  top left: 0
+	//  top left: 2
 	//  top right: 3
-	//  bottom left: 1
-	//  bottom right: 2
+	//  bottom left: 0
+	//  bottom right: 1
 
 	// guess source position from level differences (i.e., from amplitude ratios)
 	// right vs. left
-	~sourcePos[0] = [~globalvels[3]/(~globalvels[0] + 1e-16), ~globalvels[2]/(~globalvels[1] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
+	~sourcePos[0] = [~globalvels[3]/(~globalvels[2] + 1e-16), ~globalvels[1]/(~globalvels[0] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
 	// top vs. bottom
-	~sourcePos[1] = [~globalvels[0]/(~globalvels[1] + 1e-16), ~globalvels[3]/(~globalvels[2] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
+	~sourcePos[1] = [~globalvels[2]/(~globalvels[0] + 1e-16), ~globalvels[3]/(~globalvels[1] + 1e-16)].collect{|i| i.explin(inMin: q[\slMinRatio], inMax: q[\slMaxRatio], outMin: -1.0, outMax: 1.0)}.mean;
 
 	// set playback rate and comb filter, respectively
 	p.primary[\rate] = ~posToRate.(~sourcePos); // map position to playback speed
@@ -157,7 +157,7 @@
 };
 
 ~mapVel = {
-	p.primary[\vel] = ~globalvel.lincurve(q[\velMapInMin], q[\velMapInMax], q[\velMapOutMin], q[\velMapOutMax], curve: q[\velMapCurve], clip: \minmax);
+	p.primary[\vel] = ~globalvel.expexp(q[\velMapInMin], q[\velMapInMax], q[\velMapOutMin], q[\velMapOutMax], clip: \minmax);
 };
 
 ~setVel = {

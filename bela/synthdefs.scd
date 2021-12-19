@@ -34,7 +34,7 @@ SynthDef(\primary,{
 	velEnv = Line.kr(start: velPeakLevel, end: 0.0, dur: velEnvDur);
 	// velEnv = EnvGen.kr(Env(levels: [velPeakLevel, 0.0], times: [velEnvDur], curve: 'lin'), gate: gate);
 	// sig2 = BPeakEQ.ar(sig, freq: 10000.0, rq: 10.0, db: 10.0);
-	sig = BHiShelf.ar(sig, freq: 5000.0, rs: 10.0, db: velEnv);
+	sig = BHiShelf.ar(sig, freq: 7500.0, rs: 10.0, db: velEnv);
 
 	sig = sig * EnvGen.kr(Env.cutoff(releaseTime: 0.005, level: 1.0, curve: -4.0), gate: gate, doneAction: 2); // apply release envelope
 	// sig = sig * EnvGen.kr(Env.asr(0.0, 1.0, 0.005), gate: gate, doneAction: 2); // apply release envelope
@@ -140,7 +140,7 @@ SynthDef(\od, {
 	inGain3 = 0.0,
 	inGain4 = 0.0;
 
-	var sigRaw, sig, sighpf, energies, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, velTrig, energy, sigRawSum, tbVel, tbVels, sigRawEnergies, sigRawEnergy;
+	var sigRaw, sig, sighpf, energies, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, velTrig, energy, sigRawSum, tbVel, tbVels, sigRawAbss;
 	var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
 	var nfft = 256; // FFT size in samples
 	var frameDur = (nfft/SampleRate.ir)*1.1; // duration of one fft frame in seconds, plus safety of 10 percent. 5.4ms at 48kHz and 256samp fft size.
@@ -148,8 +148,7 @@ SynthDef(\od, {
 	sigRaw = SoundIn.ar([0,1,2,3]) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels, high-pass filtered
 	sigRawSum = sigRaw.sum; // mono mix version
 
-	sigRawEnergies = Amplitude.ar(HPF.ar(sigRaw, 1500.0).squared, attackTime: 0.0, releaseTime: tbRefPeriod); // smoothed signal energy
-	sigRawEnergy = sigRawEnergies.mean; // average energy
+	sigRawAbss = HPF.ar(sigRaw, 1500.0).abs; // smoothed signal energy
 
 
 	//=== TBOD ===
@@ -171,11 +170,13 @@ SynthDef(\od, {
 	*/
 
 	//=== VD: velocity detection ===
-	tbVels = RunningMax.ar(sigRawEnergies, tbTrig); // running max of input. reset at TBOD trigger.
+	tbVels = RunningMax.ar(sigRawAbss, tbTrig); // running max of input. reset at TBOD trigger.
 	tbVel = tbVels.mean; // average all channels
 	velTrig = DelayN.ar(tbTrig, 0.05, velDelay); // after TBOD trigger, wait for specified delay time, then trigger velocity
 	//SendTrig.ar(velTrig, id: 3, value: tbVel); // send velocity value to language
 	SendTrig.ar(velTrig, id: 1, value: tbVel); // send velocity value to language.
+
+
 
 	//=== SL: source localization ===
 	// send the 4 individual velocity values to the language:

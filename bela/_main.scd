@@ -18,15 +18,15 @@ if(~hostname==\bela, { // If running on Bela
 	s.options.numAnalogOutChannels = 4;
 	s.options.numDigitalChannels = 0;
 	s.options.maxLogins = 4;
-	s.options.blockSize = 32;
+	s.options.blockSize = 64;
 	s.options.numInputBusChannels = 4;
-	s.options.numOutputBusChannels = 8;
+	s.options.numOutputBusChannels = 4;
 	n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr("192.168.0.103", 57120) ]; // set GUI addresses
 	"Bela recognized itself as Bela.".postln;
 }, { // If running elsewhere (debug)
 	~debugMode = true;
 	s.options.numInputBusChannels = 4;
-	s.options.numOutputBusChannels = 8;
+	s.options.numOutputBusChannels = 4;
 	n = [ NetAddr("localhost", 57120) ];
 	"No Bela detected. --> Debug mode.".postln;
 });
@@ -80,12 +80,14 @@ OSCdef(\preset, { | msg, time |
 	~outcomePossible = true; // outcome didn't happen yet?
 	~secondaryCutoff = 20000.0; // cutoff for secondary sound
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
-	~sound.do{|item| if(item.notNil, {item.free})}; // free buffers of primary sounds
-	~soundcat_sum.do{|item| if(item.notNil, {item.free})}; // free buffers of secondary sounds
-	//~combFilterDryWet = 1.0.neg; // dry/wet for comb filter
-	// ~eqGain = q[\eqGain]; // goes from 0 to 1!
-	~secondaryMaxCount = 7; // secondary max count
+	~sound.do{|item| item.free }; // free buffers of primary sounds
+	~soundcat_sum.do{|item| item.free }; // free buffers of secondary sounds
+	~dummybuffer.free;
+	~dummybuffer = Buffer.alloc(s, 64, bufnum: 0);
+	~secondaryMaxCount = 6; // secondary max count
 	~hpfPrimary = 20.0; // default value for highpass filter of primary sound
+	~sound = [~dummybuffer, ~dummybuffer];
+	~soundcat_sum = [~dummybuffer, ~dummybuffer];
 
 	// Load preset
 	if(~preset > 0){
@@ -93,8 +95,6 @@ OSCdef(\preset, { | msg, time |
 	}{
 		// Notify if no preset was selected
 		"No preset selected. Press the button to start!".postln;
-		~sound = [~dummybuffer, ~dummybuffer];
-		~soundcat_sum = [~dummybuffer, ~dummybuffer];
 	};
 
 	// init primary sound
@@ -104,7 +104,8 @@ OSCdef(\preset, { | msg, time |
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
-	v = Voicer.new(voices: ~voices, things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
+	// WARNING: number of voices limited to 2
+	v = Voicer.new(voices: ~voices.min(2), things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
 	v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 	v.stealer = \preferLate; // set voice stealing algorithm
 

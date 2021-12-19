@@ -48,9 +48,9 @@ OSCFunc({|msg, time|
 e = (); // create empty dictionary
 
 // TBOD
-e.tbThreshDB = 110.0.neg; // TBOD threshold in dB
-e.tbThreshLoDB = 120.0.neg; // TBOD lower threshold in dB
-e.tbRefPeriod = 0.1;// specifies a minimum gap (in seconds) between subsequent onset detections
+e.tbThreshDB = 155.0.neg; // TBOD threshold in dB
+e.tbThreshLoDB = 180.0.neg; // TBOD lower threshold in dB
+e.tbRefPeriod = 0.05;// specifies a minimum gap (in seconds) between subsequent onset detections
 e.tbLpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
 e.tbLpf2Freq = 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
 e.tbHpfFreq = 4000.0; // frequency of high-pass filter in Hz  (TBOD)
@@ -70,19 +70,19 @@ e.fbMedianspan = 22; // specifies the size (in FFT frames) of the median window 
 e.velDelay = 0.0009; // delay between TBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
 e.defaultVel = 0.05; // default velocity
 e.velUpdateLag = 0.0002; // lag time for velocity update smoothing
-e.velMapInMin = 1e-5; // mapping between amplitude and velocity: inMin
-e.velMapInMax = 0.01; // mapping between amplitude and velocity: inMax
-e.velMapOutMin = 0.005; // mapping between amplitude and velocity: outMin
-e.velMapOutMax = 1; // mapping between amplitude and velocity: outMax
+e.velMapInMin = 0.001; // mapping between amplitude and velocity: inMin
+e.velMapInMax = 0.1; // mapping between amplitude and velocity: inMax
+e.velMapOutMin = 0.01; // mapping between amplitude and velocity: outMin
+e.velMapOutMax = 1.0; // mapping between amplitude and velocity: outMax
 e.velMapCurve = 4.0.neg; // mapping between amplitude and velocity: curve
 e.velEnvDur = 0.04; // release time of velocity-controlled high-shelf
 e.velPeakLevel = 10.0; // peak level in dB for velocity-controlled high-shef
 e.velPeakMapCurve = 0.0; // HF Boost Curve Parameter
 e.velPeakMapZeroDB = -5.0; // HF Boost 0dB value. At the given value in dB there will be no HF boost. Above will be HF boost, below will be HF cut.
-e.inGain1 = -9.2; // input gain of Mic Channel 1
-e.inGain2 = -0.6; // input gain of Mic Channel 2
+e.inGain1 = -7.0; // input gain of Mic Channel 1
+e.inGain2 = 0.0; // input gain of Mic Channel 2
 e.inGain3 = 0.0; // input gain of Mic Channel 3
-e.inGain4 = 2.5; // input gain of Mic Channel 4
+e.inGain4 = -1.0; // input gain of Mic Channel 4
 
 // Preset Settings
 e.primaryDB = inf.neg; // primary level in dB
@@ -96,8 +96,8 @@ e.hpfPrimary = 20;
 e.primaryMasterDB = 0.0; // primary level in dB
 e.secondaryMasterDB = 0.0; // secondary level in dB
 e.outcomeMasterDB = 0.0; // outcome level in dB
-e.masterHPF = 100.0; // master HPF cutoff in Hz
-e.masterLPF = 16000.0; // master LPF cutoff in Hz
+e.masterHPF = 20.0; // master HPF cutoff in Hz
+e.masterLPF = 20000.0; // master LPF cutoff in Hz
 e.eq = 1; // output equalization
 e.masterLevel = inf.neg; // Master level in dB
 
@@ -120,9 +120,9 @@ e.flip3 = 0; // output channel 3 flip phase
 e.flip4 = 0; // output channel 4 flip phase
 
 // Primary Sound
-e.eqMinFreq = 200.0; // minimum eq frequency in Hz
+e.eqMinFreq = 400.0; // minimum eq frequency in Hz
 e.eqMaxFreq = 2000.0; // maximum eq frequency in Hz
-e.slMaxPlaybackRate = 1.1; // max playback rate, as controlled by source localization
+e.slMaxPlaybackRate = 1.01; // max playback rate, as controlled by source localization
 
 
 // Source Localization
@@ -138,13 +138,13 @@ e.testOnsetFreq = 1.5;
 e.playbackRand = 0.01; // percent rate randomization
 
 // Outcome sound
-e.breakingThreshold = 0.2; // threshold velocity for breaking
+e.breakingThreshold = 0.8; // threshold velocity for breaking
 
 // Secondary Sound
 e.secondaryMinDel = 0.5; // minimum start delay
 e.secondaryMaxDel = 1.0; // maximum start delay
 e.secondaryMinCount = 1; // min onset count for secondary trigger
-e.secondaryMaxCount = 7; // max onset count for secondary trigger
+e.secondaryMaxCount = 6; // max onset count for secondary trigger
 e.secondaryCountCurve = 3; // curve
 
 
