@@ -1,7 +1,10 @@
 
+~path = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
+
+
 // define function
 ~randomLatinSquare = { |order|
-	("python3 ~/Desktop/schroedingers-box/src-code/latin-square/random_latin_square.py"+order).unixCmdGetStdOutLines[0..order-1].collect{|item|
+	("python3"+(~path+/+"./random_latin_square.py").standardizePath+order).unixCmdGetStdOutLines[0..order-1].collect{|item|
 		("["++item.replace(" ", ",")++"]").interpret;
 	};
 };
