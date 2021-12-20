@@ -242,7 +242,7 @@
 		{if(~testRecSynth.isPlaying, {}, {
 			q.testRecPath = (~path+/+"rec/rec_"++Date.getDate.format("%Y-%m-%d_%H-%M-%S")++".wav").standardizePath;
 			q.testRecBuf.write(q.testRecPath, "WAV", "int24", 0, 0, true); // create file, leave open
-			~testRecSynth = Synth.new(\recorder, [\buf, q.testRecBuf.bufnum]).register; // record
+			~testRecSynth = Synth.new(\recorder, [\buf, q.testRecBuf.bufnum, \primaryBus, p.primary[\busnum]]).register; // record
 			("Recording started ("++q.testRecPath++")").postln;
 		};);},
 		{

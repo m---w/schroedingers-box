@@ -233,8 +233,8 @@ SynthDef(\tt, {
 
 
 // Recorder
-SynthDef(\recorder, {|buf=0|
-	DiskOut.ar(buf, SoundIn.ar([0,1,2,3]));
+SynthDef(\recorder, {|buf=0,primaryBus=0|
+	DiskOut.ar(buf, SoundIn.ar([0,1,2,3])++In.ar(primaryBus));
 }).add;
 
 

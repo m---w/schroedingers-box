@@ -176,7 +176,6 @@ OSCdef(\preset, { | msg, time |
 
 s.waitForBoot{
 
-
 	/*===================== BUS AND BUFFER ALLOCATIONS =====================*/
 
 	// allocate busses
@@ -208,7 +207,7 @@ s.waitForBoot{
 	p.master[\irbufnum] = ~irSpectrum.bufnum;
 
 	// test recorder
-	q.testRecBuf = Buffer.alloc(s, 48000*30, 4); // allocate a disk i/o buffer
+	q.testRecBuf = Buffer.alloc(s, 2**20, 5); // allocate a disk i/o buffer
 
 
 	/*===================== SYNTHDEFS =====================*/
