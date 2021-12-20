@@ -5,6 +5,8 @@
 // parameter default values
 e = (); // create empty dictionary
 
+e.presetName = "not initialized";
+
 // TBOD
 e.tbThreshDB = 155.0.neg; // TBOD threshold in dB
 e.tbThreshLoDB = 180.0.neg; // TBOD lower threshold in dB

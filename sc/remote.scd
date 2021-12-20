@@ -92,7 +92,7 @@ OSCFunc({|msg, time|
 		[0.001, 1000.0, \exp, 0.0, "1e-3", "Velocity Map: inMax", 1.0e-3, \velMapInMax],
 		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMin", 1.0, \velMapOutMin],
 		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMax", 1.0, \velMapOutMax],
-		[-10, 10, \lin, 0.1, "", "Velocity Map: curve", 1.0, \velMapCurve],
+		//[-10, 10, \lin, 0.1, "", "Velocity Map: curve", 1.0, \velMapCurve],
 	];
 
 	// Preset
@@ -201,6 +201,8 @@ OSCFunc({|msg, time|
 		;
 	};
 
+	var presetSpace = " Preset Name:  ";
+
 	// dictionary that is returned by the GUI function
 	var elements = ();
 
@@ -293,6 +295,12 @@ OSCFunc({|msg, time|
 	.action_({|obj|
 		elements[\participantID].valueAction = (e[\participantID] + 1).max(0).min(666);
 	});
+
+	elements[\presetName] = StaticText(elements[\w].view, 300@24)
+	.string_(presetSpace++e[\presetName])
+	.font_(Font("Helvetica", 16))
+	.stringColor_(Color.white)
+	;
 
 	newline.();
 	heading.("Tools");
@@ -432,6 +440,9 @@ OSCFunc({|msg, time|
 		elements[\preset].value = e[\preset];
 		elements[\participantID].value = e[\participantID];
 		elements[\toggleMaster].value = e[\toggleMaster];
+
+		elements[\presetName].string = presetSpace++e[\presetName];
+
 		"GUI updated"; // return message
 	};
 

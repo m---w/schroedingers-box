@@ -56,6 +56,17 @@ q = (); // other parameters
 ~globalvel = 0.0; // init velocity
 ~sourcePos = 0.0!2; // init source position
 
+// scan for presets
+q[\presetIDs] = Array.new(1000); // Warning: hard-coded fixed size!
+a = PathName.new((~path+/+"presets").standardizePath).files.do{ |item|
+	var path = item;
+	var filename = item.fileNameWithoutExtension.postln;
+	if(filename.contains("sound"), {
+		q[\presetIDs].add(PathName.new(filename).endNumber.postln);
+	});
+};
+q[\presetIDs] = q[\presetIDs].sort; // Get list of found presets in ascending order
+
 
 /*===================== SOUND SELECTION =====================*/
 
@@ -88,13 +99,15 @@ OSCdef(\preset, { | msg, time |
 	~hpfPrimary = 20.0; // default value for highpass filter of primary sound
 	~sound = [~dummybuffer, ~dummybuffer];
 	~soundcat_sum = [~dummybuffer, ~dummybuffer];
+	~presetName = "---";
 
 	// Load preset
-	if(~preset > 0){
+	if(q[\presetIDs].includes(~preset)){
 		(~path+/+"presets/sound"++~preset.asInteger ++".scd").standardizePath.load; // load preset file
 	}{
 		// Notify if no preset was selected
-		"No preset selected. Press the button to start!".postln;
+		"No valid preset selected. Press the button to start!";
+		~presetName = "invalid";
 	};
 
 	// init primary sound
@@ -104,8 +117,8 @@ OSCdef(\preset, { | msg, time |
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
-	// WARNING: number of voices limited to 3
-	v = Voicer.new(voices: ~voices.min(3), things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
+	// WARNING: number of voices limited to 5
+	v = Voicer.new(voices: ~voices.min(5), things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
 	v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 	v.stealer = \preferLate; // set voice stealing algorithm
 
@@ -141,6 +154,7 @@ OSCdef(\preset, { | msg, time |
 	// n.do{|item| item.sendMsg(\bela, \eqDryWet, p.primary[\eqDryWet]) };
 	n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.master[\hpfPrimary]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
+	n.do{|item| item.sendMsg(\bela, \presetName, ~presetName) };
 
 	//finish
 	// if(~preset>=666){s.freeAll};
