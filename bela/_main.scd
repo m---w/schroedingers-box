@@ -60,9 +60,9 @@ q = (); // other parameters
 q[\presetIDs] = Array.new(1000); // Warning: hard-coded fixed size!
 a = PathName.new((~path+/+"presets").standardizePath).files.do{ |item|
 	var path = item;
-	var filename = item.fileNameWithoutExtension.postln;
+	var filename = item.fileNameWithoutExtension;
 	if(filename.contains("sound"), {
-		q[\presetIDs].add(PathName.new(filename).endNumber.postln);
+		q[\presetIDs].add(PathName.new(filename).endNumber);
 	});
 };
 q[\presetIDs] = q[\presetIDs].sort; // Get list of found presets in ascending order
