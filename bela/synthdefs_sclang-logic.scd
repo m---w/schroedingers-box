@@ -161,7 +161,7 @@ SynthDef(\od, {
 	lpf2 = Lop.ar(energy, tbLpf2Freq); // Smoothing 2. Turchet2018: 25
 	// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
 	tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
-	tbTrig = Trig.ar(Schmidt.ar(tsub, tbThreshDB.dbamp, tbThreshLoDB.dbamp), tbRefPeriod); // thresholding with high and low threshold
+	tbTrig = Trig.ar(Schmidt.ar(tsub, tbThreshLoDB.dbamp, tbThreshDB.dbamp), tbRefPeriod); // thresholding with high and low threshold
 	//tbTrig = Trig.ar((tsub-tbThreshDB.dbamp).sign.max(0), tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
 	//SendTrig.ar(tbTrig, id: 1, value: 0.0); // send TBOD trigger to language. ID 1 means TBOD. Value is first guess for velocity.
 

@@ -120,7 +120,21 @@ OSCdef(\preset, { | msg, time |
 		~presetName = "invalid";
 	};
 
-	~voices = ~voices + 1; // add safety voice
+	~voices = (~voices + 1).min(~maxVoices); // add safety voice
+
+
+
+	// WORKAROUND AGAINST NOISE
+		s.sync;
+		~sound.do{|item|
+			var end = item.numFrames-1;
+			item.set(0, 0.0, end, 0.0);
+		};
+		~soundcat_sum.do{|item|
+			var end = item.numFrames-1;
+			item.set(0, 0.0, end, 0.0);
+		};
+
 
 	// init primary sound
 	p.primary[\level] = ~ampfactor; // map preset variable to synth variable
@@ -133,7 +147,6 @@ OSCdef(\preset, { | msg, time |
 
 	if(~serverLogic, {
 		// server logic
-		//{
 			s.sync;
 			x[\primary].do{|item| item.free};
 			x[\voicer].free;
@@ -149,10 +162,10 @@ OSCdef(\preset, { | msg, time |
 			x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
 			x[\primary] = ~voices.collect{|i| Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register};
 			s.sync;
-		//}.fork;
+
 	}, {
 		// SCLang logic
-		v = Voicer.new(voices: ~voices.min(~maxVoices), things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
+		v = Voicer.new(voices: ~voices, things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
 		v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 		v.stealer = \preferLate; // set voice stealing algorithm
 	});
