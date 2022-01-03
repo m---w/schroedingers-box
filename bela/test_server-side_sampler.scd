@@ -39,19 +39,22 @@ SynthDef(\primaryVoiceAllocation, {
 	var
 	bufnums = ~soundBufnums,
 	voices = ~voices,
+	slMaxPlaybackRateR = slMaxPlaybackRate.reciprocal,
 	onset, gate, vel, pos, bufnum, nextVoice, eqFreqs, rate;
 
 	onset = In.ar(onsetBus, numChannels: 3);
 
-	pos = onset[1..2]; // position [x,y] (between -1 and 1)
+	// pos = onset[1..2]; // position [x,y] (between -1 and 1)
+	pos = DC.ar(0.0)!2;
+
 	// gate = onset[0]; // gate signal
-	gate = LFPulse.ar(freq: 0.5, width: 0.5, mul: 0.9); // trigger simulator
+	gate = LFPulse.ar(freq: 0.5, width: 0.5, mul: 0.01); // trigger simulator
 
-	vel = Clip.ar(gate * velocityFactor, velMapOutMin, velMapOutMax); // map and clip velocity
+	vel = Clip.ar(gate * velocityFactor, lo: velMapOutMin, hi: velMapOutMax); // map and clip velocity
 
-	eqFreqs = pos.linexp(inMin: -1.0, inMax: 1.0, outMin: eqMinFreq, outMax: eqMaxFreq, clip: \minmax); // map position to filter frequency
+	eqFreqs = Clip.ar(LinExp.ar(pos, srclo: -1.0, srchi: 1.0, dstlo: eqMinFreq, dsthi: eqMaxFreq), lo: eqMinFreq, hi: eqMaxFreq); // map position to filter frequency
 
-	rate = pos.sum.linexp(inMin: -2.0, inMax: 2.0, outMin: slMaxPlaybackRate.reciprocal, outMax: slMaxPlaybackRate, clip: \minmax); // map position to playback speed
+	rate = Clip.ar(LinExp.ar(pos.sum, srclo: -2.0, srchi: 2.0, dstlo: slMaxPlaybackRateR, dsthi: slMaxPlaybackRate), lo: slMaxPlaybackRateR, hi: slMaxPlaybackRate); // map position to playback speed
 
 	bufnum = Demand.ar(gate, 0, Dxrand(list: bufnums, repeats: inf)); // get random buffer number (no repetition)
 
@@ -72,26 +75,41 @@ SynthDef(\primaryVoice,{
 	voiceID = 0,
 	primaryBus = ~primaryBus.busnum,
 	gateBus = ~voiceGateBus.busnum,
-	outBus = 0,
-	level = 0.0;
+	busnum = 0,
+	level = inf.neg,
+	eqGain = 4.0,
+	velEnvDur = 0.005,
+	velPeakLevel = 20.0,
+	eqRQ = 0.1;
 
-	var ctl, gate, amplitude, bufnum, rate, sig, env, out;
+	var ctl, gate, amplitude, sig, velEnv, env, out;
 
-	ctl = In.ar(primaryBus, 4); // receive voice parameters
+	// inputs: voice parameters and voice gate
+	ctl = In.ar(primaryBus, 4); // receive voice parameters [bufnum, rate, eqFreq1, eqFreq2]
 	gate = In.ar(gateBus+voiceID, 1); // receive voice gate of this ID
 
+	// sample the voice parameters
 	amplitude = Latch.ar(gate, gate); // sample&hold for velocity amplitude
 	bufnum = Latch.ar(ctl[0], gate); // sample&hold for bufnum
 	rate = Latch.ar(ctl[1], gate); // sample&hold for rate
 
+	// sample playback
+	sig = PlayBuf.ar(numChannels: 1, bufnum: ctl[0], rate: ctl[1]*BufRateScale.kr(ctl[0]), trigger: gate, doneAction: 0); // play sample
 
-	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 0); // play sample
+	// position-dependent filtering
+	sig = BPeakEQ.ar(sig, freq: ctl[2], rq: eqRQ, db: eqGain);
+	sig = BPeakEQ.ar(sig, freq: ctl[3], rq: eqRQ, db: eqGain.neg);
 
+	// velocity-dependent filtering
+	velEnv = EnvGen.kr(Env.new(levels: [0.0, velPeakLevel, 0.0], times: [0.0, velEnvDur], curve: \lin), gate: gate, doneAction: 0);
+	sig = BHiShelf.ar(sig, freq: 7500.0, rs: 10.0, db: velEnv);
+
+	// release envelope, velocity, and level
 	env = Amplitude.ar(gate, attackTime: 0.0, releaseTime: 0.010); // envelope with instant attack and smooth release
-
 	out = sig * amplitude * env * level.dbamp; // apply velocity amplitude, envelope, and master level
 
-	Out.ar(outBus, out!2); // play to bus
+	// output
+	Out.ar(busnum, out); // play to bus
 
 }).add;
 
@@ -101,4 +119,4 @@ y = Synth.new(\primaryVoiceAllocation, [\onsetBus, ~onsetBus, \primaryBus, ~prim
 x = ~voices.collect{|i| Synth.new(\primaryVoice, [\voiceID, i, \primaryBus, ~primaryBus, \gateBus, ~voiceGateBus, \outBus, 0], addAction: \addToTail)};
 )
 
-// x.do{|item| item.free}; y.free;
+//e

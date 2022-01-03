@@ -10,6 +10,8 @@ s = Server.local;
 ~hostname = "hostname".unixCmdGetStdOut.replace("\n","").asSymbol; // get system hostname
 ~path = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
 
+~serverLogic = true; // server-logic (fast) or sclang-logic (slow)
+
 
 // Set up options
 if(~hostname==\bela, { // If running on Bela
@@ -38,6 +40,7 @@ if(~hostname==\bela, { // If running on Bela
 x = (); // synth dictionary
 p = (); // parameter dictionary
 p.tt = (); // test tone parameters
+p.voicer = ();
 p.primary = (); // primary sound parameters
 p.secondary = (); // secondary sound parameters
 p.outcome = (); // outcome sound parameters
@@ -55,6 +58,8 @@ q = (); // other parameters
 ~globalvels = 0.0!4; // init global velocities
 ~globalvel = 0.0; // init velocity
 ~sourcePos = 0.0!2; // init source position
+~maxVoices = 3; // maximum number of allocated voices
+
 
 // scan for presets
 q[\presetIDs] = Array.new(1000); // Warning: hard-coded fixed size!
@@ -72,6 +77,9 @@ q[\presetIDs] = q[\presetIDs].sort; // Get list of found presets in ascending or
 
 
 OSCdef(\preset, { | msg, time |
+
+	fork{
+
 	~preset = msg[1].asInteger; // set preset
 	("New sound selected:"+~preset).postln; // notify
 
@@ -79,7 +87,9 @@ OSCdef(\preset, { | msg, time |
 	x[\tt].free;
 	x[\secondary].free;
 	x[\outcome].free;
-	v.free; // free previous voicer instance
+	if(~serverLogic, {}, {
+		v.free; // free previous voicer instance
+	});
 
 	// load default settings (these may be defined in the preset)
 	~addsound = false; // secondary sound on/off
@@ -116,11 +126,34 @@ OSCdef(\preset, { | msg, time |
 	// p.primary[\eqGain] = ~eqGain;
 	~soundSize = ~sound.size; // number of primary sounds in this preset
 	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
+	~soundBufnums = ~sound.collect{|item| item.bufnum}; // array of bufnums for sound samples of this preset
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
-	// WARNING: number of voices limited to 5
-	v = Voicer.new(voices: ~voices.min(5), things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
-	v.latency = nil; // set latency of the voicer. nil means as soon as possible.
-	v.stealer = \preferLate; // set voice stealing algorithm
+
+	if(~serverLogic, {
+		// server logic
+		//{
+			s.sync;
+			x[\primary].do{|item| item.free};
+			x[\voicer].free;
+			s.sync;
+
+			//0.5.wait;
+
+			(~path+/+"voicer.scd").standardizePath.load; // load preset file
+			s.sync;
+
+			//0.5.wait;
+
+			x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
+			x[\primary] = ~voices.collect{|i| Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register};
+			s.sync;
+		//}.fork;
+	}, {
+		// SCLang logic
+		v = Voicer.new(voices: ~voices.min(~maxVoices), things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
+		v.latency = nil; // set latency of the voicer. nil means as soon as possible.
+		v.stealer = \preferLate; // set voice stealing algorithm
+	});
 
 	// init master
 	p.master[\hpfPrimary] = ~hpfPrimary; // map preset variable to synth variable
@@ -159,6 +192,8 @@ OSCdef(\preset, { | msg, time |
 	//finish
 	// if(~preset>=666){s.freeAll};
 
+	};
+
 },'/preset');
 
 
@@ -169,8 +204,11 @@ OSCdef(\preset, { | msg, time |
 
 /*===================== SOUND TRIGGERING =====================*/
 
-(~path+/+"triggerLogic.scd").standardizePath.load; // load trigger logic
-
+if(~serverLogic, {
+	(~path+/+"triggerLogic_server-logic.scd").standardizePath.load; // load trigger logic
+}, {
+	(~path+/+"triggerLogic_sclang-logic.scd").standardizePath.load; // load trigger logic
+});
 
 /*===================== WAIT FOR SERVER =====================*/
 
@@ -182,6 +220,18 @@ s.waitForBoot{
 	p.primary[\busnum] = Bus.audio(s, numChannels: 1);
 	p.secondary[\busnum] = Bus.audio(s, numChannels: 1);
 	p.outcome[\busnum] = Bus.audio(s, numChannels: 1);
+
+	if(~serverLogic, {
+		// allocate busses
+		p.od[\onsetBus] = Bus.audio(s, numChannels: 3); // init audio busses for onset busses [gate, posx, posy]
+		p.voicer[\primaryCtlBus] = Bus.audio(s, numChannels: 4); // init audio busses for primary sound parameters [bufnum, rate, filt1, filt2]
+		p.voicer[\gateBus] = Bus.audio(s, numChannels: ~maxVoices); // init audio busses for voice gates
+
+		// map busses
+		p.voicer[\onsetBus] = p.od[\onsetBus];
+		p.primary[\primaryCtlBus] = p.voicer[\primaryCtlBus];
+		p.primary[\gateBus] = p.voicer[\gateBus];
+	});
 
 	// map also to master busses
 	p.master[\primaryBus] = p.primary[\busnum];
@@ -212,12 +262,17 @@ s.waitForBoot{
 
 	/*===================== SYNTHDEFS =====================*/
 
-	(~path+/+"synthdefs.scd").standardizePath.load; // load synth defs
-
+	if(~serverLogic, {
+		(~path+/+"synthdefs_server-logic.scd").standardizePath.load; // load synth defs
+	}, {
+		(~path+/+"synthdefs_sclang-logic.scd").standardizePath.load; // load synth defs
+	});
 
 	/*===================== MAIN =====================*/
 
-	1.wait; // wait a second
+	// 1.wait; // wait a second
+
+	s.sync;
 
 	x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
 	x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth

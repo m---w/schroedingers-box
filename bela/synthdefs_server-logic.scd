@@ -1,46 +1,52 @@
-"Loading SynthDefs (sclang logic) ... ".post;
+"Loading SynthDefs (server-logic) ... ".post;
 
-// PRIMARY SOUND
-SynthDef(\primary,{
+
+SynthDef(\primaryVoice,{
 
 	arg
+	voiceID = 0,
+	primaryCtlBus = ~primaryCtlBus.busnum,
+	gateBus = ~voiceGateBus.busnum,
 	busnum = 0,
-	gate = 1.0,
-	vel = 0.1,
-	bufnum = 0,
 	level = inf.neg,
-	rate = 1.0,
 	eqGain = 4.0,
-	//combFiltFreq1 = 1000.0,
-	//combFiltFreq2 = 4100.0,
-	eqFreq1 = 1000.0,
-	eqFreq2 = 4100.0,
-	//velUpdateLag = 0.001,
 	velEnvDur = 0.005,
 	velPeakLevel = 20.0,
+	velPeakMapZeroDB = 3.0.neg,
 	eqRQ = 0.1;
 
-	var sig, velEnv;
+	var ctl, gate, amplitude, sig, velEnv, env, out, rate, eqFreq1, eqFreq2, bufnum, velPeakDB;
+	var velPeakLevelN = velPeakLevel.neg;
 
-	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 2); // play sample
+	// inputs: voice parameters and voice gate
+	ctl = In.ar(primaryCtlBus´, 4); // receive voice parameters [bufnum, rate, eqFreq1, eqFreq2]
+	gate = In.ar(gateBus+voiceID, 1); // receive voice gate of this ID
 
-	/*
-	comb = sig - DelayN.ar(sig, maxdelaytime: 0.1, delaytime: combFiltFreq1.reciprocal, mul: combFiltDryWet); // comb filter
-	comb2 = comb - DelayN.ar(comb, maxdelaytime: 0.1, delaytime: combFiltFreq2.reciprocal, mul: combFiltDryWet); // comb filter 2
-	*/
+	// sample the voice parameters
+	amplitude = Latch.ar(gate, gate); // sample&hold for velocity amplitude
+	bufnum = Latch.ar(ctl[0], gate); // sample&hold for bufnum
+	rate = Latch.ar(ctl[1], gate); // sample&hold for rate
+	eqFreq1 = Latch.ar(ctl[2], gate);
+	eqFreq2 = Latch.ar(ctl[3], gate);
 
+	// sample playback
+	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 0); // play sample
+
+	// position-dependent filtering
 	sig = BPeakEQ.ar(sig, freq: eqFreq1, rq: eqRQ, db: eqGain);
 	sig = BPeakEQ.ar(sig, freq: eqFreq2, rq: eqRQ, db: eqGain.neg);
 
-	velEnv = Line.kr(start: velPeakLevel, end: 0.0, dur: velEnvDur);
-	// velEnv = EnvGen.kr(Env(levels: [velPeakLevel, 0.0], times: [velEnvDur], curve: 'lin'), gate: gate);
-	// sig2 = BPeakEQ.ar(sig, freq: 10000.0, rq: 10.0, db: 10.0);
+	// velocity-dependent filtering
+	velPeakDB = Clip.ar(LinLin.ar(amplitude.ampdb, srclo: 2.0*velPeakMapZeroDB, srchi: 0.0, dstlo: velPeakLevelN, dsthi: velPeakLevel), lo: velPeakLevelN, hi: velPeakLevel);
+	velEnv = EnvGen.kr(Env.new(levels: [0.0, velPeakDB, 0.0], times: [0.0, velEnvDur], curve: \lin), gate: gate, doneAction: 0);
 	sig = BHiShelf.ar(sig, freq: 7500.0, rs: 10.0, db: velEnv);
 
-	sig = sig * EnvGen.kr(Env.cutoff(releaseTime: 0.005, level: 1.0, curve: -4.0), gate: gate, doneAction: 2); // apply release envelope
-	// sig = sig * EnvGen.kr(Env.asr(0.0, 1.0, 0.005), gate: gate, doneAction: 2); // apply release envelope
-	sig = vel * sig * level.dbamp; // apply velocity and master level
-	Out.ar(busnum, sig); // play to bus
+	// release envelope, velocity, and level
+	env = Amplitude.ar(gate, attackTime: 0.0, releaseTime: 0.010); // envelope with instant attack and smooth release
+	out = sig * amplitude * env * level.dbamp; // apply velocity amplitude, envelope, and master level
+
+	// output
+	Out.ar(busnum, out); // play to bus
 
 }).add;
 
@@ -123,6 +129,7 @@ SynthDef(\master, {
 // ONSET DETECTION
 SynthDef(\od, {
 	arg
+	onsetBus = ~onsetBus.busnum,
 	tbThreshDB = 0.0,
 	tbThreshLoDB = 0.0,
 	fbThreshDB = 0.0,
@@ -139,12 +146,20 @@ SynthDef(\od, {
 	inGain1 = 0.0,
 	inGain2 = 0.0,
 	inGain3 = 0.0,
-	inGain4 = 0.0;
+	inGain4 = 0.0,
+	slMaxRatioDB = 2.0,
+	//velMapInMin = 0.001,
+	velMapInMax = 0.1,
+	velMapOutMin = 0.01,
+	velMapOutMax = 1.0;
 
-	var sigRaw, sig, sighpf, energies, lpf1, derivative, lpf2, tsub, tbTrig, chain, fbTrigKR, fbTrigAR, velTrig, energy, sigRawSum, tbVel, tbVels, sigRawAbss;
+
+	var sigRaw, sig, sighpf, energies, lpf1, derivative, lpf2, tsub, tbTrig, velTrig, energy, sigRawSum, tbVel, tbVels, sigRawAbss, pos, velsDB, vel;
+	// var chain, fbTrigKR, fbTrigAR;
 	var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
 	var nfft = 256; // FFT size in samples
 	var frameDur = (nfft/SampleRate.ir)*1.1; // duration of one fft frame in seconds, plus safety of 10 percent. 5.4ms at 48kHz and 256samp fft size.
+	var slMinRatioDB = slMaxRatioDB.neg;
 
 	sigRaw = SoundIn.ar([0,1,2,3]) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels, high-pass filtered
 	sigRawSum = sigRaw.sum; // mono mix version
@@ -174,17 +189,8 @@ SynthDef(\od, {
 	tbVels = RunningMax.ar(sigRawAbss, tbTrig); // running max of input. reset at TBOD trigger.
 	tbVel = tbVels.mean; // average all channels
 	velTrig = DelayN.ar(tbTrig, 0.05, velDelay); // after TBOD trigger, wait for specified delay time, then trigger velocity
-	//SendTrig.ar(velTrig, id: 3, value: tbVel); // send velocity value to language
-	SendTrig.ar(velTrig, id: 1, value: tbVel); // send velocity value to language.
-
-
-
-	//=== SL: source localization ===
-	// send the 4 individual velocity values to the language:
-	SendTrig.ar(velTrig, 4, value: tbVels[0]); // velocity of channel 0
-	SendTrig.ar(velTrig, 5, value: tbVels[1]); // velocity of channel 1
-	SendTrig.ar(velTrig, 6, value: tbVels[2]); // velocity of channel 2
-	SendTrig.ar(velTrig, 7, value: tbVels[3]); // velocity of channel 3
+	vel = Clip.ar(Latch.ar(tbVel, velTrig) * (velMapOutMax/velMapInMax), lo: velMapOutMin, hi: velMapOutMax); // map and clip velocity
+	SendTrig.ar(velTrig, id: 1, value: vel); // send velocity value to language.
 
 
 	//=== FBOD ===
@@ -194,6 +200,27 @@ SynthDef(\od, {
 	fbTrigAR = T2A.ar(fbTrigKR, offset: 0);
 	SendTrig.ar(fbTrigAR, id: 2, value: 0.0); // send FBOD trigger to language. ID 2 means FBOD.
 	*/
+
+
+	//=== SL: source localization ===
+	velsDB = Latch.ar(tbVels.max(1e-16), velTrig).ampdb; // sample&hold velocities, in dB
+
+	// Position goes from -1 to +1.
+	// Channel mapping:
+	//  top left: 2
+	//  top right: 3
+	//  bottom left: 0
+	//  bottom right: 1
+	// guess source position from level differences (i.e., from amplitude ratios)
+	pos = [
+		// right vs. left
+		Clip.ar(LinLin.ar([velsDB[3]-velsDB[2], velsDB[1]-velsDB[0]], srclo: slMinRatioDB, srchi: slMaxRatioDB, dstlo: -1.0, dsthi: 1.0), lo: -1.0, hi: 1.0).mean,
+		// top vs. bottom
+		Clip.ar(LinLin.ar([velsDB[2]-velsDB[0], velsDB[3]-velsDB[1]], srclo: slMinRatioDB, srchi: slMaxRatioDB, dstlo: -1.0, dsthi: 1.0), lo: -1.0, hi: 1.0).mean
+	];
+
+	// Send Onset Trigger to Onset Bus
+	Out.ar(onsetBus, [velTrig*Latch.ar(tbVel, velTrig), pos[0], pos[1]]);
 
 }).add;
 

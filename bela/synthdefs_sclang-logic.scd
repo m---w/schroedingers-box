@@ -1,4 +1,4 @@
-"Loading SynthDefs (sclang logic) ... ".post;
+"Loading SynthDefs (sclang-logic) ... ".post;
 
 // PRIMARY SOUND
 SynthDef(\primary,{

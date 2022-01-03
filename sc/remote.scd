@@ -130,7 +130,7 @@ OSCFunc({|msg, time|
 	var sliderListSound = [
 		[0.0, 1000, \lin, 0.1, "ms", "HF Boost Envelope Duration", 1.0e-3, \velEnvDur],
 		[0.0, 60, \lin, 0.1, "dB", "HF Boost Peak Level", 1.0, \velPeakLevel],
-		[-10, 10, \lin, 0.1, "", "HF Boost Mapping Curve", 1.0, \velPeakMapCurve],
+		// [-10, 10, \lin, 0.1, "", "HF Boost Mapping Curve", 1.0, \velPeakMapCurve],
 		[-20.0, 0.0, \lin, 0.1, "dB", "HF Boost Neutral Velocity", 1.0, \velPeakMapZeroDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Min Freq", 1.0, \eqMinFreq],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Max Freq", 1.0, \eqMaxFreq],
@@ -278,7 +278,7 @@ OSCFunc({|msg, time|
 	.action_({ |ez|
 		e[\participantID] = ez.value.asInteger; // update value in settings dictionary
 		o.sendMsg('/participantID', e[\participantID]); // send updated value via OSC
-		elements[\preset].valueAction_(1.neg); // init sample number
+		// elements[\preset].valueAction_(1.neg); // init sample number
 		("Participant ID:"+e[\participantID]).postln; // print message
 	});
 
