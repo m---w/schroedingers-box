@@ -27,8 +27,9 @@ SynthDef(\voicer, {
 	// gate = LFPulse.ar(freq: 0.5, width: 0.5, mul: 0.01); // trigger simulator
 
 	// Parameter mapping: eqFreqs, rate
-	eqFreqs = Clip.ar(LinExp.ar(pos, srclo: -1.0, srchi: 1.0, dstlo: eqMinFreq, dsthi: eqMaxFreq), lo: eqMinFreq, hi: eqMaxFreq); // map position to filter frequency
-	rate = Clip.ar(LinExp.ar(pos.sum, srclo: -2.0, srchi: 2.0, dstlo: slMaxPlaybackRateR, dsthi: slMaxPlaybackRate), lo: slMaxPlaybackRateR, hi: slMaxPlaybackRate); // map position to playback speed
+	eqFreqs = LinExp.ar(pos, srclo: -1.0, srchi: 1.0, dstlo: eqMinFreq, dsthi: eqMaxFreq); // map position to filter frequency
+	rate = pow(slMaxPlaybackRate, ((pos.sum-2.0)/2.0) + 1.0); // linexp mapping
+	// rate = Clip.ar(LinExp.ar(pos.sum, srclo: -2.0, srchi: 2.0, dstlo: slMaxPlaybackRateR, dsthi: slMaxPlaybackRate), lo: slMaxPlaybackRateR, hi: slMaxPlaybackRate); // map position to playback speed
 
 	// Random sample selection
 	bufnum = Demand.ar(gate, 0, Dxrand(list: bufnums, repeats: inf)); // get random buffer number (no repetition)
@@ -44,3 +45,5 @@ SynthDef(\voicer, {
 }).add;
 
 "done.".postln;
+
+

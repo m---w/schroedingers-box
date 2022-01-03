@@ -51,14 +51,14 @@ q = (); // other parameters
 // Variable Init
 ~tbodTriggered = false; // flag to store if TBOD has triggered
 ~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
-~debugOnsets = true; // debug printing for onset detection
+~debugOnsets = false; // debug printing for onset detection
 ~debugSourcePos = false; // debug printing for sound localization
 ~debugSound = false; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
 ~globalvels = 0.0!4; // init global velocities
 ~globalvel = 0.0; // init velocity
 ~sourcePos = 0.0!2; // init source position
-~maxVoices = 3; // maximum number of allocated voices
+~maxVoices = 2; // maximum number of allocated voices
 
 
 // scan for presets
