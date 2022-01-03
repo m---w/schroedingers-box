@@ -88,10 +88,10 @@ OSCFunc({|msg, time|
 		[0.1, 50.0, \exp, 0.1, "ms", "Velocity Waiting Time", 1.0e-3, \velDelay],
 		// [0.1, 50.0, \exp, 0.1, "ms", "Velocity Update Lag", 1.0e-3, \velUpdateLag],
 		// [0.0001, 1.0, \exp, 0.0, "", "Default Velocity", 1.0, \defaultVel],
-		[0.001, 1000.0, \exp, 0.0, "1e-3", "Velocity Map: inMin", 1.0e-3, \velMapInMin],
-		[0.001, 1000.0, \exp, 0.0, "1e-3", "Velocity Map: inMax", 1.0e-3, \velMapInMax],
-		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMin", 1.0, \velMapOutMin],
-		[0.0001, 1.0, \exp, 0.0, "", "Velocity Map: outMax", 1.0, \velMapOutMax],
+		[0.001, 1000.0, \exp, 0.001, "1e-3", "Velocity Map: inMin", 1.0e-3, \velMapInMin],
+		[0.001, 1000.0, \exp, 0.001, "1e-3", "Velocity Map: inMax", 1.0e-3, \velMapInMax],
+		[0.0001, 1.0, \exp, 0.0001, "", "Velocity Map: outMin", 1.0, \velMapOutMin],
+		[0.0001, 1.0, \exp, 0.0001, "", "Velocity Map: outMax", 1.0, \velMapOutMax],
 		//[-10, 10, \lin, 0.1, "", "Velocity Map: curve", 1.0, \velMapCurve],
 	];
 
@@ -107,23 +107,23 @@ OSCFunc({|msg, time|
 
 	// Master
 	var sliderListMaster = [
-		[-60.0, 30.0, \lin, 0.0, "dB", "Global primary sound level", 1.0, \primaryMasterDB],
-		[-60.0, 30.0, \lin, 0.0, "dB", "Global secondary sound level", 1.0, \secondaryMasterDB],
-		[-60.0, 30.0, \lin, 0.0, "dB", "Global outcome sound level", 1.0, \outcomeMasterDB],
-		[20.0, 20000.0, \exp, 0.1, "Hz", "Master HPF Cutoff", 1.0, \masterHPF],
-		[20.0, 20000.0, \exp, 0.1, "Hz", "Master LPF Cutoff", 1.0, \masterLPF],
-		[-60.0, 30.0, \lin, 0.0, "dB", "GLOBAL MASTER LEVEL", 1.0, \masterLevel],
+		[-60.0, 30.0, \lin, 1.0, "dB", "Global primary sound level", 1.0, \primaryMasterDB],
+		[-60.0, 30.0, \lin, 1.0, "dB", "Global secondary sound level", 1.0, \secondaryMasterDB],
+		[-60.0, 30.0, \lin, 1.0, "dB", "Global outcome sound level", 1.0, \outcomeMasterDB],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Master HPF Cutoff", 1.0, \masterHPF],
+		[20.0, 20000.0, \exp, 1.0, "Hz", "Master LPF Cutoff", 1.0, \masterLPF],
+		[-60.0, 30.0, \lin, 1.0, "dB", "GLOBAL MASTER LEVEL", 1.0, \masterLevel],
 	];
 
 	// Test Tone Generator
 	var sliderListTest = [
-		[-80.0, 0.0, \lin, 0.1, "dB", "Noise Volume", 1.0, \noiseMasterDB],
-		[-80.0, 0.0, \lin, 0.1, "dB", "Sine Volume", 1.0, \sineMasterDB],
+		[-80.0, 0.0, \lin, 1.0, "dB", "Noise Volume", 1.0, \noiseMasterDB],
+		[-80.0, 0.0, \lin, 1.0, "dB", "Sine Volume", 1.0, \sineMasterDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Sine Frequency", 1.0, \testFreq],
 		[0.001, 1.0, \exp, 0.0, "", "Test Onset Velocity", 1.0, \testOnsetVel],
-		[1.0, 10.0, \lin, 0.0, "", "Test Onset Hit Freq", 1.0, \testOnsetFreq],
-		[-1.0, 1.0, \lin, 0.0, "", "Test Onset Pos X", 1.0, \testOnsetPosX],
-		[-1.0, 1.0, \lin, 0.0, "", "Test Onset Pos Y", 1.0, \testOnsetPosY],
+		[1.0, 10.0, \lin, 0.1, "", "Test Onset Hit Freq", 1.0, \testOnsetFreq],
+		[-1.0, 1.0, \lin, 0.01, "", "Test Onset Pos X", 1.0, \testOnsetPosX],
+		[-1.0, 1.0, \lin, 0.01, "", "Test Onset Pos Y", 1.0, \testOnsetPosY],
 	];
 
 	// Sound
@@ -135,15 +135,15 @@ OSCFunc({|msg, time|
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Min Freq", 1.0, \eqMinFreq],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Max Freq", 1.0, \eqMaxFreq],
 		[0.0, 10.0, \lin, 0.1, "%", "Secondary: Playback Rate Randomization", 1.0e-2, \secondaryPlaybackRand],
-		[0.001, 1.0, \exp, 0.0, "", "Breaking/Outcome Threshold", 1.0, \breakingThreshold],
+		[0.001, 1.0, \exp, 0.001, "", "Breaking/Outcome Threshold", 1.0, \breakingThreshold],
 		[0.0, 5.0, \lin, 0.1, "s", "Secondary: Min Delay", 1.0, \secondaryMinDel],
 		[0.0, 5.0, \lin, 0.1, "s", "Secondary: Max Delay", 1.0, \secondaryMaxDel],
 		[0, 10, \lin, 1, "", "Secondary: Min Count", 1.0, \secondaryMinCount],
 		[-10, 10, \lin, 0.1, "", "Secondary: Probability Curve", 1.0, \secondaryCountCurve],
-		[1.0, 2.0, \exp, 0.0, "", "Source Pos: Max Playback Rate", 1.0, \slMaxPlaybackRate],
-		[1.0, 10.0, \exp, 0.0, "", "Source Pos: Max Amplitude Ratio", 1.0, \slMaxRatio],
+		[1.0, 2.0, \exp, 0.001, "", "Source Pos: Max Playback Rate", 1.0, \slMaxPlaybackRate],
+		[1.0, 10.0, \exp, 0.001, "", "Source Pos: Max Amplitude Ratio", 1.0, \slMaxRatio],
 		[0.0, 20.0, \lin, 1.0, "dB", "Peaking EQ Level", 1.0, \eqGain],
-		[0.001, 1.0, \exp, 0.0, "", "1/Q for Peaking EQ level", 1.0, \eqRQ],
+		[0.001, 1.0, \exp, 0.001, "", "1/Q for Peaking EQ level", 1.0, \eqRQ],
 	];
 
 	// convert to dictionary, to address them by name

@@ -14,7 +14,7 @@ SynthDef(\voicer, {
 	var
 	bufnums = ~soundBufnums,
 	voices = ~voices,
-	slMaxPlaybackRateR = slMaxPlaybackRate.reciprocal,
+	//slMaxPlaybackRateR = slMaxPlaybackRate.reciprocal,
 	onset, gate, pos, bufnum, nextVoice, eqFreqs, rate;
 
 	// get onset trigger and position [gate/vel, posx, posy]
@@ -27,7 +27,8 @@ SynthDef(\voicer, {
 	// gate = LFPulse.ar(freq: 0.5, width: 0.5, mul: 0.01); // trigger simulator
 
 	// Parameter mapping: eqFreqs, rate
-	eqFreqs = LinExp.ar(pos, srclo: -1.0, srchi: 1.0, dstlo: eqMinFreq, dsthi: eqMaxFreq); // map position to filter frequency
+	eqFreqs = pow(eqMaxFreq/eqMinFreq, (pos+1.0)/2.0) * eqMinFreq; // linexp mapping
+	// eqFreqs = LinExp.ar(pos, srclo: -1.0, srchi: 1.0, dstlo: eqMinFreq, dsthi: eqMaxFreq); // map position to filter frequency
 	rate = pow(slMaxPlaybackRate, ((pos.sum-2.0)/2.0) + 1.0); // linexp mapping
 	// rate = Clip.ar(LinExp.ar(pos.sum, srclo: -2.0, srchi: 2.0, dstlo: slMaxPlaybackRateR, dsthi: slMaxPlaybackRate), lo: slMaxPlaybackRateR, hi: slMaxPlaybackRate); // map position to playback speed
 
