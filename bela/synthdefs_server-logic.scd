@@ -5,8 +5,8 @@ SynthDef(\primaryVoice,{
 
 	arg
 	voiceID = 0,
-	primaryCtlBus = ~primaryCtlBus.busnum,
-	gateBus = ~voiceGateBus.busnum,
+	primaryCtlBus = 0,
+	gateBus = 0,
 	busnum = 0,
 	level = inf.neg,
 	eqGain = 4.0,
@@ -19,7 +19,7 @@ SynthDef(\primaryVoice,{
 	var velPeakLevelN = velPeakLevel.neg;
 
 	// inputs: voice parameters and voice gate
-	ctl = In.ar(primaryCtlBus´, 4); // receive voice parameters [bufnum, rate, eqFreq1, eqFreq2]
+	ctl = In.ar(primaryCtlBus, 4); // receive voice parameters [bufnum, rate, eqFreq1, eqFreq2]
 	gate = In.ar(gateBus+voiceID, 1); // receive voice gate of this ID
 
 	// sample the voice parameters
@@ -129,7 +129,7 @@ SynthDef(\master, {
 // ONSET DETECTION
 SynthDef(\od, {
 	arg
-	onsetBus = ~onsetBus.busnum,
+	onsetBus = 0,
 	tbThreshDB = 0.0,
 	tbThreshLoDB = 0.0,
 	fbThreshDB = 0.0,
@@ -220,7 +220,7 @@ SynthDef(\od, {
 	];
 
 	// Send Onset Trigger to Onset Bus
-	Out.ar(onsetBus, [velTrig*Latch.ar(tbVel, velTrig), pos[0], pos[1]]);
+	Out.ar(onsetBus, velTrig*[Latch.ar(tbVel, velTrig), pos[0], pos[1]]);
 
 }).add;
 
@@ -257,6 +257,18 @@ SynthDef(\tt, {
 	Out.ar(0, (sigArray!2).flat); // play same signal to 1-4 and 5-8
 
 }).add;
+
+SynthDef(\testOnset, {
+	arg
+	vel = 0.0,
+	onsetBus = 0,
+	testOnsetPosX = 0.0,
+	testOnsetPosY = 0.0;
+
+	var gate = EnvGen.ar(Env.step([0.0, vel, 0.0],[0.0, 0.05, 0.0]), doneAction: 2);
+	Out.ar(onsetBus, [gate, DC.ar(testOnsetPosX), DC.ar(testOnsetPosY)]);
+}).add;
+
 
 
 // Recorder

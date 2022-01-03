@@ -51,7 +51,7 @@ q = (); // other parameters
 // Variable Init
 ~tbodTriggered = false; // flag to store if TBOD has triggered
 ~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
-~debugOnsets = false; // debug printing for onset detection
+~debugOnsets = true; // debug printing for onset detection
 ~debugSourcePos = false; // debug printing for sound localization
 ~debugSound = false; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
@@ -63,7 +63,7 @@ q = (); // other parameters
 
 // scan for presets
 q[\presetIDs] = Array.new(1000); // Warning: hard-coded fixed size!
-a = PathName.new((~path+/+"presets").standardizePath).files.do{ |item|
+PathName.new((~path+/+"presets").standardizePath).files.do{ |item|
 	var path = item;
 	var filename = item.fileNameWithoutExtension;
 	if(filename.contains("sound"), {
@@ -119,6 +119,8 @@ OSCdef(\preset, { | msg, time |
 		"No valid preset selected. Press the button to start!";
 		~presetName = "invalid";
 	};
+
+	~voices = ~voices + 1; // add safety voice
 
 	// init primary sound
 	p.primary[\level] = ~ampfactor; // map preset variable to synth variable
@@ -223,12 +225,16 @@ s.waitForBoot{
 
 	if(~serverLogic, {
 		// allocate busses
-		p.od[\onsetBus] = Bus.audio(s, numChannels: 3); // init audio busses for onset busses [gate, posx, posy]
-		p.voicer[\primaryCtlBus] = Bus.audio(s, numChannels: 4); // init audio busses for primary sound parameters [bufnum, rate, filt1, filt2]
-		p.voicer[\gateBus] = Bus.audio(s, numChannels: ~maxVoices); // init audio busses for voice gates
+		~onsetBus = Bus.audio(s, numChannels: 3); // init audio busses for onset busses [gate, posx, posy]
+
+		~primaryCtlBus = Bus.audio(s, numChannels: 4); // init audio busses for primary sound parameters [bufnum, rate, filt1, filt2]
+		~gateBus = Bus.audio(s, numChannels: ~maxVoices); // init audio busses for voice gates
 
 		// map busses
+		p.od[\onsetBus] = ~onsetBus.index;
 		p.voicer[\onsetBus] = p.od[\onsetBus];
+		p.voicer[\primaryCtlBus] = ~primaryCtlBus.index;
+		p.voicer[\gateBus] = ~gateBus.index;
 		p.primary[\primaryCtlBus] = p.voicer[\primaryCtlBus];
 		p.primary[\gateBus] = p.voicer[\gateBus];
 	});

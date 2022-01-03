@@ -94,7 +94,7 @@
 	}, addr);
 };
 
-// ~oscSetq.(\playbackRand);
+~oscSetq.(\secondaryPlaybackRand);
 ~oscSetq.(\breakingThreshold);
 ~oscSetq.(\secondaryMinDel);
 ~oscSetq.(\secondaryMaxDel);
@@ -239,6 +239,24 @@ if(~serverLogic, {
 		p[\od][\slMaxRatioDB] = q[\slMaxRatio].ampdb;
 		if(x[\od].isPlaying, {
 			x[\od].set(\slMaxRatioDB, p[\od][\slMaxRatioDB]);
+		});
+	});
+
+	~oscSetFunc.(\triggerOnset, {|val, addr|
+		x[\testOnset] = Synth.before(x[\voicer], \testOnset, [\vel, q[\testOnsetVel], \onsetBus, ~onsetBus.index, \testOnsetPosX, q[\testOnsetPosX], \testOnsetPosY, q[\testOnsetPosY]]).register;
+		~maybeNewSecondarySound.(); // maybe trigger new secondary sound
+	});
+
+	~oscSetFunc.(\toggleOnsets, {|val, addr|
+		q[\toggleOnsets] = val;
+		if(val==1, {
+			Tdef(\outOnset, { loop{
+				q[\testOnsetFreq].reciprocal.wait;
+				x[\testOnset] = Synth.before(x[\voicer], \testOnset, [\vel, q[\testOnsetVel], \onsetBus, ~onsetBus.index, \testOnsetPosX, q[\testOnsetPosX], \testOnsetPosY, q[\testOnsetPosY]]).register;
+				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
+			}}).play;
+		},{
+			Tdef(\outOnset).stop;
 		});
 	});
 

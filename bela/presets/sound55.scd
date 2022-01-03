@@ -1,7 +1,7 @@
 ~sound1 = Buffer.readChannel(s, ~path+/+"./sounds/wood_crack_1.wav", channels: 0);
 ~sound2 = Buffer.readChannel(s, ~path+/+"./sounds/wood_crack_2.wav", channels: 0);
 ~sound3 = Buffer.readChannel(s, ~path+/+"./sounds/wood_crack_3.wav", channels: 0);
-~sound3 = Buffer.readChannel(s, ~path+/+"./sounds/wood_crack_4.wav", channels: 0);
+~sound4 = Buffer.readChannel(s, ~path+/+"./sounds/wood_crack_4.wav", channels: 0);
 ~sound5 = Buffer.readChannel(s, ~path+/+"./sounds/wood_crack_5.wav", channels: 0);
 
 

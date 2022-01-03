@@ -95,8 +95,6 @@ e.testOnsetPosY = 0.0;
 e.testOnsetVel = 0.5;
 e.testOnsetFreq = 1.5;
 
-// Global Sound Parameters
-e.playbackRand = 0.01; // percent rate randomization
 
 // Outcome sound
 e.breakingThreshold = 0.8; // threshold velocity for breaking
@@ -107,6 +105,7 @@ e.secondaryMaxDel = 1.0; // maximum start delay
 e.secondaryMinCount = 1; // min onset count for secondary trigger
 e.secondaryMaxCount = 6; // max onset count for secondary trigger
 e.secondaryCountCurve = 3; // curve
+e.secondaryPlaybackRand = 0.05; // percent rate randomization
 
 
 "done.".postln;

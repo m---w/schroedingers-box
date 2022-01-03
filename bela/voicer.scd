@@ -4,9 +4,9 @@
 // Voice Allocation Synth. Needs to be re-defined on preset load.
 SynthDef(\voicer, {
 	arg
-	onsetBus = ~onsetBus.busnum,
-	primaryCtlBus = ~primaryCtlBus.busnum,
-	gateBus = ~voiceGateBus.busnum,
+	onsetBus = 0,
+	primaryCtlBus = 0,
+	gateBus = 0,
 	eqMinFreq = 1000.0,
 	eqMaxFreq = 5000.0,
 	slMaxPlaybackRate = 1.1;

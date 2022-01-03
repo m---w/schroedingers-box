@@ -10,7 +10,7 @@
 
 
 ~randRate = {
-	exprand(q[\playbackRand], q[\playbackRand].reciprocal); // random playback rate on exponential scale
+	exprand(q[\secondaryPlaybackRand], q[\secondaryPlaybackRand].reciprocal); // random playback rate on exponential scale
 	// if playbackRand is 2.0, then rate will be random between 0.5 and 2.0.
 };
 

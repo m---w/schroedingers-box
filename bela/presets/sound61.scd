@@ -1,7 +1,7 @@
 ~sound1 = Buffer.readChannel(s, ~path+/+"./sounds/big-metal-plate_var01.wav", channels: 0);
 ~sound2 = Buffer.readChannel(s, ~path+/+"./sounds/big-metal-plate_var02.wav", channels: 0);
 ~sound3 = Buffer.readChannel(s, ~path+/+"./sounds/big-metal-plate_var03.wav", channels: 0);
-~sound3 = Buffer.readChannel(s, ~path+/+"./sounds/big-metal-plate_var04.wav", channels: 0);
+~sound4 = Buffer.readChannel(s, ~path+/+"./sounds/big-metal-plate_var04.wav", channels: 0);
 ~sound5 = Buffer.readChannel(s, ~path+/+"./sounds/big-metal-plate_var05.wav", channels: 0);
 ~sound6 = Buffer.readChannel(s, ~path+/+"./sounds/big-metal-plate_var06.wav", channels: 0);
 
