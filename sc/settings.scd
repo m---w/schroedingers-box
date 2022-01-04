@@ -32,7 +32,7 @@ e.defaultVel = 0.05; // default velocity
 e.velUpdateLag = 0.0002; // lag time for velocity update smoothing
 e.velMapInMin = 0.001; // mapping between amplitude and velocity: inMin
 e.velMapInMax = 0.1; // mapping between amplitude and velocity: inMax
-e.velMapOutMin = 0.01; // mapping between amplitude and velocity: outMin
+e.velMapOutMin = 0.2; // mapping between amplitude and velocity: outMin
 e.velMapOutMax = 1.0; // mapping between amplitude and velocity: outMax
 //e.velMapCurve = 4.0.neg; // mapping between amplitude and velocity: curve
 e.velEnvDur = 0.04; // release time of velocity-controlled high-shelf
@@ -97,7 +97,7 @@ e.testOnsetFreq = 1.5;
 
 
 // Outcome sound
-e.breakingThreshold = 0.8; // threshold velocity for breaking
+e.breakingThreshold = 0.999; // threshold velocity for breaking
 
 // Secondary Sound
 e.secondaryMinDel = 0.5; // minimum start delay

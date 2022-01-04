@@ -8,32 +8,35 @@ SynthDef(\primaryVoice,{
 	primaryCtlBus = 0,
 	gateBus = 0,
 	busnum = 0,
-	level = inf.neg,
-	eqGain = 4.0,
-	velEnvDur = 0.005,
-	velPeakLevel = 20.0,
-	velPeakMapZeroDB = 3.0.neg,
-	eqRQ = 0.1;
+	//velEnvDur = 0.005,
+	//velPeakLevel = 20.0,
+	//velPeakMapZeroDB = 3.0.neg,
+	//eqGain = 4.0,
+	//eqRQ = 0.1,
+	level = inf.neg;
 
-	var ctl, gate, amplitude, sig, velEnv, env, out, rate, eqFreq1, eqFreq2, bufnum, velPeakDB;
+	var ctl, gate, amplitude, sig, env, out, rate, bufnum;
+	//var eqFreq1, eqFreq2,
+	//var velPeakDB, velEnv;
 
 	// inputs: voice parameters and voice gate
-	ctl = In.ar(primaryCtlBus, 4); // receive voice parameters [bufnum, rate, eqFreq1, eqFreq2]
+	//ctl = In.ar(primaryCtlBus, 4); // receive voice parameters [bufnum, rate, eqFreq1, eqFreq2]
+	ctl = In.ar(primaryCtlBus, 2); // receive voice parameters [bufnum, rate, eqFreq1, eqFreq2]
 	gate = In.ar(gateBus+voiceID, 1); // receive voice gate of this ID
 
 	// sample the voice parameters
 	amplitude = Latch.ar(gate, gate); // sample&hold for velocity amplitude
 	bufnum = Latch.ar(ctl[0], gate); // sample&hold for bufnum
 	rate = Latch.ar(ctl[1], gate); // sample&hold for rate
-	eqFreq1 = A2K.kr(Latch.ar(ctl[2], gate));
-	eqFreq2 = A2K.kr(Latch.ar(ctl[3], gate));
+	//eqFreq1 = Latch.ar(ctl[2], gate);
+	//eqFreq2 = Latch.ar(ctl[3], gate);
 
 	// sample playback
 	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 0); // play sample
 
 	// position-dependent filtering
-	sig = BPeakEQ.ar(sig, freq: eqFreq1, rq: eqRQ, db: eqGain);
-	sig = BPeakEQ.ar(sig, freq: eqFreq2, rq: eqRQ, db: eqGain.neg);
+	//sig = BPeakEQ.ar(sig, freq: eqFreq1, rq: eqRQ, db: eqGain);
+	//sig = BPeakEQ.ar(sig, freq: eqFreq2, rq: eqRQ, db: eqGain.neg);
 
 	// velocity-dependent filtering
 	/* DEACTIVATED TO SAVE COMPUTING POWER
@@ -46,6 +49,9 @@ SynthDef(\primaryVoice,{
 	// release envelope, velocity, and level
 	env = Amplitude.ar(gate, attackTime: 0.0, releaseTime: 0.010); // envelope with instant attack and smooth release
 	out = sig * amplitude * env * level.dbamp; // apply velocity amplitude, envelope, and master level
+
+	// mute first few ms of creation
+	//out = out * EnvGen.kr(Env([0,0,1], [0.2, 0.05]), doneAction: 0);
 
 	// output
 	Out.ar(busnum, out); // play to bus
@@ -121,6 +127,9 @@ SynthDef(\master, {
 
 	// Equalization with inverse filter
 	out = (eq * PartConv.ar(master, fftsize: partConvFFTSize, irbufnum: irbufnum)) + ((1.0-eq) * master); // Partitioned convolution with impulse response of equalization filter, with bypass switch
+
+	// mute first few ms of creation
+	//out = out * EnvGen.kr(Env([0,0,1], [0.2, 0.05]), doneAction: 0);
 
 	out = LPF.ar(HPF.ar(out*masterLevel.dbamp, hpf), lpf).tanh; // output filtering and protection
 	Out.ar(0, out!4); // write same signal to all output channels

@@ -7,15 +7,16 @@ SynthDef(\voicer, {
 	onsetBus = 0,
 	primaryCtlBus = 0,
 	gateBus = 0,
-	eqMinFreq = 1000.0,
-	eqMaxFreq = 5000.0,
+	//eqMinFreq = 1000.0,
+	//eqMaxFreq = 5000.0,
 	slMaxPlaybackRate = 1.1;
 
 	var
 	bufnums = ~soundBufnums,
 	voices = ~voices,
 	//slMaxPlaybackRateR = slMaxPlaybackRate.reciprocal,
-	onset, gate, pos, bufnum, nextVoice, eqFreqs, rate;
+	onset, gate, pos, bufnum, nextVoice, rate;
+	//var eqFreqs;
 
 	// get onset trigger and position [gate/vel, posx, posy]
 	onset = In.ar(onsetBus, numChannels: 3);
@@ -27,7 +28,7 @@ SynthDef(\voicer, {
 	// gate = LFPulse.ar(freq: 0.5, width: 0.5, mul: 0.01); // trigger simulator
 
 	// Parameter mapping: eqFreqs, rate
-	eqFreqs = pow(eqMaxFreq/eqMinFreq, (pos+1.0)/2.0) * eqMinFreq; // linexp mapping
+	//eqFreqs = pow(eqMaxFreq/eqMinFreq, (pos+1.0)/2.0) * eqMinFreq; // linexp mapping
 	// eqFreqs = LinExp.ar(pos, srclo: -1.0, srchi: 1.0, dstlo: eqMinFreq, dsthi: eqMaxFreq); // map position to filter frequency
 	rate = pow(slMaxPlaybackRate, ((pos.sum-2.0)/2.0) + 1.0); // linexp mapping
 	// rate = Clip.ar(LinExp.ar(pos.sum, srclo: -2.0, srchi: 2.0, dstlo: slMaxPlaybackRateR, dsthi: slMaxPlaybackRate), lo: slMaxPlaybackRateR, hi: slMaxPlaybackRate); // map position to playback speed
@@ -36,7 +37,8 @@ SynthDef(\voicer, {
 	bufnum = Demand.ar(gate, 0, Dxrand(list: bufnums, repeats: inf)); // get random buffer number (no repetition)
 
 	// Write voice parameters: [bufnum, rate, eqFreq1, eqFreq2]
-	Out.ar(primaryCtlBus, [bufnum, rate, eqFreqs[0], eqFreqs[1]]); // write parameters
+	//Out.ar(primaryCtlBus, [bufnum, rate, eqFreqs[0], eqFreqs[1]]); // write parameters
+	Out.ar(primaryCtlBus, [bufnum, rate]); // write parameters
 
 	// Voice-allocation Logic / Gate logic
 	nextVoice = Stepper.ar(gate, 0, min: gateBus, max: gateBus+voices-1); // next voice index

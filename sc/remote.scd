@@ -134,7 +134,7 @@ OSCFunc({|msg, time|
 		[-20.0, 0.0, \lin, 0.1, "dB", "HF Boost Neutral Velocity", 1.0, \velPeakMapZeroDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Min Freq", 1.0, \eqMinFreq],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Max Freq", 1.0, \eqMaxFreq],
-		[0.0, 10.0, \lin, 0.1, "%", "Secondary: Playback Rate Randomization", 1.0e-2, \secondaryPlaybackRand],
+		[0.0, 10.0, \lin, 0.1, "%", "Secondary: Rate Randomization", 1.0e-2, \secondaryPlaybackRand],
 		[0.001, 1.0, \exp, 0.001, "", "Breaking/Outcome Threshold", 1.0, \breakingThreshold],
 		[0.0, 5.0, \lin, 0.1, "s", "Secondary: Min Delay", 1.0, \secondaryMinDel],
 		[0.0, 5.0, \lin, 0.1, "s", "Secondary: Max Delay", 1.0, \secondaryMaxDel],

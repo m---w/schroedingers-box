@@ -49,9 +49,7 @@
 ~maybeTriggerOutcome = {
 	if(~outcome&&~outcomePossible){
 		if(p.primary[\vel]>q[\breakingThreshold]){
-			// 1. Release all primary sounds
-			v.set([\gate, 0], lat: nil);
-			// 2. Trigger new breaking sound
+			// Trigger new breaking sound
 			p.outcome[\vel] = p.primary[\vel]; // set outcome velocity equal to primary velocity
 			p.outcome[\bufnum] = ~soundcat_sum[~chooseAddSound.()]; // choose random sample
 			p.outcome[\rate] = ~randRate.(); // choose random playback rate
@@ -75,15 +73,19 @@
 	if(~preset>0, {
 
 		// Triggering, Cancelling, and Velocity update LOGIC
+		if(id==1, {
+			// TBOD trigger new
+			p.primary[\vel] = val;
+			~maybeTriggerOutcome.(); // maybe trigger breaking sound
+			~maybeNewSecondarySound.(); // maybe trigger new secondary sound
+			if(~debugOnsets, {
+				("TBOD: new onset. Vel:"+val).postln;
+			});
+		});
+
+		/*
+		// only for debug
 		switch (id,
-			1, { // TBOD trigger new
-				p.primary[\vel] = val;
-				~maybeTriggerOutcome.(); // maybe trigger breaking sound
-				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
-				if(~debugOnsets, {
-					("TBOD: new onset. Vel:"+val).postln;
-				});
-			},
 			// Source Localization:
 			4, { // Velocity update, Channel 1
 				~globalvels[0] = val;
@@ -101,6 +103,7 @@
 				});
 			};
 		);
+		*/
 
 	});
 

@@ -49,16 +49,23 @@ p.master = (); // master parameters
 q = (); // other parameters
 
 // Variable Init
-~tbodTriggered = false; // flag to store if TBOD has triggered
-~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
+//~tbodTriggered = false; // flag to store if TBOD has triggered
+//~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
 ~debugOnsets = false; // debug printing for onset detection
 ~debugSourcePos = false; // debug printing for sound localization
 ~debugSound = false; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
-~globalvels = 0.0!4; // init global velocities
-~globalvel = 0.0; // init velocity
-~sourcePos = 0.0!2; // init source position
 ~maxVoices = 2; // maximum number of allocated voices
+~minVoices = 2; // minimum number of allocated voices (2 is basically one voice, but with smooth fadeout)
+~presetIsReady = true; // flag to say if a preset can be loaded
+if(~serverLogic, {
+	//
+}, {
+	~globalvels = 0.0!4; // init global velocities
+	~globalvel = 0.0; // init velocity
+	~sourcePos = 0.0!2; // init source position
+});
+
 
 
 // scan for presets
@@ -76,20 +83,18 @@ q[\presetIDs] = q[\presetIDs].sort; // Get list of found presets in ascending or
 /*===================== SOUND SELECTION =====================*/
 
 
-OSCdef(\preset, { | msg, time |
-
-	fork{
+OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
+	~presetIsReady = false;
 
 	~preset = msg[1].asInteger; // set preset
 	("New sound selected:"+~preset).postln; // notify
 
 	// free everything that is playing
-	x[\tt].free;
-	x[\secondary].free;
-	x[\outcome].free;
-	if(~serverLogic, {}, {
-		v.free; // free previous voicer instance
-	});
+	//x[\tt].free;
+	//x[\secondary].free;
+	//x[\outcome].free;
+	s.freeAll;
+	s.sync;
 
 	// load default settings (these may be defined in the preset)
 	~addsound = false; // secondary sound on/off
@@ -120,21 +125,8 @@ OSCdef(\preset, { | msg, time |
 		~presetName = "invalid";
 	};
 
-	~voices = (~voices + 1).min(~maxVoices); // add safety voice
-
-
-
-	// WORKAROUND AGAINST NOISE
-		s.sync;
-		~sound.do{|item|
-			var end = item.numFrames-1;
-			item.set(0, 0.0, end, 0.0);
-		};
-		~soundcat_sum.do{|item|
-			var end = item.numFrames-1;
-			item.set(0, 0.0, end, 0.0);
-		};
-
+	// fix number of voices
+	~voices = ~voices.max(~minVoices).min(~maxVoices); // clip number of voices
 
 	// init primary sound
 	p.primary[\level] = ~ampfactor; // map preset variable to synth variable
@@ -145,26 +137,62 @@ OSCdef(\preset, { | msg, time |
 	~soundBufnums = ~sound.collect{|item| item.bufnum}; // array of bufnums for sound samples of this preset
 	~lastSoundID = ~soundIndArray.choose; // choose a random start index
 
-	if(~serverLogic, {
-		// server logic
-			s.sync;
-			x[\primary].do{|item| item.free};
-			x[\voicer].free;
-			s.sync;
+	if(~serverLogic, { // server logic
 
-			//0.5.wait;
+		// Workaround against noise bursts
+		s.sync;
+		~sound.do{|item|
+			var end = item.numFrames-1;
+			item.set(0, 0.0, end, 0.0);
+		};
+		~soundcat_sum.do{|item|
+			var end = item.numFrames-1;
+			item.set(0, 0.0, end, 0.0);
+		};
+		s.sync;
 
-			(~path+/+"voicer.scd").standardizePath.load; // load preset file
-			s.sync;
+		// free voicer and individual voices
+		//x[\primary].do{|item| item.free};
+		//x[\voicer].free;
+		//s.freeAll;
+		//s.sync;
 
-			//0.5.wait;
+		// start onset detection
+		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 
-			x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
-			x[\primary] = ~voices.collect{|i| Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register};
-			s.sync;
+		// re-load voicer SynthDef (found no other way to set number of voices dynamically)
+		(~path+/+"voicer.scd").standardizePath.load;
+		s.sync;
 
-	}, {
-		// SCLang logic
+		// mute all outputs
+		//~tempLevel = p[\primary][\level];
+		//p[\primary][\level] = inf.neg;
+		//~tempMasterLevel = p[\master][\masterLevel];
+		//p[\master][\masterLevel] = inf.neg;
+
+		// create new voicer and voices
+		x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
+		x[\primary] = ~voices.collect{|i| Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register};
+		s.sync;
+
+
+		// start master
+		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
+		s.sync;
+
+	}, { // SCLang logic
+
+		//s.freeAll;
+		//s.sync;
+
+		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
+		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
+
+
+		// free old voicer instance
+		v.free;
+
+		// new voicer setup
 		v = Voicer.new(voices: ~voices, things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
 		v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 		v.stealer = \preferLate; // set voice stealing algorithm
@@ -207,9 +235,17 @@ OSCdef(\preset, { | msg, time |
 	//finish
 	// if(~preset>=666){s.freeAll};
 
-	};
 
-},'/preset');
+	//0.25.wait;
+	//s.sync;
+	// set levels again
+	//p[\primary][\level] = ~tempLevel;
+	//x[\primary].do{|item| item.set([\level, p[\primary][\level]])};
+	//p[\master][\masterLevel] = ~tempMasterLevel;
+	//x[\master].set([\masterLevel, p[\master][\masterLevel]]);
+
+	~presetIsReady = true;
+}.fork})},'/preset');
 
 
 /*===================== GUI Control / OSC Receivers =====================*/
@@ -227,7 +263,7 @@ if(~serverLogic, {
 
 /*===================== WAIT FOR SERVER =====================*/
 
-s.waitForBoot{
+s.waitForBoot{{
 
 	/*===================== BUS AND BUFFER ALLOCATIONS =====================*/
 
@@ -293,14 +329,14 @@ s.waitForBoot{
 
 	s.sync;
 
-	x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
-	x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
+	//x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
+	//x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 
 	// request parameters from GUI
 	n.do{|item| item.sendMsg(\bela, \booted) }; // send request via OSC to all addresses
 
 	"Main Patch READY.".postln;
-};
+}.fork};
 
 
 /*===================== QUIT =====================*/
