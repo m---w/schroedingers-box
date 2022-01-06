@@ -1,53 +1,95 @@
-#+TITLE: Amplitude tuning - test: aquarium using loudspeakers 211210
+#+TITLE: Preset Description
+#+OPTIONS: toc:nil
 
-+++FIX 39 sound, exclude firebursts, include only a match fire sound++++ (soft, chk hard=> FIREBURST)
+* Preset Description
+1. metallic speaker stand
+2. metallic rail
+3. metallic box
+4. tympani
+5. squeaky toy
+6. wood impact | secondary: cat
+7. wooden door kick
+8. meat knife, cut impact
+9. real deal (Schrodinger's box impact w mallet)
+10. bottle impact | outcome: bottle break
+11. aluminium can, can opening
+12. harpsi
+13. water glass
+14. physical model of a string
+15. thesis (artificial)
+16. finger snap
+17. plastic container
+18. spray
+19. bell (physical model)
+20. wood impact (toing) | secondary: cheering
+21. thermo metallic impact
+22. sackl impact
+23. book page chattering
+24. fan scissors
+25. fan rattle
+26. Davor spring wire
+27. my toaster
+28. cough
+29. music stand rattle
+30. fan wire rattle
+31. microwave ding
+32. impact | cartoon outcome (toing - crash)
+33. chaotic drop => greyhole
+34. water | outcome: water
+35. punching | secondary: vocal feedback (ouch)
+36. metal plate rattling at KHG
+37. drums
+38. axe
+39. match strike | outcome: match light
+40. cage bars | secondary: lion
+41. sk8board
+42. thermo | secondary: balloons
+43. stapler | secondary: pin drop
+44. stapler rattling feedback
+45. noodles metallic top | secondary: noodles shake
+46. aluminium toing overtones
+47. metallic box with nuts inside
+48. plastic bag pop | various plastic bag feedback
+49. click | secondary: boiler
+50. coolness (artificial sound)
+51. popping | secondary: party horn
+52. impact | electric toy duck
+53. aluminium toing | secondary nail drop on table
+54. plastic bag crumbling sound
+55. wood crack
+56. bin restmuel front (deep)
+57. bin top bouncing
+58. stone drop
+59. leaves kick
+60. "tum" wood box
+61. big metal plate
+62. laser
+63. bicycle bell
+64. vintage bicycle bell
+65. resonating bell
+66. vintage red box
+67. container long
+68. synthetic plastic plate
+69. synthetic plastic bar
+70. synthetic wood plate
+71. synthetic wood bar
+72. synthetic glass plate
+73. synthetic glass bar
+74. synthetic gold plate
+75. synthetic gold bar
+76. synthetic brass plate
+77. synthetic brass bar
+78. synthetic aluminum plate
+79. synthetic aluminum bar
+80. cash register
+81. 2kHz test tone
+82. ouch!
+83. bin restmuel | outcome: bin top bouncing
 
-+++FiX 42 add balloon inflation, impact+fouskoma TAK + FFFTTT
+* Preset tuning Amplitude values
 
-+++ADD: secondary max count parameter add in the presets
-
-+++ADD: TRUCK HORN SOUND
-
-+++ADD: Mud sound (flits, like a ditch)
-
-+++ADD: Snow sound impact (look freesound)
-
-+++ADD: rolling wheel (TAK KRRRRRRR)
-
-+++Check if lookmumnocomputer has any free sounds
-
-+++ADD: electrical sound like tesla coil (TZZZZZ) even for primary sound
-
-+++LAMARINA: Metal plate, experimental studio
-
-+++Motorcycle: extreme acceleration
-
-+++Rocket: outcome or secondary?
-
-+++SHIP HORN: Include this or alternatively a 110HZ sinwave, *no onset*
-
-*FIND LONGER SOUNDS*
-
-Sounds for HPF
-aluminum overtones
-book pages chattering
-cage bars?
-cartoon outcome
-cat scratch
-fan wire rattle
-sackl-impact_var
-lamarina_var01
-noodles top
-plastic container
-
-*apply hpf*
-
-
-
-* VALUES
-
+*Amplitude tuning - test: aquarium using loudspeakers 211210*
 VOL PARAMETER (global) = 0
-
 PARAMETER: Global primary
 
 1. 0
@@ -104,59 +146,46 @@ PARAMETER: Global primary
 52. 0
 53. 7.5
 54. -2
+* fix notes
 
-* DESCRIPTION
-1. metallic speaker stand
-2. metallic rail
-3. metallic box
-4. tympani
-5. squeaky toy
-6. wood impact | secondary: cat
-7. wooden door kick
-8. meat knife, cut impact
-9. real deal (Schrodinger's box impact w mallet)
-10. bottle impact | outcome: bottle break
-11. aluminium can, can opening
-12. harpsi
-13. water glass
-14. physical model of a string
-15. thesis (artificial)
-16. finger snap
-17. plastic container
-18. spray
-19. bell (physical model)
-20. wood impact (toing) | secondary: cheering
-21. thermo metallic impact
-22. sackl impact
-23. book page chattering
-24. fan scissors
-25. fan rattle
-26. Davor spring wire
-27. my toaster
-28. cough
-29. music stand rattle
-30. fan wire rattle
-31. microwave ding
-32. impact | cartoon outcome (toing - crash)
-33. chaotic drop => greyhole
-34. water | outcome: water
-35. punching | secondary: vocal feedback (ouch)
-36. metal plate rattling at KHG
-37. drums
-38. axe
-39. match strike | outcome: match light
-40. cage bars | secondary: lion
-41. sk8board
-42. thermo | secondary: balloons
-43. stapler | secondary: pin drop
-44. stapler rattling feedback
-45. noodles metallic top | secondary: noodles shake
-46. aluminium toing overtones
-47. metallic box with nuts inside
-48. plastic bag pop | various plastic bag feedback
-49. click | secondary: boiler
-50. coolness (artificial sound)
-51. popping | secondary: party horn
-52. impact | electric toy duck
-53. aluminium toing | secondary nail drop on table
-54. plastic bag crumbling sound
++ FIX 39 sound, exclude firebursts, include only a match fire sound+ + (soft, chk hard=> FIREBURST)
+
++ FIX 42 add balloon inflation, impact+fouskoma TAK + FFFTTT
+
++ ADD: secondary max count parameter add in the presets
+
++ ADD: TRUCK HORN SOUND
+
++ ADD: Mud sound (flits, like a ditch)
+
++ ADD: Snow sound impact (look freesound)
+
++ ADD: rolling wheel (TAK KRRRRRRR)
+
++ Check if LookMumNoComputer has any free sounds
+
++ ADD: electrical sound like tesla coil (TZZZZZ) even for primary sound
+
++ +LAMARINA: Metal plate, experimental studio+
+
++ Motorcycle: extreme acceleration
+
++ Rocket: outcome or secondary?
+
++ SHIP HORN: Include this or alternatively a 110HZ sinwave, *no onset*
+
+*FIND LONGER SOUNDS*
+
+Sounds for HPF
+aluminum overtones
+book pages chattering
+cage bars?
+cartoon outcome
+cat scratch
+fan wire rattle
+sackl-impact_var
+lamarina_var01
+noodles top
+plastic container
+
+*apply hpf*
