@@ -23,8 +23,8 @@
 ~voices = 3;
 
 //amplitude configuration
-~ampfactor = 3.5;
-~ampfactorcat = 2.5;
+~ampfactor = 18.0;;
+~ampfactorcat = 15.0;;
 
 
 //Comb Filter config
