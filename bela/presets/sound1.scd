@@ -16,3 +16,4 @@
 
 //Comb Filter config
 ~combFilterDryWet = 0.0;
+~presetName = "metalic speaker stand";

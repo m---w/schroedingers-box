@@ -23,3 +23,4 @@
 
 //Comb Filter config
 ~combFilterDryWet = 1.0;
+~presetName = "breaking glass";

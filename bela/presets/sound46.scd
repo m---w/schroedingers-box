@@ -22,3 +22,4 @@
 
 //hpf primary
 ~hpfPrimary = 100.0;
+~presetName = "aluminum can overtones";

@@ -17,3 +17,4 @@
 
 //Comb Filter config
 ~combFilterDryWet = 1.0;
+~presetName = "resonating spring wire";

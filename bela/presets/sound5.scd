@@ -14,3 +14,4 @@
 
 //Comb Filter config
 ~combFilterDryWet = 1.0.neg;
+~presetName = "squeeky toy";

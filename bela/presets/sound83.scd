@@ -23,9 +23,10 @@
 ~voices = 3;
 
 //amplitude configuration
-~ampfactor = 18.0;;
-~ampfactorcat = 15.0;;
+~ampfactor = 18.0;
+~ampfactorcat = 15.0;
 
 
 //Comb Filter config
 ~combFilterDryWet = 1.0;
+~presetName = "litter bin bounce";
