@@ -215,6 +215,10 @@ if(~serverLogic, {
 
 	~oscSetFunc.(\panic, {|val, addr|
 		// free synths
+
+		s.freeAll;
+
+		/*
 		//x[\master].free;
 		x[\tt].free;
 		x[\secondary].free;
@@ -226,10 +230,15 @@ if(~serverLogic, {
 		p.master[\masterLevel] = inf.neg;
 		x[\master].set(\masterLevel, p.master[\masterLevel]);
 		//q[\od] = 0;
-		//q[\output] = 0;
 		n.do{|item| item.sendMsg(\bela, \masterLevel, p.master[\masterLevel]) };
 		//n.do{|item| item.sendMsg(\bela, \od, q[\od]) };
-		//n.do{|item| item.sendMsg(\bela, \output, q[\output]) };
+		*/
+
+		/*
+		p.master[\masterLevel] = inf.neg;
+		n.do{|item| item.sendMsg(\bela, \masterLevel, p.master[\masterLevel]) };
+		*/
+
 	});
 
 	~oscSetp.(\voicer, \slMaxPlaybackRate, \slMaxPlaybackRate);
@@ -323,7 +332,7 @@ if(~serverLogic, {
 		{if(~testRecSynth.isPlaying, {}, {
 			q.testRecPath = (~path+/+"rec/rec_"++Date.getDate.format("%Y-%m-%d_%H-%M-%S")++".wav").standardizePath;
 			q.testRecBuf.write(q.testRecPath, "WAV", "int24", 0, 0, true); // create file, leave open
-			~testRecSynth = Synth.new(\recorder, [\buf, q.testRecBuf.bufnum, \primaryBus, p.primary[\busnum]]).register; // record
+			~testRecSynth = Synth.new(\recorder, [\buf, q.testRecBuf.bufnum, \primaryBus, p.primary[\busnum]], addAction: \addToTail).register; // record
 			("Recording started ("++q.testRecPath++")").postln;
 		};);},
 		{
