@@ -14,7 +14,7 @@
 		82, // ouch! 
 		83, // litter bin bouncing
 	],
-	
+
 ];
 
 ~experimentOrder.postln;

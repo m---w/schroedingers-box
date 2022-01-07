@@ -21,7 +21,7 @@ fork{
 
 	//load latin square
 	//update it when sounds are completed
-	~experimentOrder =
+	/*~experimentOrder =
 	// -------- start -----------
 	[
 		[ 9, 6, 3, 8, 7, 1, 0, 5, 2, 4 ],
@@ -36,7 +36,36 @@ fork{
 		[ 1, 3, 5, 9, 8, 0, 6, 2, 4, 7 ]
 	]
 	// -------- end -----------
-	;
+		;*/
+
+
+	// presets selected for the presentation
+	~experimentOrder =
+	// -------- start -----------
+	[
+		[
+			46, // aluminum can overtones
+			// 2, //metallic
+			10, // breaking glass 
+			6, // cat
+			5, // squeaky toy
+			33, // chaotic drop
+			34, // water	
+			82, // ouch! 
+			83, // litter bin bouncing
+		],	
+	];
+
+	~experimentOrder.postln;
+
+// metal: 1, 46
+// funny: 5, 82
+// outcome demonstration: 10, 83
+// secondary demonstration: 6
+// cool: 33, 34, 26
+
+// selection of simple metallic sounds:
+// 1, 2, 3, 26, 36, 42, 47, 61, 62, 63 
 
 
 	//MIDIdef
@@ -56,15 +85,17 @@ fork{
 				//if sample = -1 make it 0 and load it
 				if(~sample == (-1)){~sample = 0};
 				("sample number: "++next).postln;
-				n.sendMsg('/sound/preset', next);
+				o.sendMsg('/preset', next);
 
 				e[\preset] = next;
 				{~gui.upd;}.defer;
 				~sample = ~sample + 1;
+				~sample = ~sample.wrap(0, 7);
 			};
 		};
 
 	}, 16);
 
 	"Big red button initialised".postln;
-}
+	
+};
