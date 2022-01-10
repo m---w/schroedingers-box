@@ -8,7 +8,7 @@ e = (); // create empty dictionary
 e.presetName = "not initialized";
 
 // TBOD
-e.tbThreshDB = 155.0.neg; // TBOD threshold in dB
+e.tbThreshDB = 120.0.neg;//155.0.neg; // TBOD threshold in dB
 e.tbThreshLoDB = 180.0.neg; // TBOD lower threshold in dB
 e.tbRefPeriod = 0.05;// specifies a minimum gap (in seconds) between subsequent onset detections
 e.tbLpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
@@ -31,8 +31,8 @@ e.velDelay = 0.0009; // delay between TBOD trigger and reporting of velocity. Ve
 e.defaultVel = 0.05; // default velocity
 e.velUpdateLag = 0.0002; // lag time for velocity update smoothing
 e.velMapInMin = 0.001; // mapping between amplitude and velocity: inMin
-e.velMapInMax = 0.1; // mapping between amplitude and velocity: inMax
-e.velMapOutMin = 0.2; // mapping between amplitude and velocity: outMin
+e.velMapInMax = 485.0e-3;//0.1; // mapping between amplitude and velocity: inMax
+e.velMapOutMin = 0.3; // mapping between amplitude and velocity: outMin
 e.velMapOutMax = 1.0; // mapping between amplitude and velocity: outMax
 //e.velMapCurve = 4.0.neg; // mapping between amplitude and velocity: curve
 e.velEnvDur = 0.04; // release time of velocity-controlled high-shelf
@@ -56,11 +56,11 @@ e.hpfPrimary = 20;
 // Master
 e.primaryMasterDB = 0.0; // primary level in dB
 e.secondaryMasterDB = 0.0; // secondary level in dB
-e.outcomeMasterDB = 0.0; // outcome level in dB
-e.masterHPF = 20.0; // master HPF cutoff in Hz
-e.masterLPF = 20000.0; // master LPF cutoff in Hz
+e.outcomeMasterDB = 5.0.neg; // outcome level in dB
+e.masterHPF = 146.0; // master HPF cutoff in Hz
+e.masterLPF = 6900.0; // master LPF cutoff in Hz
 e.eq = 1; // output equalization
-e.masterLevel = inf.neg; // Master level in dB
+e.masterLevel = 14.0; // Master level in dB
 
 // Experiment
 e.participantID = 0; // participant ID
