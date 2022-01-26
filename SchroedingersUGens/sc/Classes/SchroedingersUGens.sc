@@ -18,4 +18,9 @@ Lop : Filter {
 	}
 }
 
+Teager : Filter {
+	*ar { arg in;
+		^( Delay1.ar(in).squared - (in*Delay2.ar(in)) );
+	}
+}
 
