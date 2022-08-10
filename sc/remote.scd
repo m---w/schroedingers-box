@@ -2,10 +2,12 @@
 Schroedinger's Box
 Remote Control
 SuperCollider Patch
-2021 Jason Svoronos-Kanavas, Marian Weger
+2022 Marian Weger, Jason Svoronos-Kanavas
 */
-// Ⓢⓒⓗⓡⓞⓔⓓⓘⓝⓖⓔⓡⓢ Ⓑⓞⓧ
 
+
+// Check which operating system we are, and then check if Bela is reachable.
+// If Bela unreachable, set to local mode and use local SC server instead of Bela.
 (
 Platform.case(
     \osx, {
@@ -27,7 +29,7 @@ if(~localMode, {
 });
 
 
-Window.closeAll;
+Window.closeAll; // close all open GUI windows
 
 
 // OSC receiver to get messages from Bela
@@ -148,7 +150,7 @@ OSCFunc({|msg, time|
 
 	// convert to dictionary, to address them by name
 	var sliderDictTBOD = ().putPairs([sliderListTBOD.flop.last,sliderListTBOD].flop.flatten);
-	//var sliderDictFBOD = ().putPairs([sliderListFBOD.flop.last,sliderListFBOD].flop.flatten);
+	//var sliderDictFBOD = ().putPairs([sliderListFBOD.flop.last,sliderListFBOD].flop.flatten); // FBOD currently deactivated
 	var sliderDictVelocity = ().putPairs([sliderListVelocity.flop.last,sliderListVelocity].flop.flatten);
 	var sliderDictPresetParams = ().putPairs([sliderListPresetParams.flop.last,sliderListPresetParams].flop.flatten);
 	var sliderDictMaster = ().putPairs([sliderListMaster.flop.last,sliderListMaster].flop.flatten);
