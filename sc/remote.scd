@@ -62,8 +62,8 @@ OSCFunc({|msg, time|
 		[-180, 0.0, \lin, 1.0, "dB", "TBOD threshold", 1.0, \tbThreshDB],
 		[-180, 0.0, \lin, 1.0, "dB", "TBOD lower threshold", 1.0, \tbThreshLoDB],
 		[80.0, 8000.0, \exp, 1.0, "Hz", "HPF Cutoff", 1.0, \tbHpfFreq],
-		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 1 Cutoff", 1.0, \tbLpf1Freq],
-		[1.0, 120.0, \exp, 1.0, "Hz", "LPF 2 Cutoff", 1.0, \tbLpf2Freq],
+		[1.0, 10000.0, \exp, 1.0, "Hz", "LPF 1 Cutoff", 1.0, \tbLpf1Freq],
+		[1.0, 10000.0, \exp, 1.0, "Hz", "LPF 2 Cutoff", 1.0, \tbLpf2Freq],
 		[0.1, 500.0, \exp, 1.0, "ms", "TBOD Refractory Period", 1.0e-3, \tbRefPeriod],
 		// [0.0, 32.0, \lin, 1.0, "FFT frames", "False Alarm Cancellation delay", 1.0, \cancelDel],
 	];

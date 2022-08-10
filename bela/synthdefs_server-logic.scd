@@ -7,32 +7,43 @@ SynthDef(\primaryVoice,{
 	voiceID = 0,
 	primaryCtlBus = 0,
 	gateBus = 0,
+	updateBus = 0,
 	busnum = 0,
+	velTrigBus = 0,
 	//velEnvDur = 0.005,
 	//velPeakLevel = 20.0,
 	//velPeakMapZeroDB = 3.0.neg,
 	//eqGain = 4.0,
 	//eqRQ = 0.1,
-	level = inf.neg;
+	level = 0.0;
 
-	var ctl, gate, amplitude, sig, env, out, rate, bufnum;
+	var ctl, gate, sig, env, out, rate, bufnum, update, velTrig, amplitude;
+	// var amplitude
 	//var eqFreq1, eqFreq2,
 	//var velPeakDB, velEnv;
 
 	// inputs: voice parameters and voice gate
 	//ctl = In.ar(primaryCtlBus, 4); // receive voice parameters [bufnum, rate, eqFreq1, eqFreq2]
-	ctl = In.ar(primaryCtlBus, 2); // receive voice parameters [bufnum, rate, eqFreq1, eqFreq2]
+	ctl = In.ar(primaryCtlBus, 3); // receive voice parameters [bufnum, rate, vel]
+	update = In.ar(updateBus+voiceID, 1); // receive update gate of this ID
 	gate = In.ar(gateBus+voiceID, 1); // receive voice gate of this ID
+	velTrig = In.ar(velTrigBus, 1);
+
+	// velTrig = DelayN.ar(update, 0.05, velDelay); // after TBOD trigger, wait for specified delay time, then trigger velocity
+
 
 	// sample the voice parameters
-	amplitude = Latch.ar(gate, gate); // sample&hold for velocity amplitude
+	// amplitude = Latch.ar(gate, gate); // sample&hold for velocity amplitude
+	// amplitude = (ctl[2]*update) + ((update.neg+1.0)*Latch.ar(ctl[2], velTrig*update)); // velocity amplitude
+	amplitude = Gate.ar(ctl[2], Trig.ar(update, 0.0009));
 	bufnum = Latch.ar(ctl[0], gate); // sample&hold for bufnum
 	rate = Latch.ar(ctl[1], gate); // sample&hold for rate
 	//eqFreq1 = Latch.ar(ctl[2], gate);
 	//eqFreq2 = Latch.ar(ctl[3], gate);
 
 	// sample playback
-	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 0); // play sample
+	// sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 0); // play sample
+	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate, trigger: gate, doneAction: 0); // play sample
 
 	// position-dependent filtering
 	//sig = BPeakEQ.ar(sig, freq: eqFreq1, rq: eqRQ, db: eqGain);
@@ -47,8 +58,8 @@ SynthDef(\primaryVoice,{
 	*/
 
 	// release envelope, velocity, and level
-	env = Amplitude.ar(gate, attackTime: 0.0, releaseTime: 0.010); // envelope with instant attack and smooth release
-	out = sig * amplitude * env * level.dbamp; // apply velocity amplitude, envelope, and master level
+	env = Amplitude.ar(gate*amplitude, attackTime: 0.0, releaseTime: 0.1, mul: level); // envelope with instant attack and smooth release, apply master level
+	out = sig * env; // apply velocity amplitude, envelope
 
 	// mute first few ms of creation
 	//out = out * EnvGen.kr(Env([0,0,1], [0.2, 0.05]), doneAction: 0);
@@ -64,16 +75,16 @@ SynthDef(\outcome,{
 
 	arg
 	busnum = 0,
-	gate = 1.0,
 	vel = 0.0,
 	bufnum = 0,
-	level = inf.neg,
-	rate = 1.0;
+	// rate = 1.0,
+	level = 0.0;
+
 
 	var sig, comb;
 
-	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: 1, trigger: gate, doneAction: 2); // play sample
-	sig = vel * sig * level.dbamp; // apply velocity and master level
+	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: 1.0, trigger: 1.0, doneAction: 2); // play sample
+	sig = (vel * level) * sig; // apply velocity and master level
 	Out.ar(busnum, sig); // play to bus
 
 }).add;
@@ -85,15 +96,16 @@ SynthDef(\secondary, {
 	arg
 	busnum = 0,
 	bufnum = 0,
-	level = inf.neg,
-	rate = 1.0,
-	upperCutoff = 500;
+	// rate = 1.0,
+	// upperCutoff = 500,
+	level = 0.0;
+
 
 	var sig;
 
-	sig = PlayBuf.ar(1, bufnum, rate: 1, trigger: 1.0, doneAction: 2); // play sample
-	sig = LPF.ar(sig, upperCutoff); // low-pass filter to simulate damping through box
-	sig = sig * level.dbamp; // apply amplitude
+	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: 1.0, trigger: 1.0, doneAction: 2); // play sample
+	// sig = LPF.ar(sig, upperCutoff); // low-pass filter to simulate damping through box
+	sig = sig * level; // apply amplitude
 	Out.ar(busnum, sig);
 
 }).add;
@@ -111,27 +123,30 @@ SynthDef(\master, {
 	outcomeLevel = 0.0,
 	lpf = 20000.0,
 	hpf = 80.0,
-	irbufnum = 0,
-	partConvFFTSize = 128,
-	eq = 1,
+	// irbufnum = 0,
+	// partConvFFTSize = 128,
+	// eq = 1,
 	masterLevel = inf.neg,
 	hpfPrimary = 20;
 
-	var primary, secondary, outcome, master, out;
+	var primary, secondary, outcome, out;
+	// var master;
 
-	primary = Hip.ar(In.ar(primaryBus, numChannels: 1), hpfPrimary) * primaryLevel.dbamp; // read primary bus and apply level
-	secondary = In.ar(secondaryBus, numChannels: 1) * secondaryLevel.dbamp; // read secondary bus and apply level
-	outcome = In.ar(outcomeBus, numChannels: 1) * outcomeLevel.dbamp; // read outcome bus and apply level
+	primary = Hip48.ar(In.ar(primaryBus, numChannels: 1), hpfPrimary) * primaryLevel; // read primary bus and apply level
+	secondary = In.ar(secondaryBus, numChannels: 1) * secondaryLevel; // read secondary bus and apply level
+	outcome = In.ar(outcomeBus, numChannels: 1) * outcomeLevel; // read outcome bus and apply level
 
-	master = primary + secondary + outcome; // just sum all sounds together
+	// master = primary + secondary + outcome; // just sum all sounds together
 
 	// Equalization with inverse filter
-	out = (eq * PartConv.ar(master, fftsize: partConvFFTSize, irbufnum: irbufnum)) + ((1.0-eq) * master); // Partitioned convolution with impulse response of equalization filter, with bypass switch
+	// out = (eq * PartConv.ar(master, fftsize: partConvFFTSize, irbufnum: irbufnum)) + ((1.0-eq) * master); // Partitioned convolution with impulse response of equalization filter, with bypass switch
+
+	out = primary + secondary + outcome; // just sum all sounds together
 
 	// mute first few ms of creation
 	//out = out * EnvGen.kr(Env([0,0,1], [0.2, 0.05]), doneAction: 0);
 
-	out = LPF.ar(HPF.ar(out*masterLevel.dbamp, hpf), lpf).tanh; // output filtering and protection
+	out = Lop48.ar(HPF.ar(out*masterLevel, hpf), lpf).tanh; // output filtering and protection
 	Out.ar(0, out!4); // write same signal to all output channels
 
 }).add;
@@ -141,6 +156,7 @@ SynthDef(\master, {
 SynthDef(\od, {
 	arg
 	onsetBus = 0,
+	velTrigBus = 0,
 	tbThreshDB = 0.0,
 	tbThreshLoDB = 0.0,
 	//fbThreshDB = 0.0,
@@ -148,12 +164,13 @@ SynthDef(\od, {
 	//fbFloorDB = -20.0,
 	//fbMingap = 22,
 	//fbMedianspan = 22,
-	velDelay = 0.006,
+	velDelay = 0.0009,
 	tbRefPeriod = 0.03,
 	tbLpf1Freq = 25.0,
 	tbLpf2Freq = 25.0,
 	tbHpfFreq = 4000.0,
 	//cancelDel = 1.0,
+	inchannels = #[0,1,2,3],
 	inGain1 = 0.0,
 	inGain2 = 0.0,
 	inGain3 = 0.0,
@@ -165,28 +182,31 @@ SynthDef(\od, {
 	velMapOutMax = 1.0;
 
 
-	var sigRaw, sig, sighpf, energies, lpf1, derivative, lpf2, tsub, tbTrig, velTrig, energy, sigRawSum, tbVel, tbVels, sigRawAbss, pos, vel;
+	var sigRaw, sig, sighpf, energies, lpf1, derivative, lpf2, tsub, tbTrig, velTrig, energy, tbVel, tbVels, sigRawAbss, pos, vel;
 	// var chain, fbTrigKR, fbTrigAR;
-	var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
-	var nfft = 256; // FFT size in samples
-	var frameDur = (nfft/SampleRate.ir)*1.1; // duration of one fft frame in seconds, plus safety of 10 percent. 5.4ms at 48kHz and 256samp fft size.
+	// var sampleDur = 1.1/SampleRate.ir; // duration of one audio sample, plus 10 percent safety
+	// var nfft = 256; // FFT size in samples
+	// var frameDur = (nfft/SampleRate.ir)*1.1; // duration of one fft frame in seconds, plus safety of 10 percent. 5.4ms at 48kHz and 256samp fft size.
 
-	sigRaw = SoundIn.ar([0,1,2,3]) * [inGain1, inGain2, inGain3, inGain4].dbamp; // input channels, high-pass filtered
-	sigRawSum = sigRaw.sum; // mono mix version
+	sigRaw = SoundIn.ar(inchannels) * [inGain1, inGain2, inGain3, inGain4]; // input channels
+	// sigRawSum = sigRaw.sum; // mono mix version
 
-	sigRawAbss = HPF.ar(sigRaw, 1500.0).abs; // smoothed signal energy
+	sigRawAbss = HPF.ar(sigRaw, 1500.0).abs; // velocity signal
 
 
 	//=== TBOD ===
-	sighpf = Hip.ar(sigRaw, tbHpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
-	energies = sighpf.squared; // Squaring (get signal energy)
+	sighpf = Hip48.ar(sigRaw, tbHpfFreq); // Highpass Filter. Turchet2018: 4000 for conga, 7500 for bongo/djembe/cajon
+	// energies = sighpf.squared; // Squaring (get signal energy)
+	energies = Teager.ar(sighpf); // Teager Operator = signal energy
 	energy = energies.sum; // add up all energies
-	lpf1 = Lop.ar(energy, tbLpf1Freq); // Smoothing 1. Turchet2018: 25
+	lpf1 = Lop48.ar(energy, tbLpf1Freq); // Smoothing 1. Turchet2018: 25
 	derivative = Slope.ar(lpf1); // 1st derivative = slope
-	lpf2 = Lop.ar(energy, tbLpf2Freq); // Smoothing 2. Turchet2018: 25
+	lpf2 = Lop48.ar(derivative, tbLpf2Freq); // Smoothing 2. Turchet2018: 25
 	// tsub = (0.01 * lpf1 - lpf2).max(0); // trend subtraction (inspired from Coyote)
-	tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
-	tbTrig = Trig.ar(Schmidt.ar(tsub, tbThreshLoDB.dbamp, tbThreshDB.dbamp), tbRefPeriod); // thresholding with high and low threshold
+	//tsub = lpf2 - Median.ar(64, lpf2); // trend subtraction (inspired from Turchet2018: length 65 samples)
+	// tsub = energy - lpf1;
+	// tsub = energy - Median.ar(64, lpf1);
+	tbTrig = Trig.ar(Schmidt.ar(lpf2, tbThreshLoDB, tbThreshDB), tbRefPeriod); // thresholding with high and low threshold
 	//tbTrig = Trig.ar((tsub-tbThreshDB.dbamp).sign.max(0), tbRefPeriod); // simple thresholding, including a refractory period to prevent re-triggering within the given time
 	//SendTrig.ar(tbTrig, id: 1, value: 0.0); // send TBOD trigger to language. ID 1 means TBOD. Value is first guess for velocity.
 
@@ -221,11 +241,12 @@ SynthDef(\od, {
 	//  bottom right: 1
 	// guess source position from level differences (i.e., from amplitude ratios)
 	/*pos = [
-		// right vs. left
-		Clip.ar(LinLin.ar([velsDB[3]-velsDB[2], velsDB[1]-velsDB[0]], srclo: slMinRatioDB, srchi: slMaxRatioDB, dstlo: -1.0, dsthi: 1.0), lo: -1.0, hi: 1.0).mean,
-		// top vs. bottom
-		Clip.ar(LinLin.ar([velsDB[2]-velsDB[0], velsDB[3]-velsDB[1]], srclo: slMinRatioDB, srchi: slMaxRatioDB, dstlo: -1.0, dsthi: 1.0), lo: -1.0, hi: 1.0).mean
+	// right vs. left
+	Clip.ar(LinLin.ar([velsDB[3]-velsDB[2], velsDB[1]-velsDB[0]], srclo: slMinRatioDB, srchi: slMaxRatioDB, dstlo: -1.0, dsthi: 1.0), lo: -1.0, hi: 1.0).mean,
+	// top vs. bottom
+	Clip.ar(LinLin.ar([velsDB[2]-velsDB[0], velsDB[3]-velsDB[1]], srclo: slMinRatioDB, srchi: slMaxRatioDB, dstlo: -1.0, dsthi: 1.0), lo: -1.0, hi: 1.0).mean
 	];*/
+
 	pos = ((0.5*[
 		// right vs. left
 		((tbVels[3]+tbVels[1])/(tbVels[2]+tbVels[0])),
@@ -234,7 +255,10 @@ SynthDef(\od, {
 	]).ampdb/slMaxRatioDB).clip2(1.0);
 
 	// Send Onset Trigger to Onset Bus
-	Out.ar(onsetBus, velTrig*Latch.ar([vel, pos[0], pos[1]], velTrig));
+	// Out.ar(onsetBus, velTrig*Latch.ar([vel, pos[0], pos[1]], velTrig));
+	Out.ar(onsetBus, [tbTrig, vel, pos[0], pos[1]]);
+
+	Out.ar(velTrigBus, velTrig);
 
 }).add;
 
@@ -276,11 +300,17 @@ SynthDef(\testOnset, {
 	arg
 	vel = 0.0,
 	onsetBus = 0,
+	velTrigBus = 0,
+	velDelay = 0.0009,
 	testOnsetPosX = 0.0,
 	testOnsetPosY = 0.0;
 
-	var gate = EnvGen.ar(Env.step([0.0, vel, 0.0],[0.0, 0.05, 0.0]), doneAction: 2);
-	Out.ar(onsetBus, [gate, DC.ar(testOnsetPosX), DC.ar(testOnsetPosY)]);
+	var gate = EnvGen.ar(Env.step([0.0, 1.0, 0.0],[0.0, 0.05, 0.0]), doneAction: 2);
+	ReplaceOut.ar(onsetBus, [gate, DC.ar(vel), DC.ar(testOnsetPosX), DC.ar(testOnsetPosY)]);
+	Out.ar(velTrigBus, DelayN.ar(gate, 0.05, velDelay));
+
+	SendTrig.ar(gate, id: 1, value: vel); // send velocity value to language.
+
 }).add;
 
 

@@ -5,6 +5,7 @@
 SynthDef(\voicer, {
 	arg
 	onsetBus = 0,
+	updateBus = 0,
 	primaryCtlBus = 0,
 	gateBus = 0,
 	//eqMinFreq = 1000.0,
@@ -13,17 +14,18 @@ SynthDef(\voicer, {
 
 	var
 	bufnums = ~soundBufnums,
-	voices = ~voices,
+	//maxVoice = ~voices-1.0,
 	//slMaxPlaybackRateR = slMaxPlaybackRate.reciprocal,
-	onset, gate, pos, bufnum, nextVoice, rate;
+	onset, gate, pos, bufnum, nextVoice, rate, currentVoice, vel;
 	//var eqFreqs;
 
-	// get onset trigger and position [gate/vel, posx, posy]
-	onset = In.ar(onsetBus, numChannels: 3);
+	// get onset trigger and position [gate, vel, posx, posy]
+	onset = In.ar(onsetBus, numChannels: 4);
 
 	// shortcuts for gate and pos
-	pos = onset[1..2]; // position [x,y] (between -1 and 1)
+	pos = onset[2..3]; // position [x,y] (between -1 and 1)
 	gate = onset[0]; // gate and velocity signal
+	vel = onset[1];
 	// pos = DC.ar(0.0)!2; // pos simulator
 	// gate = LFPulse.ar(freq: 0.5, width: 0.5, mul: 0.01); // trigger simulator
 
@@ -38,12 +40,20 @@ SynthDef(\voicer, {
 
 	// Write voice parameters: [bufnum, rate, eqFreq1, eqFreq2]
 	//Out.ar(primaryCtlBus, [bufnum, rate, eqFreqs[0], eqFreqs[1]]); // write parameters
-	Out.ar(primaryCtlBus, [bufnum, rate]); // write parameters
+	Out.ar(primaryCtlBus, [bufnum, rate, vel]); // write parameters
 
 	// Voice-allocation Logic / Gate logic
-	nextVoice = Stepper.ar(gate, 0, min: gateBus, max: gateBus+voices-1); // next voice index
-	Out.ar(gateBus, Latch.ar(gate, gate)!voices); // set all gates to the velocity
-	ReplaceOut.ar(nextVoice, DC.ar(0.0)); // set gate of next voice to 0 (trigger release)
+	currentVoice = Stepper.ar(gate, 0, min: 0, max: ~voices-1); // current voice index
+	nextVoice = (currentVoice+1).mod(~voices); // next voice index (to be released)
+	// nextVoice = Wrap.ar(currentVoice, min: 0.0, max: maxVoice);//Wrap.ar((currentVoice), lo: 0, hi: maxVoice);
+
+	Out.ar(gateBus, DC.ar(1.0)!~voices); // All gates are 1 by default
+	ReplaceOut.ar(gateBus+nextVoice, DC.ar(0.0)); // set gate of next voice to 0 (trigger release)
+
+	// Out.ar(updateBus, DC.ar(0.0)!~voices); // set all update busses to zero
+	// ReplaceOut.ar(updateBus+currentVoice, DC.ar(1.0)); // set current update bus
+	Out.ar(updateBus, DC.ar(0.0)!~voices); // All gates are 1 by default
+	ReplaceOut.ar(updateBus+currentVoice, DC.ar(1.0)); // update bus: only current voice is set to 1
 
 }).add;
 

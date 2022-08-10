@@ -2,12 +2,22 @@
 
 
 // OSC Receiver function for synth parameters
-~oscSetp = { |dict, key, addr, printflag=true|
+~oscSetp = { |dict, key, addr, printflag=true, conversion=\none|
 	OSCFunc({|msg, time|
 		var val = msg[1];
 		if(printflag, {
 			("OSC incoming:"+addr+val).postln;
 		});
+
+		switch(conversion,
+			\dbamp, {
+				val = val.dbamp;
+			},
+			\ampdb, {
+				val = val.ampdb;
+			}
+		);
+
 		p[dict][key] = val; // update value in dictionary
 
 		// update the corresponding synth
@@ -59,8 +69,8 @@
 
 
 // receive OSC from GUI: create receivers
-~oscSetp.(\od, \tbThreshDB, \tbThreshDB);
-~oscSetp.(\od, \tbThreshLoDB, \tbThreshLoDB);
+~oscSetp.(\od, \tbThreshDB, \tbThreshDB, conversion: \dbamp);
+~oscSetp.(\od, \tbThreshLoDB, \tbThreshLoDB, conversion: \dbamp);
 //~oscSetOD.(\fbThreshDB);
 //~oscSetOD.(\fbRelaxtime);
 //~oscSetOD.(\fbFloorDB);
@@ -72,10 +82,10 @@
 ~oscSetp.(\od, \tbLpf2Freq, \tbLpf2Freq);
 ~oscSetp.(\od, \tbHpfFreq, \tbHpfFreq);
 //~oscSetOD.(\cancelDel);
-~oscSetp.(\od, \inGain1, \inGain1);
-~oscSetp.(\od, \inGain2, \inGain2);
-~oscSetp.(\od, \inGain3, \inGain3);
-~oscSetp.(\od, \inGain4, \inGain4);
+~oscSetp.(\od, \inGain1, \inGain1, conversion: \dbamp);
+~oscSetp.(\od, \inGain2, \inGain2, conversion: \dbamp);
+~oscSetp.(\od, \inGain3, \inGain3, conversion: \dbamp);
+~oscSetp.(\od, \inGain4, \inGain4, conversion: \dbamp);
 
 
 
@@ -147,25 +157,25 @@ if(~serverLogic, {
 // ~oscSetp.(\primary, \velUpdateLag, \velUpdateLag);
 ~oscSetp.(\primary, \eqGain, \eqGain);
 ~oscSetp.(\primary, \eqRQ, \eqRQ);
-~oscSetp.(\primary, \level, \primaryDB);
+~oscSetp.(\primary, \level, \primaryDB, conversion: \dbamp);
 ~oscSetp.(\primary, \velEnvDur, \velEnvDur);
 ~oscSetp.(\master, \hpfPrimary, \hpfPrimary);
 
 // Secondary Sound
 ~oscSetp.(\secondary, \upperCutoff, \secondaryCutoff);
-~oscSetp.(\secondary, \level, \secondaryDB);
+~oscSetp.(\secondary, \level, \secondaryDB, conversion: \dbamp);
 
 // Outcome Sound
-~oscSetp.(\outcome, \level, \outcomeDB);
+~oscSetp.(\outcome, \level, \outcomeDB, conversion: \dbamp);
 
 // Master
-~oscSetp.(\master, \primaryLevel, \primaryMasterDB);
-~oscSetp.(\master, \secondaryLevel, \secondaryMasterDB);
-~oscSetp.(\master, \outcomeLevel, \outcomeMasterDB);
+~oscSetp.(\master, \primaryLevel, \primaryMasterDB, conversion: \dbamp);
+~oscSetp.(\master, \secondaryLevel, \secondaryMasterDB, conversion: \dbamp);
+~oscSetp.(\master, \outcomeLevel, \outcomeMasterDB, conversion: \dbamp);
 ~oscSetp.(\master, \lpf, \masterLPF);
 ~oscSetp.(\master, \hpf, \masterHPF);
 ~oscSetp.(\master, \eq, \eq);
-~oscSetp.(\master, \masterLevel, \masterLevel);
+~oscSetp.(\master, \masterLevel, \masterLevel, conversion: \dbamp);
 
 // Test Tone Generator
 ~oscSetpTT = {|key| ~oscSetp.(\tt, key, key)}; // shortcut function
@@ -210,6 +220,8 @@ if(~serverLogic, {
 	});
 });
 
+
+
 if(~serverLogic, {
 	// Server Logic
 
@@ -252,7 +264,7 @@ if(~serverLogic, {
 	});
 
 	~oscSetFunc.(\triggerOnset, {|val, addr|
-		x[\testOnset] = Synth.before(x[\voicer], \testOnset, [\vel, q[\testOnsetVel], \onsetBus, ~onsetBus.index, \testOnsetPosX, q[\testOnsetPosX], \testOnsetPosY, q[\testOnsetPosY]]).register;
+		x[\testOnset] = Synth.before(x[\voicer], \testOnset, [\vel, q[\testOnsetVel], \onsetBus, ~onsetBus.index, \testOnsetPosX, q[\testOnsetPosX], \testOnsetPosY, q[\testOnsetPosY], \velDelay, p.od[\velDelay], \velTrigBus, p.od[\velTrigBus]]).register;
 		~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 	});
 
@@ -261,7 +273,7 @@ if(~serverLogic, {
 		if(val==1, {
 			Tdef(\outOnset, { loop{
 				q[\testOnsetFreq].reciprocal.wait;
-				x[\testOnset] = Synth.before(x[\voicer], \testOnset, [\vel, q[\testOnsetVel], \onsetBus, ~onsetBus.index, \testOnsetPosX, q[\testOnsetPosX], \testOnsetPosY, q[\testOnsetPosY]]).register;
+				x[\testOnset] = Synth.before(x[\voicer], \testOnset, [\vel, q[\testOnsetVel], \onsetBus, ~onsetBus.index, \testOnsetPosX, q[\testOnsetPosX], \testOnsetPosY, q[\testOnsetPosY], \velDelay, p.od[\velDelay], \velTrigBus, p.od[\velTrigBus]]).register;
 				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 			}}).play;
 		},{
@@ -327,20 +339,30 @@ if(~serverLogic, {
 
 
 ~oscSetFunc.(\record, {|val, addr|
-	if(
-		val==1,
-		{if(~testRecSynth.isPlaying, {}, {
-			q.testRecPath = (~path+/+"rec/rec_"++Date.getDate.format("%Y-%m-%d_%H-%M-%S")++".wav").standardizePath;
-			q.testRecBuf.write(q.testRecPath, "WAV", "int24", 0, 0, true); // create file, leave open
-			~testRecSynth = Synth.new(\recorder, [\buf, q.testRecBuf.bufnum, \primaryBus, p.primary[\busnum]], addAction: \addToTail).register; // record
-			("Recording started ("++q.testRecPath++")").postln;
-		};);},
-		{
-			~testRecSynth.free;
-			q.testRecBuf.close;
-			("Recording stopped ("++q.testRecPath++")").postln;
-		}
-	);
+
+	fork{
+		if(
+			val==1,
+			{if(~testRecSynth.isPlaying, {}, {
+				q.testRecPath = (~path+/+"rec/rec_"++Date.getDate.format("%Y-%m-%d_%H-%M-%S")++".wav").standardizePath;
+				q.testRecBuf = Buffer.alloc(s, 960000, 5); // allocate a disk i/o buffer (20*48000 = 20s)
+				s.sync;
+				q.testRecBuf.write(q.testRecPath, "WAV", "int24", 0, 0, true); // create file, leave open
+				s.sync;
+				~testRecSynth = Synth.new(\recorder, [\buf, q.testRecBuf.bufnum, \primaryBus, p.primary[\busnum]], addAction: \addToTail).register; // record
+				s.sync;
+				("Recording started ("++q.testRecPath++")").postln;
+			};);},
+			{
+				~testRecSynth.free;
+				if(q.testRecBuf.notNil, {
+					q.testRecBuf.close;
+				});
+				s.sync;
+				("Recording stopped ("++q.testRecPath++")").postln;
+			}
+		);
+	};
 });
 
 /*

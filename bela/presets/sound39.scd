@@ -1,14 +1,14 @@
-~sound39var1 = Buffer.readChannel(s, ~path+/+"./sounds/match_var01.wav", channels:0);
-~sound39var2 = Buffer.readChannel(s, ~path+/+"./sounds/match_var02.wav", channels:0);
-~sound39var3 = Buffer.readChannel(s, ~path+/+"./sounds/match_var03.wav", channels:0);
+~sound39var1 = Buffer.readChannel(s, ~path+/+"./sounds_preprocessed/match_var01.wav", channels: 0);
+~sound39var2 = Buffer.readChannel(s, ~path+/+"./sounds_preprocessed/match_var02.wav", channels: 0);
+~sound39var3 = Buffer.readChannel(s, ~path+/+"./sounds_preprocessed/match_var03.wav", channels: 0);
 
 //happens only once??
-~soundonce = Buffer.readChannel(s, ~path+/+"./sounds/match_light.wav", channels:0);
+~soundonce = Buffer.readChannel(s, ~path+/+"./sounds_preprocessed/match_light.wav", channels: 0);
 
-~soundoutcomevar1 = Buffer.read(s, ~path+/+"./sounds/match-light_var01.wav");
-~soundoutcomevar2 = Buffer.read(s, ~path+/+"./sounds/match-light_var02.wav");
-~soundoutcomevar3 = Buffer.read(s, ~path+/+"./sounds/match-light_var03.wav");
-~soundoutcomevar4 = Buffer.read(s, ~path+/+"./sounds/match-light_var04.wav");
+~soundoutcomevar1 = Buffer.read(s, ~path+/+"./sounds_preprocessed/match-light_var01.wav");
+~soundoutcomevar2 = Buffer.read(s, ~path+/+"./sounds_preprocessed/match-light_var02.wav");
+~soundoutcomevar3 = Buffer.read(s, ~path+/+"./sounds_preprocessed/match-light_var03.wav");
+~soundoutcomevar4 = Buffer.read(s, ~path+/+"./sounds_preprocessed/match-light_var04.wav");
 
 ~sound = [~sound39var1, ~sound39var2, ~sound39var3];
 

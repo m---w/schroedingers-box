@@ -8,11 +8,11 @@ e = (); // create empty dictionary
 e.presetName = "not initialized";
 
 // TBOD
-e.tbThreshDB = 120.0.neg;//155.0.neg; // TBOD threshold in dB
+e.tbThreshDB = 65.0.neg; // 120.0.neg;//155.0.neg; // TBOD threshold in dB
 e.tbThreshLoDB = 180.0.neg; // TBOD lower threshold in dB
 e.tbRefPeriod = 0.05;// specifies a minimum gap (in seconds) between subsequent onset detections
-e.tbLpf1Freq = 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
-e.tbLpf2Freq = 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
+e.tbLpf1Freq = 1000.0; // 25.0; // frequency of 1st low-pass filter in Hz (TBOD)
+e.tbLpf2Freq = 1000.0; // 25.0; // frequency of 2nd low-pass filter in Hz (TBOD)
 e.tbHpfFreq = 4000.0; // frequency of high-pass filter in Hz  (TBOD)
 e.cancelDel = 1.0; // Delay between TBOD trigger and cancel message, in FFT frames.
 
@@ -30,9 +30,9 @@ e.fbMedianspan = 22; // specifies the size (in FFT frames) of the median window 
 e.velDelay = 0.0009; // delay between TBOD trigger and reporting of velocity. Velocity will be the maximum in this time period.
 e.defaultVel = 0.05; // default velocity
 e.velUpdateLag = 0.0002; // lag time for velocity update smoothing
-e.velMapInMin = 0.001; // mapping between amplitude and velocity: inMin
-e.velMapInMax = 485.0e-3;//0.1; // mapping between amplitude and velocity: inMax
-e.velMapOutMin = 0.3; // mapping between amplitude and velocity: outMin
+e.velMapInMin = 5e-3; // 0.001; // mapping between amplitude and velocity: inMin
+e.velMapInMax = 100e-3; // 485.0e-3;//0.1; // mapping between amplitude and velocity: inMax
+e.velMapOutMin = 0.05; // 0.3; // mapping between amplitude and velocity: outMin
 e.velMapOutMax = 1.0; // mapping between amplitude and velocity: outMax
 //e.velMapCurve = 4.0.neg; // mapping between amplitude and velocity: curve
 e.velEnvDur = 0.04; // release time of velocity-controlled high-shelf
