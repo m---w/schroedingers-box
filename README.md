@@ -6,9 +6,9 @@ Source repository of the Schrödinger's box auditory augmentation platform.
 
 Related publications
 --------------------
-'''
-Marian Weger, Iason Svoronos-Kanavas, Robert Höldrich. "Schrödinger's box: an artifact to study the limits of plausibility in auditory augmentations". 2022. ACM. Audio Mostly, St. Pölten, Austria.
-'''
+
+    Marian Weger, Iason Svoronos-Kanavas, Robert Höldrich. "Schrödinger's box: an artifact to study the limits of plausibility in auditory augmentations". 2022. ACM. Audio Mostly, St. Pölten, Austria.
+
 
 
 Copyright/License
