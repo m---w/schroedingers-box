@@ -65,12 +65,15 @@ q = (); // other parameters
 ~debugSourcePos = false; // debug printing for sound localization
 ~debugSound = false; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
-~maxVoices = 2; // maximum number of allocated voices
+~maxVoices = 3; // maximum number of allocated voices
 ~minVoices = 2; // minimum number of allocated voices (2 is basically one voice, but with smooth fadeout)
 ~presetIsReady = true; // flag to say if a preset can be loaded
+
+// Init variables that are unique to server or sclang logic
 if(~serverLogic, {
-	//
+	// server logic variables
 }, {
+	// sclang logic variables
 	~globalvels = 0.0!4; // init global velocities
 	~globalvel = 0.0; // init velocity
 	~sourcePos = 0.0!2; // init source position
@@ -79,7 +82,7 @@ if(~serverLogic, {
 
 
 // scan for presets
-q[\presetIDs] = Array.new(1000); // Warning: hard-coded fixed size!
+q[\presetIDs] = Array.new(1000); // Warning: hard-coded fixed size 1000, should be enough for all time!
 PathName.new((~path+/+"presets").standardizePath).files.do{ |item|
 	var path = item;
 	var filename = item.fileNameWithoutExtension;
@@ -109,7 +112,7 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	// load default settings (these may be defined in the preset)
 	~addsound = false; // secondary sound on/off
 	~outcome = false; // outcome sound on/off
-	~voices = 2; // number of simultaneous voices (polyphony)
+	~voices = 3; // number of simultaneous voices (polyphony)
 	~ampfactor = 0.0; // primary sound level
 	~ampfactorcat = inf.neg; // secondary sound level
 	~ampfactoroutcome = inf.neg; // outcome sound level
@@ -149,14 +152,16 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 
 	// measurement mode
 	if(~measurement, {
-		p.od[\inchannels] = [0,0,2,3]; // no 2nd channel for measurement
+		p.od[\inchannels] = [0,0,2,3]; // 2nd channel (ch. 1) is used for measurement and thus deactivated for onset detection
 	},{
 		p.od[\inchannels] = [0,1,2,3]; // normal
 	});
 
+
+	// START SIGNAL PROCESSING (either server-side or sclang logic)
 	if(~serverLogic, { // server logic
 
-		// Workaround against noise bursts
+		// Workaround against noise bursts on preset change
 		/*
 		s.sync;
 		~sound.do{|item|
@@ -179,9 +184,13 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		// start onset detection
 		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 
+		1.wait;
+
 		// re-load voicer SynthDef (found no other way to set number of voices dynamically)
 		(~path+/+"voicer.scd").standardizePath.load;
 		s.sync;
+
+		1.wait;
 
 		// mute all outputs
 		//~tempLevel = p[\primary][\level];
@@ -192,9 +201,13 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		// create new voicer and voices
 		x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
 		s.sync;
+
+		1.wait;
+
 		x[\primary] = ~voices.collect{|i| Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register};
 		s.sync;
 
+		1.wait;
 
 		// start master
 		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
@@ -205,7 +218,7 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		//s.freeAll;
 		//s.sync;
 
-		/*
+
 
 		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
@@ -219,7 +232,7 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 		v.stealer = \preferLate; // set voice stealing algorithm
 
-		*/
+
 	});
 
 	// init master
@@ -279,11 +292,90 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 
 /*===================== SOUND TRIGGERING =====================*/
 
+
+// Same for both versions
+
+/*--------------- Same for both versions: Randomization, mapping functions, yield and secondary sound ----------------*/
+
+~chooseAddSound = {
+	// set new sample ID (random from array, but not same as previous)
+	~lastAddSoundID = ~addSoundIndArray[~addSoundIndArray.rejectIndices({|i| i==~lastAddSoundID})].choose;
+};
+
+
+// random playback rate
+~randRate = {
+	exprand(q[\secondaryPlaybackRand], q[\secondaryPlaybackRand].reciprocal); // random playback rate on exponential scale
+	// if playbackRand is 2.0, then rate will be random between 0.5 and 2.0.
+};
+
+/*
+// random comb filtering
+~randCombFreq = {
+	exprand(q[\combFiltMaxFreq], q[\combFiltMinFreq]); // random frequency on exponential scale between min and max
+};
+*/
+
+
+// random delay for starting secondary sound
+~randAddDelay = {
+	rrand(q[\secondaryMinDel], q[\secondaryMaxDel]);
+};
+
+
+// Secondary sound
+~maybeNewSecondarySound = {
+	if(x[\secondary].isPlaying.not && ~addsound && ~secondaryPossible){
+		~onsetCounter = ~onsetCounter + 1; // increment onset counter
+
+		// Random decision (tune inMin and inMax to set minimum and maximum number of hits for 0% and 100% chance, respectively)
+		if( ~onsetCounter.lincurve(inMin: q[\secondaryMinCount], inMax: q[\secondaryMaxCount], outMin: 0.0, outMax: 1.0, curve: q[\secondaryCountCurve], clip: \minmax).coin ) {
+			// Trigger new secondary sound
+			p.secondary[\bufnum] = ~soundcat_sum[~chooseAddSound.()];
+			p.secondary[\rate] = ~randRate.();
+			~secondaryPossible = false; // block secondary sound triggers until the synth has started
+			fork{
+				~randAddDelay.().wait;
+				x[\secondary] = Synth.new(\secondary, p.secondary.asKeyValuePairs, addAction: \addToHead).register;
+				if(~debugSound, {
+					"Secondary sound started.".postln;
+				});
+				~secondaryPossible = true; // don't block anymore. Synth is already playing.
+			};
+			~onsetCounter = 1; // reset onset counter to 1 (so that there is already some small chance to directly trigger secondary sound again next time
+		};
+
+	};
+};
+
+
+
+// Yield sound
+~maybeTriggerOutcome = {
+	if(~outcome&&~outcomePossible){
+		if(p.primary[\vel]>q[\breakingThreshold]){
+			// 1. Release all primary sounds (only necessary for sclang logic, but does no harm for server logic
+			//v.set([\gate, 0], lat: nil); // deactivated: primary will continue during yield
+			// 2. Trigger new yield sound
+			p.outcome[\vel] = p.primary[\vel]; // set outcome velocity equal to primary velocity
+			p.outcome[\bufnum] = ~soundcat_sum[~chooseAddSound.()]; // choose random sample
+			p.outcome[\rate] = ~randRate.(); // choose random playback rate
+			x[\outcome] = Synth.new(\outcome, p.outcome.asKeyValuePairs, addAction: \addToHead); // create synth
+			// ~outcomePossible = false; // outcome not possible anymore // WARNING: outcome is always possible!
+		};
+	};
+};
+
+
+
+/*--------------- Load either server or sclang logic ----------------*/
+
 if(~serverLogic, {
-	(~path+/+"triggerLogic_server-logic.scd").standardizePath.load; // load trigger logic
+	(~path+/+"triggerLogic_server-logic.scd").standardizePath.load; // load server-side trigger logic
 }, {
-	(~path+/+"triggerLogic_sclang-logic.scd").standardizePath.load; // load trigger logic
+	(~path+/+"triggerLogic_sclang-logic.scd").standardizePath.load; // load language-side trigger logic
 });
+
 
 /*===================== WAIT FOR SERVER =====================*/
 

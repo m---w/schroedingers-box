@@ -1,60 +1,14 @@
 "Loading Trigger Logic (sclang-logic) ... ".post;
 
 
-/*===================== RANDOMIZATION AND MAPPING FUNCTIONS =====================*/
+/*===================== Primary Sound =====================*/
 
 ~chooseSound = {
 	// set new sample ID (random from array, but not same as previous)
 	~lastSoundID = ~soundIndArray[~soundIndArray.rejectIndices({|i| i==~lastSoundID})].choose;
 };
 
-~chooseAddSound = {
-	// set new sample ID (random from array, but not same as previous)
-	~lastAddSoundID = ~addSoundIndArray[~addSoundIndArray.rejectIndices({|i| i==~lastAddSoundID})].choose;
-};
 
-
-~randRate = {
-	exprand(q[\playbackRand], q[\playbackRand].reciprocal); // random playback rate on exponential scale
-	// if playbackRand is 2.0, then rate will be random between 0.5 and 2.0.
-};
-
-
-/*
-~randCombFreq = {
-	exprand(q[\combFiltMaxFreq], q[\combFiltMinFreq]); // random frequency on exponential scale between min and max
-};
-*/
-
-~randAddDelay = {
-	rrand(q[\secondaryMinDel], q[\secondaryMaxDel]);
-};
-
-
-// Secondary sound
-~maybeNewSecondarySound = {
-	if(x[\secondary].isPlaying.not && ~addsound && ~secondaryPossible){
-		~onsetCounter = ~onsetCounter + 1; // increment onset counter
-
-		// Random decision (tune inMin and inMax to set minimum and maximum number of hits for 0% and 100% chance, respectively)
-		if( ~onsetCounter.lincurve(inMin: q[\secondaryMinCount], inMax: q[\secondaryMaxCount], outMin: 0.0, outMax: 1.0, curve: q[\secondaryCountCurve], clip: \minmax).coin ) {
-			// Trigger new secondary sound
-			p.secondary[\bufnum] = ~soundcat_sum[~chooseAddSound.()];
-			p.secondary[\rate] = ~randRate.();
-			~secondaryPossible = false; // block secondary sound triggers until the synth has started
-			fork{
-				~randAddDelay.().wait;
-				x[\secondary] = Synth.new(\secondary, p.secondary.asKeyValuePairs, addAction: \addToHead).register;
-				if(~debugSound, {
-					"Secondary sound started.".postln;
-				});
-				~secondaryPossible = true; // don't block anymore. Synth is already playing.
-			};
-			~onsetCounter = 1; // reset onset counter to 1 (so that there is already some small chance to directly trigger secondary sound again next time
-		};
-
-	};
-};
 
 // Primary sound
 ~newPrimarySound = {
@@ -69,6 +23,8 @@
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
 };
 
+
+/*
 // Primary sound TEST
 ~newPrimarySoundTest = {
 	// set parameters
@@ -87,13 +43,14 @@
 	// Break glass
 	~maybeTriggerOutcome.();
 };
+*/
 
 
-
-
+/*
 ~posToRate = {|sourcePos|
 	sourcePos.sum.linexp(inMin: -2.0, inMax: 2.0, outMin: q[\slMinPlaybackRate], outMax: q[\slMaxPlaybackRate], clip: \minmax); // map position to playback speed
 };
+*/
 
 /*
 ~posToCombFreq = {|sourcePos|
@@ -101,9 +58,11 @@
 };
 */
 
+/*
 ~posToEQFreq = {|sourcePos|
 	sourcePos.linexp(inMin: -1.0, inMax: 1.0, outMin: q[\eqMinFreq], outMax: q[\eqMaxFreq], clip: \minmax); // map position to filter frequency
 };
+*/
 
 
 ~updateSourcePos = {
@@ -141,20 +100,6 @@
 
 
 
-~maybeTriggerOutcome = {
-	if(~outcome&&~outcomePossible){
-		if(p.primary[\vel]>q[\breakingThreshold]){
-			// 1. Release all primary sounds
-			v.set([\gate, 0], lat: nil);
-			// 2. Trigger new breaking sound
-			p.outcome[\vel] = p.primary[\vel]; // set outcome velocity equal to primary velocity
-			p.outcome[\bufnum] = ~soundcat_sum[~chooseAddSound.()]; // choose random sample
-			p.outcome[\rate] = ~randRate.(); // choose random playback rate
-			x[\outcome] = Synth.new(\outcome, p.outcome.asKeyValuePairs, addAction: \addToHead); // create synth
-			// ~outcomePossible = false; // outcome not possible anymore // WARNING: outcome is always possible!
-		};
-	};
-};
 
 ~mapVel = {
 	p.primary[\vel] = ~globalvel.expexp(q[\velMapInMin], q[\velMapInMax], q[\velMapOutMin], q[\velMapOutMax], clip: \minmax);
