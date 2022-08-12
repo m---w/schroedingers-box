@@ -441,6 +441,8 @@ s.waitForBoot{{
 
 	/*===================== SYNTHDEFS =====================*/
 
+	(~path+/+"synthdefs_common.scd").standardizePath.load; // load common synth defs
+
 	if(~serverLogic, {
 		(~path+/+"synthdefs_server-logic.scd").standardizePath.load; // load synth defs
 	}, {
