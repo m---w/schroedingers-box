@@ -198,7 +198,7 @@ if(~serverLogic, {
 
 
 ~oscSetFunc = { |addr, func, printflag=true|
-	OSCFdef(addr, {|msg, time|
+	OSCdef(addr, {|msg, time|
 		var val = msg[1];
 		if(printflag, {
 			("OSC incoming:"+addr+val).postln;

@@ -28,9 +28,10 @@ SynthDef(\secondary, {
 	arg
 	busnum = 0,
 	bufnum = 0,
-	level = 0.0,
 	// rate = 1.0,
-	// upperCutoff = 500;
+	// upperCutoff = 500,
+	level = 0.0;
+
 
 	var sig;
 

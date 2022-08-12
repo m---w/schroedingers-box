@@ -10,7 +10,7 @@ s = Server.local;
 ~hostname = "hostname".unixCmdGetStdOut.replace("\n","").asSymbol; // get system hostname
 ~path = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
 
-~serverLogic = false; // server-logic (fast) or sclang-logic (slow)
+~serverLogic = true; // server-logic (fast) or sclang-logic (slow)
 
 
 // Set up options
@@ -106,8 +106,12 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	//x[\tt].free;
 	//x[\secondary].free;
 	//x[\outcome].free;
-	s.freeAll;
+	s.freeAll; // free everything on server
+	Buffer.freeAll(s); // free all buffers on the server
 	s.sync;
+
+	// "free done.".postln;
+	// 1.wait;
 
 	// load default settings (these may be defined in the preset)
 	~addsound = false; // secondary sound on/off
@@ -119,15 +123,17 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	~outcomePossible = true; // outcome didn't happen yet?
 	~secondaryCutoff = 20000.0; // cutoff for secondary sound
 	~onsetCounter = 0; // onset counter (for triggering secondary sound)
-	~sound.do{|item| item.free }; // free buffers of primary sounds
-	~soundcat_sum.do{|item| item.free }; // free buffers of secondary sounds
-	~dummybuffer.free;
+	// ~sound.do{|item| item.free }; // free buffers of primary sounds
+	// ~soundcat_sum.do{|item| item.free }; // free buffers of secondary sounds
+	// ~dummybuffer.free;
 	~dummybuffer = Buffer.alloc(s, 32, bufnum: 0);
 	~secondaryMaxCount = 6; // secondary max count
 	~hpfPrimary = 20.0; // default value for highpass filter of primary sound
 	~sound = [~dummybuffer, ~dummybuffer];
 	~soundcat_sum = [~dummybuffer, ~dummybuffer];
 	~presetName = "---";
+
+
 
 	// Load preset
 	if(q[\presetIDs].includes(~preset)){
@@ -157,6 +163,9 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		p.od[\inchannels] = [0,1,2,3]; // normal
 	});
 
+	// "init done.".postln;
+	// 1.wait;
+
 
 	// START SIGNAL PROCESSING (either server-side or sclang logic)
 	if(~serverLogic, { // server logic
@@ -184,11 +193,19 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		// start onset detection
 		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 
+		// "od started.".postln;
+		// 1.wait;
+
+
+
+
 		// 1.wait;
 
 		// re-load voicer SynthDef (found no other way to set number of voices dynamically)
 		(~path+/+"voicer.scd").standardizePath.load;
 		s.sync;
+
+
 
 		// 1.wait;
 
@@ -202,16 +219,31 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
 		s.sync;
 
+		// "voicer started.".postln;
 		// 1.wait;
+		// 1.wait;
+
+
+
+
+
+
 
 		x[\primary] = ~voices.collect{|i| Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register};
 		s.sync;
 
+		// "primary voices started.".postln;
 		// 1.wait;
+		// 1.wait;
+
+
 
 		// start master
 		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
 		s.sync;
+
+		// "master started.".postln;
+
 
 	}, { // SCLang logic
 

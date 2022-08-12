@@ -29,6 +29,11 @@ SynthDef(\primaryVoice,{
 	gate = In.ar(gateBus+voiceID, 1); // receive voice gate of this ID
 	velTrig = In.ar(velTrigBus, 1);
 
+	gate = gate * (voiceID.min(2).mod(2) - 1 + PulseCount.kr(trig: A2K.kr(gate,0.01,0.01))).min(1); // don't trigger first time if voiceID is not 1 (workaround against trigger on preset change)
+
+	// update = update * ((voiceID.min(2).mod(2) - 1) + PulseCount.ar(trig: gate)).min(1.0); // don't trigger first time if voiceID=0 (workaround against trigger on preset change)
+
+	// ~voices
 	// velTrig = DelayN.ar(update, 0.05, velDelay); // after TBOD trigger, wait for specified delay time, then trigger velocity
 
 
@@ -40,6 +45,7 @@ SynthDef(\primaryVoice,{
 	rate = Latch.ar(ctl[1], gate); // sample&hold for rate
 	//eqFreq1 = Latch.ar(ctl[2], gate);
 	//eqFreq2 = Latch.ar(ctl[3], gate);
+
 
 	// sample playback
 	// sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate*BufRateScale.kr(bufnum), trigger: gate, doneAction: 0); // play sample
@@ -58,9 +64,9 @@ SynthDef(\primaryVoice,{
 	*/
 
 	// release envelope, velocity, and level
-	env = (level * amplitude) * EnvGen.ar(Env.cutoff(releaseTime: 0.1, level: 1.0, curve: 'lin'), gate: gate); // envelope with instant attack and smooth release, apply master level
-	// env = Amplitude.ar(gate*amplitude, attackTime: 0.0, releaseTime: 0.1); // envelope with instant attack and smooth release
-	out = sig * env; // apply velocity amplitude, envelope
+	// env = amplitude * EnvGen.ar(Env.cutoff(releaseTime: 0.1, level: 1.0, curve: 'lin'), gate: gate); // envelope with instant attack and smooth release
+	env = Amplitude.ar(gate*amplitude, attackTime: 0.0, releaseTime: 0.1); // envelope with instant attack and smooth release
+	out = sig * env * level; // apply velocity amplitude, envelope, apply master level
 
 	// mute first few ms of creation
 	//out = out * EnvGen.kr(Env([0,0,1], [0.2, 0.05]), doneAction: 0);
