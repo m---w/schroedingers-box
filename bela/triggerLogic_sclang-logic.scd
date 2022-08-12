@@ -120,7 +120,7 @@
 
 
 // ONSET DETECTION
-~oscReceiverOD = OSCFunc({ |msg, time|
+OSCdef(\triggerLogic, { |msg, time|
 	var id = msg[2];
 	var val = msg[3];
 

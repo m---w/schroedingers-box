@@ -3,7 +3,7 @@
 
 // OSC Receiver function for synth parameters
 ~oscSetp = { |dict, key, addr, printflag=true, conversion=\none|
-	OSCFunc({|msg, time|
+	OSCdef(addr, {|msg, time|
 		var val = msg[1];
 		if(printflag, {
 			("OSC incoming:"+addr+val).postln;
@@ -69,8 +69,8 @@
 
 
 // receive OSC from GUI: create receivers
-~oscSetp.(\od, \tbThreshDB, \tbThreshDB, conversion: \dbamp);
-~oscSetp.(\od, \tbThreshLoDB, \tbThreshLoDB, conversion: \dbamp);
+~oscSetp.(\od, \tbThresh, \tbThreshDB, conversion: \dbamp);
+~oscSetp.(\od, \tbThreshLo, \tbThreshLoDB, conversion: \dbamp);
 //~oscSetOD.(\fbThreshDB);
 //~oscSetOD.(\fbRelaxtime);
 //~oscSetOD.(\fbFloorDB);
@@ -95,7 +95,7 @@
 
 // OSC receiver function for global parameters
 ~oscSetq = { |addr, printflag=true|
-	OSCFunc({|msg, time|
+	OSCdef(addr, {|msg, time|
 		var val = msg[1];
 		if(printflag, {
 			("OSC incoming:"+addr+val).postln;
@@ -198,7 +198,7 @@ if(~serverLogic, {
 
 
 ~oscSetFunc = { |addr, func, printflag=true|
-	OSCFunc({|msg, time|
+	OSCFdef(addr, {|msg, time|
 		var val = msg[1];
 		if(printflag, {
 			("OSC incoming:"+addr+val).postln;
@@ -315,7 +315,8 @@ if(~serverLogic, {
 	});
 
 	~oscSetFunc.(\triggerOnset, {|val, addr|
-		~lastvoice = ~newPrimarySoundTest.(); // trigger new primary sound
+		~lastvoice = ~newPrimarySound.(); // trigger new primary sound
+		~maybeTriggerOutcome.(); // maybe trigger breaking sound
 		~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 	});
 

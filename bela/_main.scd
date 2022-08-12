@@ -10,7 +10,7 @@ s = Server.local;
 ~hostname = "hostname".unixCmdGetStdOut.replace("\n","").asSymbol; // get system hostname
 ~path = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
 
-~serverLogic = true; // server-logic (fast) or sclang-logic (slow)
+~serverLogic = false; // server-logic (fast) or sclang-logic (slow)
 
 
 // Set up options
@@ -138,7 +138,7 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		~presetName = "invalid";
 	};
 
-	// fix number of voices
+	// clip number of voices
 	~voices = ~voices.max(~minVoices).min(~maxVoices); // clip number of voices
 
 	// init primary sound
@@ -184,13 +184,13 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		// start onset detection
 		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 
-		1.wait;
+		// 1.wait;
 
 		// re-load voicer SynthDef (found no other way to set number of voices dynamically)
 		(~path+/+"voicer.scd").standardizePath.load;
 		s.sync;
 
-		1.wait;
+		// 1.wait;
 
 		// mute all outputs
 		//~tempLevel = p[\primary][\level];
@@ -202,12 +202,12 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
 		s.sync;
 
-		1.wait;
+		// 1.wait;
 
 		x[\primary] = ~voices.collect{|i| Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register};
 		s.sync;
 
-		1.wait;
+		// 1.wait;
 
 		// start master
 		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
