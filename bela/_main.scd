@@ -9,6 +9,22 @@
 s = Server.local;
 ~hostname = "hostname".unixCmdGetStdOut.replace("\n","").asSymbol; // get system hostname
 ~path = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
+~wavpath = ~path+/+"sounds_preprocessed"; // path to wav files. Change "preprocessed" to "raw" for using raw wavs.
+
+
+// function to read wav files into buffers
+~fillSamples = {|filenames,channels=0|
+	filenames.asArray.collect{|item,i|
+		Buffer.readChannel(s, ~wavpath+/+item++".wav", channels: channels)
+	};
+};
+~fillNSamples = {|filename,nSamples,digits=2,startIndex=1,channels=0|
+	nSamples.collect{|i|
+		Buffer.readChannel(s, ~wavpath+/+filename++(i+startIndex).asPaddedString(digits)++".wav", channels: channels)
+	};
+};
+
+
 
 ~serverLogic = true; // server-logic (fast) or sclang-logic (slow)
 
