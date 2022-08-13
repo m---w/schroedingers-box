@@ -3,7 +3,7 @@
 % in order to save computing power on Bela
 % 2022 Marian Weger
 
-filenames = dir('../bela/sounds/*.wav'); % search for wav files in the sound folder
+filenames = dir('../bela/sounds_raw/*.wav'); % search for wav files in the sound folder
 Fs = 48000; % Sampling Rate of Bela
 
 % load impulse response
