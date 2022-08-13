@@ -19,7 +19,7 @@ OSCdef(\triggerLogic, { |msg, time|
 		if(id==1, {
 			// TBOD trigger new
 			p.primary[\vel] = val;
-			~maybeTriggerOutcome.(); // maybe trigger yield sound
+			~maybeTriggerYield.(); // maybe trigger yield sound
 			~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 			if(~debugOnsets, {
 				("TBOD: new onset. Vel:"+val).postln;

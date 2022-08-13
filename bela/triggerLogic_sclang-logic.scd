@@ -13,7 +13,7 @@
 // Primary sound
 ~newPrimarySound = {
 	// set parameters
-	p.primary[\bufnum] = ~sound[~chooseSound.()];
+	p.primary[\bufnum] = ~primaryBuffers[~chooseSound.()];
 	p.primary[\rate] = 1.0; // pitch is controlled by position
 	p.primary[\eqFreq1] = (q[\eqMinFreq]*q[\eqMaxFreq]).sqrt; // map position to filter frequency
 	p.primary[\eqFreq2] = p.primary[\eqFreq1]; // map position to filter frequency
@@ -30,7 +30,7 @@
 	// set parameters
 	p.primary[\vel] = q[\testOnsetVel];
 	~mapVelPeakLevel.();
-	p.primary[\bufnum] = ~sound[~chooseSound.()];
+	p.primary[\bufnum] = ~primaryBuffers[~chooseSound.()];
 	p.primary[\rate] = ~posToRate.([q[\testOnsetPosX],q[\testOnsetPosY]]); // map position to playback speed
 	/*
 	p.primary[\combFiltFreq1] = ~posToCombFreq.(q[\testOnsetPosX]); // map position to filter frequency
@@ -41,7 +41,7 @@
 	// play voice
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
 	// Break glass
-	~maybeTriggerOutcome.();
+	~maybeTriggerYield.();
 };
 */
 
@@ -146,7 +146,7 @@ OSCdef(\triggerLogic, { |msg, time|
 				~mapVel.();
 				~mapVelPeakLevel.();
 				~lastvoice = ~newPrimarySound.(); // trigger new primary sound
-				~maybeTriggerOutcome.(); // maybe trigger breaking sound
+				~maybeTriggerYield.(); // maybe trigger breaking sound
 				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 				if(~debugOnsets, {
 					("TBOD: new onset. Vel:"+val).postln;
@@ -166,7 +166,7 @@ OSCdef(\triggerLogic, { |msg, time|
 					~mapVel.();
 					~mapVelPeakLevel.();
 					~lastvoice = ~newPrimarySound.(); // trigger new primary sound
-					~maybeTriggerOutcome.(); // maybe trigger breaking sound
+					~maybeTriggerYield.(); // maybe trigger breaking sound
 					~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 					if(~debugOnsets, {
 						("FBOD: new onset").postln;

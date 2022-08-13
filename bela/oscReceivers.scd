@@ -34,9 +34,9 @@
 					x[\secondary].set(key, val);
 				});
 			},
-			\outcome, {
-				if(x[\outcome].isPlaying, {
-					x[\outcome].set(key, val);
+			\yield, {
+				if(x[\yield].isPlaying, {
+					x[\yield].set(key, val);
 				});
 			},
 			\master, {
@@ -165,13 +165,13 @@ if(~serverLogic, {
 ~oscSetp.(\secondary, \upperCutoff, \secondaryCutoff);
 ~oscSetp.(\secondary, \level, \secondaryDB, conversion: \dbamp);
 
-// Outcome Sound
-~oscSetp.(\outcome, \level, \outcomeDB, conversion: \dbamp);
+// Yield Sound
+~oscSetp.(\yield, \level, \yieldDB, conversion: \dbamp);
 
 // Master
 ~oscSetp.(\master, \primaryLevel, \primaryMasterDB, conversion: \dbamp);
 ~oscSetp.(\master, \secondaryLevel, \secondaryMasterDB, conversion: \dbamp);
-~oscSetp.(\master, \outcomeLevel, \outcomeMasterDB, conversion: \dbamp);
+~oscSetp.(\master, \yieldLevel, \yieldMasterDB, conversion: \dbamp);
 ~oscSetp.(\master, \lpf, \masterLPF);
 ~oscSetp.(\master, \hpf, \masterHPF);
 ~oscSetp.(\master, \eq, \eq);
@@ -234,7 +234,7 @@ if(~serverLogic, {
 		//x[\master].free;
 		x[\tt].free;
 		x[\secondary].free;
-		x[\outcome].free;
+		x[\yield].free;
 		x[\voicer].free;
 		x[\primary].do{|item| item.free};
 		// x[\od].free;
@@ -292,7 +292,7 @@ if(~serverLogic, {
 		//x[\master].free;
 		x[\tt].free;
 		x[\secondary].free;
-		x[\outcome].free;
+		x[\yield].free;
 		// x[\od].free;
 		// set master level to zero
 		p.master[\masterLevel] = inf.neg;
@@ -316,7 +316,7 @@ if(~serverLogic, {
 
 	~oscSetFunc.(\triggerOnset, {|val, addr|
 		~lastvoice = ~newPrimarySound.(); // trigger new primary sound
-		~maybeTriggerOutcome.(); // maybe trigger breaking sound
+		~maybeTriggerYield.(); // maybe trigger breaking sound
 		~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 	});
 

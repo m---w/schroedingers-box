@@ -2,7 +2,7 @@
 
 
 // YIELD SOUND
-SynthDef(\outcome,{
+SynthDef(\yield,{
 
 	arg
 	busnum = 0,
@@ -50,10 +50,10 @@ SynthDef(\master, {
 	arg
 	primaryBus = 0,
 	secondaryBus = 0,
-	outcomeBus = 0,
+	yieldBus = 0,
 	primaryLevel = 0.0,
 	secondaryLevel = 0.0,
-	outcomeLevel = 0.0,
+	yieldLevel = 0.0,
 	lpf = 20000.0,
 	hpf = 80.0,
 	// irbufnum = 0,
@@ -62,19 +62,19 @@ SynthDef(\master, {
 	masterLevel = 0.0,
 	hpfPrimary = 20;
 
-	var primary, secondary, outcome, out;
+	var primary, secondary, yield, out;
 	// var master;
 
 	primary = Hip48.ar(In.ar(primaryBus, numChannels: 1), hpfPrimary) * primaryLevel; // read primary bus and apply level
 	secondary = In.ar(secondaryBus, numChannels: 1) * secondaryLevel; // read secondary bus and apply level
-	outcome = In.ar(outcomeBus, numChannels: 1) * outcomeLevel; // read outcome bus and apply level
+	yield = In.ar(yieldBus, numChannels: 1) * yieldLevel; // read yield bus and apply level
 
-	// master = primary + secondary + outcome; // just sum all sounds together
+	// master = primary + secondary + yield; // just sum all sounds together
 
 	// Equalization with inverse filter
 	// out = (eq * PartConv.ar(master, fftsize: partConvFFTSize, irbufnum: irbufnum)) + ((1.0-eq) * master); // Partitioned convolution with impulse response of equalization filter, with bypass switch
 
-	out = primary + secondary + outcome; // just sum all sounds together
+	out = primary + secondary + yield; // just sum all sounds together
 
 	// mute first few ms of creation
 	//out = out * EnvGen.kr(Env([0,0,1], [0.2, 0.05]), doneAction: 0);
