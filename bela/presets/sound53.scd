@@ -3,6 +3,6 @@
 ~secondaryBuffers = ~fillNSamples.("nails-drop_var", 8);
 ~secondary = true;
 ~ampfactor = 7.5;
-~ampfactorcat = 0.0;
+~ampfactorSecondary = 0.0;
 ~combFilterDryWet = 1.0;
 ~secondaryMaxCount = 4;

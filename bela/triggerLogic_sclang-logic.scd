@@ -40,7 +40,7 @@
 	p.primary[\eqFreq2] = ~posToEQFreq.(q[\testOnsetPosY]); // map position to filter frequency
 	// play voice
 	v.trigger(freq: 1, gate: 1, args: p.primary.asKeyValuePairs, lat: nil);
-	// Break glass
+	// Yield
 	~maybeTriggerYield.();
 };
 */
@@ -146,7 +146,7 @@ OSCdef(\triggerLogic, { |msg, time|
 				~mapVel.();
 				~mapVelPeakLevel.();
 				~lastvoice = ~newPrimarySound.(); // trigger new primary sound
-				~maybeTriggerYield.(); // maybe trigger breaking sound
+				~maybeTriggerYield.(); // maybe trigger yield sound
 				~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 				if(~debugOnsets, {
 					("TBOD: new onset. Vel:"+val).postln;
@@ -166,7 +166,7 @@ OSCdef(\triggerLogic, { |msg, time|
 					~mapVel.();
 					~mapVelPeakLevel.();
 					~lastvoice = ~newPrimarySound.(); // trigger new primary sound
-					~maybeTriggerYield.(); // maybe trigger breaking sound
+					~maybeTriggerYield.(); // maybe trigger yield sound
 					~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 					if(~debugOnsets, {
 						("FBOD: new onset").postln;

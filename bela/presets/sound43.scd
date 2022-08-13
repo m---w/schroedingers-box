@@ -1,5 +1,5 @@
 ~presetName = "stapler | secondary: pin drop";
-~primaryBuffers = ~fillNSamples.("stapler-imp_var", 9) ++ ~fillSamples.("stapler-imp_var010");
+~primaryBuffers = ~fillNSamples.("stapler-imp_var", 9) ++ ~fillSamples.(["stapler-imp_var010"]);
 ~secondaryBuffers = ~fillNSamples.("stapler-pins-drop_var", 9);
 ~secondary = true;
 ~ampfactor = 4.5;

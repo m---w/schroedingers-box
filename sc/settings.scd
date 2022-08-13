@@ -47,7 +47,7 @@ e.inGain4 = -1.0; // input gain of Mic Channel 4
 // Preset Settings
 e.primaryDB = inf.neg; // primary level in dB
 e.secondaryDB = inf.neg; // secondary level in dB
-e.outcomeDB = inf.neg; // outcome level in dB
+e.yieldDB = inf.neg; // yield level in dB
 e.secondaryCutoff = 4000.0; // Cutoff frequency of LPF for secondary sound, in Hz
 e.eqGain = 12.0; // level for eq resonance filter, in dB
 e.eqRQ = 1.0; // reciprocal Q-factor of eq resonance filter
@@ -56,7 +56,7 @@ e.hpfPrimary = 20;
 // Master
 e.primaryMasterDB = 0.0; // primary level in dB
 e.secondaryMasterDB = 0.0; // secondary level in dB
-e.outcomeMasterDB = 5.0.neg; // outcome level in dB
+e.yieldMasterDB = 5.0.neg; // yield level in dB
 e.masterHPF = 146.0; // master HPF cutoff in Hz
 e.masterLPF = 6900.0; // master LPF cutoff in Hz
 e.eq = 1; // output equalization
@@ -96,8 +96,8 @@ e.testOnsetVel = 0.5;
 e.testOnsetFreq = 1.5;
 
 
-// Outcome sound
-e.breakingThreshold = 0.999; // threshold velocity for breaking
+// Yield sound
+e.yieldThreshold = 0.999; // threshold velocity for breaking
 
 // Secondary Sound
 e.secondaryMinDel = 0.5; // minimum start delay
@@ -105,7 +105,7 @@ e.secondaryMaxDel = 1.0; // maximum start delay
 e.secondaryMinCount = 1; // min onset count for secondary trigger
 e.secondaryMaxCount = 6; // max onset count for secondary trigger
 e.secondaryCountCurve = 3; // curve
-e.secondaryPlaybackRand = 0.05; // percent rate randomization
+e.rateRand = 0.05; // percent rate randomization
 
 
 "done.".postln;

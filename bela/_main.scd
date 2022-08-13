@@ -70,7 +70,7 @@ p.tt = (); // test tone parameters
 p.voicer = ();
 p.primary = (); // primary sound parameters
 p.secondary = (); // secondary sound parameters
-p.yield = (); // yield sound parameters
+p[\yield] = (); // yield sound parameters
 p.od = (); // onset detection parameters
 p.master = (); // master parameters
 q = (); // other parameters
@@ -81,7 +81,7 @@ q = (); // other parameters
 ~measurement = false; // toggle for measurement mode
 ~debugOnsets = false; // debug printing for onset detection
 ~debugSourcePos = false; // debug printing for sound localization
-~debugSound = false; // debug printing for sound triggering
+~debugSound = true; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
 ~maxVoices = 3; // maximum number of allocated voices
 ~minVoices = 2; // minimum number of allocated voices (2 is basically one voice, but with smooth fadeout)
@@ -300,25 +300,24 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	p.secondary[\level] = ~ampfactorSecondary.dbamp;
 	p.secondary[\upperCutoff] = ~secondaryCutoff;
 	p.secondary[\secondaryMaxCount] = ~secondaryMaxCount;
-	if(~addsound, {
-		~addSoundSize = ~secondaryBuffers.size; // number of secondary sounds in this preset
-		~addSoundIndArray = (0..(~addSoundSize-1)); // array of secondary sound indices
-		~lastAddSoundID = ~addSoundIndArray.choose; // choose a random start index
+	if(~secondary, {
+		~secondarySize = ~secondaryBuffers.size; // number of secondary sounds in this preset
+		~secondaryIndArray = (0..(~secondarySize-1)); // array of secondary sound indices
+		~lastSecondaryID = ~secondaryIndArray.choose; // choose a random start index
 	});
 
 	// init yield sound
-	p.yield[\level] = p.secondary[\level]; // TODO: separate level variable for yield in presets
-	// p.yield[\level] = ~ampfactorYield.dbamp;
+	p[\yield][\level] = ~ampfactorYield.dbamp;
 	if(~yield, {
-		~addSoundSize = ~yieldBuffers.size; // number of secondary sounds in this preset
-		~addSoundIndArray = (0..(~addSoundSize-1)); // array of secondary sound indices
-		~lastAddSoundID = ~addSoundIndArray.choose; // choose a random start index
+		~yieldSize = ~yieldBuffers.size; // number of yield sounds in this preset
+		~yieldIndArray = (0..(~yieldSize-1)); // array of yield sound indices
+		~lastYieldID = ~yieldIndArray.choose; // choose a random start index
 	});
 
 	// update remote GUI
 	n.do{|item| item.sendMsg(\bela, \primaryDB, p.primary[\level].ampdb) };
 	n.do{|item| item.sendMsg(\bela, \secondaryDB, p.secondary[\level].ampdb) };
-	n.do{|item| item.sendMsg(\bela, \yieldDB, p.yield[\level].ampdb) };
+	n.do{|item| item.sendMsg(\bela, \yieldDB, p[\yield][\level].ampdb) };
 	// n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
 	// n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
 	// n.do{|item| item.sendMsg(\bela, \eqDryWet, p.primary[\eqDryWet]) };
@@ -354,16 +353,29 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 
 /*--------------- Same for both versions: Randomization, mapping functions, yield and secondary sound ----------------*/
 
-~chooseAddSound = {
+~chooseSecondary = {
 	// set new sample ID (random from array, but not same as previous)
-	~lastAddSoundID = ~addSoundIndArray[~addSoundIndArray.rejectIndices({|i| i==~lastAddSoundID})].choose;
+	if(~secondaryIndArray.size>1, {
+		~lastSecondaryID = ~secondaryIndArray[~secondaryIndArray.rejectIndices({|i| i==~lastSecondaryID})].choose;
+	}, {
+		~lastSecondaryID;
+	});
+};
+
+~chooseYield = {
+	// set new sample ID (random from array, but not same as previous)
+	if(~yieldIndArray.size>1, {
+		~lastYieldID = ~yieldIndArray[~yieldIndArray.rejectIndices({|i| i==~lastYieldID})].choose;
+	}, {
+		~lastYieldID;
+	});
 };
 
 
-// random playback rate
+// random playback rate for yield and secondary
 ~randRate = {
-	exprand(q[\secondaryPlaybackRand], q[\secondaryPlaybackRand].reciprocal); // random playback rate on exponential scale
-	// if playbackRand is 2.0, then rate will be random between 0.5 and 2.0.
+	exprand(q[\rateRand], q[\rateRand].reciprocal); // random playback rate on exponential scale
+	// if rateRand is 2.0, then rate will be random between 0.5 and 2.0.
 };
 
 /*
@@ -375,24 +387,24 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 
 
 // random delay for starting secondary sound
-~randAddDelay = {
+~randSecondaryDelay = {
 	rrand(q[\secondaryMinDel], q[\secondaryMaxDel]);
 };
 
 
 // Secondary sound
 ~maybeNewSecondarySound = {
-	if(x[\secondary].isPlaying.not && ~addsound && ~secondaryPossible){
+	if(x[\secondary].isPlaying.not && ~secondary && ~secondaryPossible){
 		~onsetCounter = ~onsetCounter + 1; // increment onset counter
 
 		// Random decision (tune inMin and inMax to set minimum and maximum number of hits for 0% and 100% chance, respectively)
 		if( ~onsetCounter.lincurve(inMin: q[\secondaryMinCount], inMax: q[\secondaryMaxCount], outMin: 0.0, outMax: 1.0, curve: q[\secondaryCountCurve], clip: \minmax).coin ) {
 			// Trigger new secondary sound
-			p.secondary[\bufnum] = ~secondaryBuffers[~chooseAddSound.()];
+			p.secondary[\bufnum] = ~secondaryBuffers[~chooseSecondary.()];
 			p.secondary[\rate] = ~randRate.();
 			~secondaryPossible = false; // block secondary sound triggers until the synth has started
 			fork{
-				~randAddDelay.().wait;
+				~randSecondaryDelay.().wait;
 				x[\secondary] = Synth.new(\secondary, p.secondary.asKeyValuePairs, addAction: \addToHead).register;
 				if(~debugSound, {
 					"Secondary sound started.".postln;
@@ -410,14 +422,14 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 // Yield sound
 ~maybeTriggerYield = {
 	if(~yield&&~yieldPossible){
-		if(p.primary[\vel]>q[\breakingThreshold]){
+		if(p.primary[\vel]>q[\yieldThreshold]){
 			// 1. Release all primary sounds (only necessary for sclang logic, but does no harm for server logic
 			//v.set([\gate, 0], lat: nil); // deactivated: primary will continue during yield
 			// 2. Trigger new yield sound
-			p.yield[\vel] = p.primary[\vel]; // set yield velocity equal to primary velocity
-			p.yield[\bufnum] = ~yieldBuffers[~chooseAddSound.()]; // choose random sample
-			p.yield[\rate] = ~randRate.(); // choose random playback rate
-			x[\yield] = Synth.new(\yield, p.yield.asKeyValuePairs, addAction: \addToHead); // create synth
+			p[\yield][\vel] = p.primary[\vel]; // set yield velocity equal to primary velocity
+			p[\yield][\bufnum] = ~yieldBuffers[~chooseYield.()]; // choose random sample
+			p[\yield][\rate] = ~randRate.(); // choose random playback rate
+			x[\yield] = Synth.new(\yield, p[\yield].asKeyValuePairs, addAction: \addToHead); // create synth
 			// ~yieldPossible = false; // yield not possible anymore // WARNING: yield is always possible!
 		};
 	};
@@ -443,7 +455,7 @@ s.waitForBoot{{
 	// allocate busses
 	p.primary[\busnum] = Bus.audio(s, numChannels: 1);
 	p.secondary[\busnum] = Bus.audio(s, numChannels: 1);
-	p.yield[\busnum] = Bus.audio(s, numChannels: 1);
+	p[\yield][\busnum] = Bus.audio(s, numChannels: 1);
 
 	if(~serverLogic, {
 		// allocate busses
@@ -470,7 +482,7 @@ s.waitForBoot{{
 	// map also to master busses
 	p.master[\primaryBus] = p.primary[\busnum].index;
 	p.master[\secondaryBus] = p.secondary[\busnum].index;
-	p.master[\yieldBus] = p.yield[\busnum].index;
+	p.master[\yieldBus] = p[\yield][\busnum].index;
 
 	// allocate dummy buffer that will be used by default
 	~dummybuffer = Buffer.alloc(s, 32, bufnum: 0);

@@ -9,13 +9,13 @@ SynthDef(\yield,{
 	gate = 1.0,
 	vel = 0.0,
 	bufnum = 0,
-	// rate = 1.0,
+	rate = 1.0,
 	level = 0.0;
 
 
 	var sig;
 
-	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: 1.0, trigger: gate, doneAction: 2); // play sample
+	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate, trigger: gate, doneAction: 2); // play sample
 	sig = vel * sig * level; // apply velocity and master level
 	Out.ar(busnum, sig); // play to bus
 
@@ -28,14 +28,14 @@ SynthDef(\secondary, {
 	arg
 	busnum = 0,
 	bufnum = 0,
-	// rate = 1.0,
+	rate = 1.0,
 	// upperCutoff = 500,
 	level = 0.0;
 
 
 	var sig;
 
-	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: 1, trigger: 1.0, doneAction: 2); // play sample
+	sig = PlayBuf.ar(numChannels: 1, bufnum: bufnum, rate: rate, trigger: 1.0, doneAction: 2); // play sample
 	// sig = LPF.ar(sig, upperCutoff); // low-pass filter to simulate damping through box
 	sig = sig * level; // apply amplitude
 	Out.ar(busnum, sig);

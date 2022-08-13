@@ -3,3 +3,4 @@
 ~ampfactor = 4.5;
 ~combFilterDryWet = 1.0;
 ~hpfPrimary = 200.0;
+~voices = 1;

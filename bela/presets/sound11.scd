@@ -1,5 +1,5 @@
 ~presetName = "aluminium can, can opening";
-~primaryBuffers = ~fillNSamples.("can_var01", 6, digits: 2);
+~primaryBuffers = ~fillNSamples.("can_var", 6);
 ~voices = 1;
-~ampfactor = 1.neg;
+~ampfactor = 1.0.neg;
 ~combFilterDryWet = 1.0.neg;

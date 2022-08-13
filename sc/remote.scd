@@ -49,7 +49,7 @@ OSCFunc({|msg, time|
 ~remotePath = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
 
 (~remotePath+/+"settings.scd").standardizePath.load; // load parameter settings
-´
+
 
 // GUI function definition
 ~schroedingersGUI = {|n, e|
@@ -101,7 +101,7 @@ OSCFunc({|msg, time|
 	var sliderListPresetParams = [
 		[-60.0, 30.0, \lin, 0.1, "dB", "Primary sound level", 1.0, \primaryDB],
 		[-60.0, 30.0, \lin, 0.1, "dB", "Secondary sound level", 1.0, \secondaryDB],
-		[-60.0, 30.0, \lin, 0.1, "dB", "Outcome sound level", 1.0, \outcomeDB],
+		[-60.0, 30.0, \lin, 0.1, "dB", "Yield sound level", 1.0, \yieldDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Secondary Sound Upper Cutoff", 1.0, \secondaryCutoff],
 		[1e-3, 300.0, \lin, 1.0, "Hz", "HPF cutoff primary", 1.0, \hpfPrimary],
 		[1, 50, \lin, 1, "", "Secondary Max Count", 1.0, \secondaryMaxCount],
@@ -111,7 +111,7 @@ OSCFunc({|msg, time|
 	var sliderListMaster = [
 		[-60.0, 30.0, \lin, 1.0, "dB", "Global primary sound level", 1.0, \primaryMasterDB],
 		[-60.0, 30.0, \lin, 1.0, "dB", "Global secondary sound level", 1.0, \secondaryMasterDB],
-		[-60.0, 30.0, \lin, 1.0, "dB", "Global outcome sound level", 1.0, \outcomeMasterDB],
+		[-60.0, 30.0, \lin, 1.0, "dB", "Global yield sound level", 1.0, \yieldMasterDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Master HPF Cutoff", 1.0, \masterHPF],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Master LPF Cutoff", 1.0, \masterLPF],
 		[-60.0, 30.0, \lin, 1.0, "dB", "GLOBAL MASTER LEVEL", 1.0, \masterLevel],
@@ -136,8 +136,8 @@ OSCFunc({|msg, time|
 		[-20.0, 0.0, \lin, 0.1, "dB", "HF Boost Neutral Velocity", 1.0, \velPeakMapZeroDB],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Min Freq", 1.0, \eqMinFreq],
 		[20.0, 20000.0, \exp, 1.0, "Hz", "Source Pos: Peaking EQ Max Freq", 1.0, \eqMaxFreq],
-		[0.0, 10.0, \lin, 0.1, "%", "Secondary: Rate Randomization", 1.0e-2, \secondaryPlaybackRand],
-		[0.001, 1.0, \exp, 0.001, "", "Breaking/Outcome Threshold", 1.0, \breakingThreshold],
+		[0.0, 10.0, \lin, 0.1, "%", "Secondary/Yield rate randomization", 1.0e-2, \rateRand],
+		[0.001, 1.0, \exp, 0.001, "", "Yield Threshold", 1.0, \yieldThreshold],
 		[0.0, 5.0, \lin, 0.1, "s", "Secondary: Min Delay", 1.0, \secondaryMinDel],
 		[0.0, 5.0, \lin, 0.1, "s", "Secondary: Max Delay", 1.0, \secondaryMaxDel],
 		[0, 10, \lin, 1, "", "Secondary: Min Count", 1.0, \secondaryMinCount],

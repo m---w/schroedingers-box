@@ -104,8 +104,13 @@
 	}, addr);
 };
 
-~oscSetq.(\secondaryPlaybackRand);
-~oscSetq.(\breakingThreshold);
+OSCdef(\rateRand, {|msg, time|
+	var val = msg[1];
+	q[\rateRand] = val + 1.0;
+	("OSC incoming:"+\rateRand+q[\rateRand]).postln;
+}, \rateRand);
+
+~oscSetq.(\yieldThreshold);
 ~oscSetq.(\secondaryMinDel);
 ~oscSetq.(\secondaryMaxDel);
 ~oscSetq.(\secondaryMinCount);
@@ -316,7 +321,7 @@ if(~serverLogic, {
 
 	~oscSetFunc.(\triggerOnset, {|val, addr|
 		~lastvoice = ~newPrimarySound.(); // trigger new primary sound
-		~maybeTriggerYield.(); // maybe trigger breaking sound
+		~maybeTriggerYield.(); // maybe trigger yield sound
 		~maybeNewSecondarySound.(); // maybe trigger new secondary sound
 	});
 
