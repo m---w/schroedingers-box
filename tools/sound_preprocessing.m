@@ -1,7 +1,14 @@
 
-% Matlab script for pre-processing sound samples
+% Matlab/Octage script for pre-processing sound samples
 % in order to save computing power on Bela
 % 2022 Marian Weger
+%
+% In Octave, if you get the following error, then do what it says, then run the script again:
+%	error: 'resample' undefined near line 22, column 21
+%	The 'resample' function belongs to the signal package from Octave Forge
+%	which you have installed but not loaded.  To load the package, run 'pkg
+%	load signal' from the Octave prompt.
+%
 
 filenames = dir('../bela/sounds_raw/*.wav'); % search for wav files in the sound folder
 Fs = 48000; % Sampling Rate of Bela
