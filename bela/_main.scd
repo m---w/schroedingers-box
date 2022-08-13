@@ -1,7 +1,7 @@
 /*
 	Schroedinger's Box
 	Main SuperCollider Patch
-	2021 Jason Svoronos-Kanavas, Marian Weger
+	2021 Marian Weger, Iason Svoronos-Kanavas
 */
 
 /*===================== BELA SETUP =====================*/
@@ -14,11 +14,13 @@ s = Server.local;
 
 // function to read wav files into buffers
 ~fillSamples = {|filenames,channels=0|
-	filenames.asArray.collect{|item,i|
+	// note: "filenames" needs to be an array of basenames without ".wav" extension.
+	filenames.collect{|item,i|
 		Buffer.readChannel(s, ~wavpath+/+item++".wav", channels: channels)
 	};
 };
 ~fillNSamples = {|filename,nSamples,digits=2,startIndex=1,channels=0|
+	// note: "filename" needs to be a basenames without ".wav" extension and without numbering.
 	nSamples.collect{|i|
 		Buffer.readChannel(s, ~wavpath+/+filename++(i+startIndex).asPaddedString(digits)++".wav", channels: channels)
 	};
