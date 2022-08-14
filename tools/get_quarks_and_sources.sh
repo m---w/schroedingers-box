@@ -23,7 +23,7 @@ if [ ! -d "ddwGUIEnhancements" ] ; then
 fi
 
 if [ ! -d "crucial-library" ] ; then
-    git clone https://github.com/supercollider-quarks/crucial-library.git
+    git clone https://github.com/crucialfelix/crucial-library.git
 fi
 
 
