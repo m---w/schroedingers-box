@@ -19,7 +19,7 @@ SynthDef(\yield,{
 	sig = vel * sig * level; // apply velocity and master level
 	Out.ar(busnum, sig); // play to bus
 
-}).add;
+}).send(s);
 
 
 // SECONDARY SOUND
@@ -40,7 +40,7 @@ SynthDef(\secondary, {
 	sig = sig * level; // apply amplitude
 	Out.ar(busnum, sig);
 
-}).add;
+}).send(s);
 
 
 
@@ -82,7 +82,7 @@ SynthDef(\master, {
 	out = Lop48.ar(HPF.ar(out*masterLevel, hpf), lpf).tanh; // output filtering and protection
 	Out.ar(0, out!4); // write same signal to all output channels
 
-}).add;
+}).send(s);
 
 
 
@@ -118,7 +118,7 @@ SynthDef(\tt, {
 
 	Out.ar(0, (sigArray!2).flat); // play same signal to 1-4 and 5-8
 
-}).add;
+}).send(s);
 
 
 
@@ -126,7 +126,7 @@ SynthDef(\tt, {
 // Recorder
 SynthDef(\recorder, {|buf=0,primaryBus=0|
 	DiskOut.ar(buf, SoundIn.ar([0,1,2,3])++In.ar(primaryBus));
-}).add;
+}).send(s);
 
 
 "done.".postln;

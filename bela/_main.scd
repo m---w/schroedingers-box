@@ -11,12 +11,20 @@ s = Server.local;
 ~path = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
 ~wavpath = ~path+/+"sounds_preprocessed"; // path to wav files. Change "preprocessed" to "raw" for using raw wavs.
 
+
+// Settings
 ~serverLogic = true; // server-logic (fast) or sclang-logic (slow)
+~measurement = false; // toggle for measurement mode
+~debugOnsets = false; // debug printing for onset detection
+~debugSourcePos = false; // debug printing for sound localization
+~debugSound = false; // debug printing for sound triggering
+~maxVoices = 3; // maximum number of allocated voices
+~minVoices = 2; // minimum number of allocated voices (2 is basically one voice, but with smooth fadeout)
+~sendToRemote = true; // send OSC update/sync messages to remote
 
 
 // Set up options
 if(~hostname==\bela, { // If running on Bela
-	~debugMode = false;
 	s.options.sampleRate = 48000;
 	s.options.numAnalogInChannels = 4;
 	s.options.numAnalogOutChannels = 4;
@@ -36,7 +44,6 @@ if(~hostname==\bela, { // If running on Bela
 	n = [ NetAddr("192.168.0.101", 57120), NetAddr("192.168.0.102", 57120), NetAddr("192.168.0.103", 57120) ]; // set GUI addresses
 	"Bela recognized itself as Bela.".postln;
 }, { // If running elsewhere (debug)
-	~debugMode = true;
 	s.options.numInputBusChannels = 4;
 	s.options.numOutputBusChannels = 4;
 	n = [ NetAddr("localhost", 57120) ];
@@ -61,13 +68,7 @@ q = (); // other parameters
 // Variable Init
 //~tbodTriggered = false; // flag to store if TBOD has triggered
 //~fbodAgrees = false; // flag to store if FBOD agreed with TBOD
-~measurement = false; // toggle for measurement mode
-~debugOnsets = false; // debug printing for onset detection
-~debugSourcePos = false; // debug printing for sound localization
-~debugSound = true; // debug printing for sound triggering
 ~secondaryPossible = true; // flag used in secondary sound logic
-~maxVoices = 3; // maximum number of allocated voices
-~minVoices = 2; // minimum number of allocated voices (2 is basically one voice, but with smooth fadeout)
 ~presetIsReady = true; // flag to say if a preset can be loaded
 
 // Init variables that are unique to server or sclang logic
@@ -179,15 +180,13 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		p.od[\inchannels] = [0,1,2,3]; // normal
 	});
 
-	// "init done.".postln;
-	// 1.wait;
-
 
 	// START SIGNAL PROCESSING (either server-side or sclang logic)
 	if(~serverLogic, { // server logic
 
 		// start onset detection
 		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
+		s.sync;
 
 		// re-load voicer SynthDef (found no other way to set number of voices dynamically)
 		(~path+/+"voicer.scd").standardizePath.load;
@@ -198,7 +197,10 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		s.sync;
 
 		// start primary voices
-		x[\primary] = ~voices.collect{|i| Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register};
+		x[\primary] = ~voices.collect{|i|
+			s.sync;
+			Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register;
+		};
 		s.sync;
 
 		// start master
@@ -243,17 +245,21 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	});
 
 	// update remote GUI
-	n.do{|item| item.sendMsg(\bela, \primaryDB, p.primary[\level].ampdb) };
-	n.do{|item| item.sendMsg(\bela, \secondaryDB, p.secondary[\level].ampdb) };
-	n.do{|item| item.sendMsg(\bela, \yieldDB, p[\yield][\level].ampdb) };
-	// n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
-	// n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
-	// n.do{|item| item.sendMsg(\bela, \eqDryWet, p.primary[\eqDryWet]) };
-	n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.master[\hpfPrimary]) };
-	n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
-	n.do{|item| item.sendMsg(\bela, \presetName, ~presetName) };
-	n.do{|item| item.sendMsg(\bela, \secondary, ~secondary) };
-	n.do{|item| item.sendMsg(\bela, \yield, ~yield) };
+	if(~sendToRemote, {
+		n.do{|item| item.sendMsg(\bela, \primaryDB, p.primary[\level].ampdb) };
+		n.do{|item| item.sendMsg(\bela, \secondaryDB, p.secondary[\level].ampdb) };
+		n.do{|item| item.sendMsg(\bela, \yieldDB, p[\yield][\level].ampdb) };
+		// n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
+		// n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
+		// n.do{|item| item.sendMsg(\bela, \eqDryWet, p.primary[\eqDryWet]) };
+		n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.master[\hpfPrimary]) };
+		n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
+		n.do{|item| item.sendMsg(\bela, \presetName, ~presetName) };
+		n.do{|item| item.sendMsg(\bela, \secondary, ~secondary) };
+		n.do{|item| item.sendMsg(\bela, \yield, ~yield) };
+	});
+
+	s.sync;
 
 	~presetIsReady = true;
 }.fork})},'/preset');
@@ -438,7 +444,9 @@ s.waitForBoot{{
 	s.sync;
 
 	// request parameters from GUI
-	n.do{|item| item.sendMsg(\bela, \booted) }; // send request via OSC to all addresses
+	if(~sendToRemote, {
+		n.do{|item| item.sendMsg(\bela, \booted) }; // send request via OSC to all addresses
+	});
 
 	"Main Patch READY.".postln;
 }.fork};

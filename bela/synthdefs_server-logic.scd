@@ -74,7 +74,7 @@ SynthDef(\primaryVoice,{
 	// output
 	Out.ar(busnum, out); // play to bus
 
-}).add;
+}).send(s);
 
 
 
@@ -186,7 +186,7 @@ SynthDef(\od, {
 
 	Out.ar(velTrigBus, velTrig);
 
-}).add;
+}).send(s);
 
 
 
@@ -206,7 +206,7 @@ SynthDef(\testOnset, {
 
 	SendTrig.ar(gate, id: 1, value: vel); // send velocity value to language.
 
-}).add;
+}).send(s);
 
 
 

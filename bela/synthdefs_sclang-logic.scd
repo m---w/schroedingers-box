@@ -42,7 +42,7 @@ SynthDef(\primary,{
 	sig = vel * sig * level; // apply velocity and master level
 	Out.ar(busnum, sig); // play to bus
 
-}).add;
+}).send(s);
 
 
 
@@ -122,7 +122,7 @@ SynthDef(\od, {
 	SendTrig.ar(fbTrigAR, id: 2, value: 0.0); // send FBOD trigger to language. ID 2 means FBOD.
 	*/
 
-}).add;
+}).send(s);
 
 
 

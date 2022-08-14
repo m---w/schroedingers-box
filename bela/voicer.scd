@@ -55,7 +55,7 @@ SynthDef(\voicer, {
 	Out.ar(updateBus, DC.ar(0.0)!~voices); // All gates are 1 by default
 	ReplaceOut.ar(updateBus+currentVoice, DC.ar(1.0)); // update bus: only current voice is set to 1
 
-}).add;
+}).send(s);
 
 "done.".postln;
 
