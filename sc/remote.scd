@@ -331,7 +331,7 @@ OSCFunc({|msg, time|
 		"panic: panic".postln; // print message
 	});
 
-	elements[\toggles][\eq] = makeToggle.(\eq, "EQ");
+	// elements[\toggles][\eq] = makeToggle.(\eq, "EQ");
 	//elements[\toggles][\od] = makeToggle.(\od, "OD");
 	//elements[\toggles][\output] = makeToggle.(\output, "Output");
 

@@ -11,23 +11,6 @@ s = Server.local;
 ~path = PathName(thisProcess.nowExecutingPath).pathOnly; // current path
 ~wavpath = ~path+/+"sounds_preprocessed"; // path to wav files. Change "preprocessed" to "raw" for using raw wavs.
 
-
-// function to read wav files into buffers
-~fillSamples = {|filenames,channels=0|
-	// note: "filenames" needs to be an array of basenames without ".wav" extension.
-	filenames.collect{|item,i|
-		Buffer.readChannel(s, ~wavpath+/+item++".wav", channels: channels)
-	};
-};
-~fillNSamples = {|filename,nSamples,digits=2,startIndex=1,channels=0|
-	// note: "filename" needs to be a basenames without ".wav" extension and without numbering.
-	nSamples.collect{|i|
-		Buffer.readChannel(s, ~wavpath+/+filename++(i+startIndex).asPaddedString(digits)++".wav", channels: channels)
-	};
-};
-
-
-
 ~serverLogic = true; // server-logic (fast) or sclang-logic (slow)
 
 
@@ -98,6 +81,23 @@ if(~serverLogic, {
 });
 
 
+/*===================== SOUND SELECTION =====================*/
+
+
+// function to read wav files into buffers
+~fillSamples = {|filenames,channels=0|
+	// note: "filenames" needs to be an array of basenames without ".wav" extension.
+	filenames.collect{|item,i|
+		Buffer.readChannel(s, ~wavpath+/+item++".wav", channels: channels)
+	};
+};
+~fillNSamples = {|filename,nSamples,digits=2,startIndex=1,channels=0|
+	// note: "filename" needs to be a basenames without ".wav" extension and without numbering.
+	nSamples.collect{|i|
+		Buffer.readChannel(s, ~wavpath+/+filename++(i+startIndex).asPaddedString(digits)++".wav", channels: channels)
+	};
+};
+
 
 // scan for presets
 q[\presetIDs] = Array.new(1000); // Warning: hard-coded fixed size 1000, should be enough for all time!
@@ -111,9 +111,7 @@ PathName.new((~path+/+"presets").standardizePath).files.do{ |item|
 q[\presetIDs] = q[\presetIDs].sort; // Get list of found presets in ascending order
 
 
-/*===================== SOUND SELECTION =====================*/
-
-
+// OSC DEF for PRESETS
 OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	~presetIsReady = false;
 
@@ -121,15 +119,12 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	("New sound selected:"+~preset).postln; // notify
 
 	// free everything that is playing
-	//x[\tt].free;
-	//x[\secondary].free;
-	//x[\yield].free;
+	// x[\tt].free;
+	// x[\secondary].free;
+	// x[\yield].free;
 	s.freeAll; // free everything on server
 	Buffer.freeAll(s); // free all buffers on the server
 	s.sync;
-
-	// "free done.".postln;
-	// 1.wait;
 
 	// load default settings (these may be defined in the preset)
 	~secondary = false; // secondary sound on/off
@@ -191,95 +186,29 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	// START SIGNAL PROCESSING (either server-side or sclang logic)
 	if(~serverLogic, { // server logic
 
-		// Workaround against noise bursts on preset change
-		/*
-		s.sync;
-		~primaryBuffers.do{|item|
-			var end = item.numFrames-1;
-			item.set(0, 0.0, end, 0.0);
-		};
-		~secondaryBuffers.do{|item|
-			var end = item.numFrames-1;
-			item.set(0, 0.0, end, 0.0);
-		};
-		~yieldBuffers.do{|item|
-			var end = item.numFrames-1;
-			item.set(0, 0.0, end, 0.0);
-		};
-		s.sync;
-		*/
-
-		// free voicer and individual voices
-		//x[\primary].do{|item| item.free};
-		//x[\voicer].free;
-		//s.freeAll;
-		//s.sync;
-
 		// start onset detection
 		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
-
-		// "od started.".postln;
-		// 1.wait;
-
-
-
-
-		// 1.wait;
 
 		// re-load voicer SynthDef (found no other way to set number of voices dynamically)
 		(~path+/+"voicer.scd").standardizePath.load;
 		s.sync;
 
-
-
-		// 1.wait;
-
-		// mute all outputs
-		//~tempLevel = p[\primary][\level];
-		//p[\primary][\level] = inf.neg;
-		//~tempMasterLevel = p[\master][\masterLevel];
-		//p[\master][\masterLevel] = inf.neg;
-
 		// create new voicer and voices
 		x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
 		s.sync;
 
-		// "voicer started.".postln;
-		// 1.wait;
-		// 1.wait;
-
-
-
-
-
-
-
+		// start primary voices
 		x[\primary] = ~voices.collect{|i| Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register};
 		s.sync;
-
-		// "primary voices started.".postln;
-		// 1.wait;
-		// 1.wait;
-
-
 
 		// start master
 		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
 		s.sync;
 
-		// "master started.".postln;
-
-
 	}, { // SCLang logic
-
-		//s.freeAll;
-		//s.sync;
-
-
 
 		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
-
 
 		// free old voicer instance
 		v.free;
@@ -288,7 +217,6 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 		v = Voicer.new(voices: ~voices, things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
 		v.latency = nil; // set latency of the voicer. nil means as soon as possible.
 		v.stealer = \preferLate; // set voice stealing algorithm
-
 
 	});
 
@@ -326,18 +254,6 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	n.do{|item| item.sendMsg(\bela, \presetName, ~presetName) };
 	n.do{|item| item.sendMsg(\bela, \secondary, ~secondary) };
 	n.do{|item| item.sendMsg(\bela, \yield, ~yield) };
-
-	//finish
-	// if(~preset>=666){s.freeAll};
-
-
-	//0.25.wait;
-	//s.sync;
-	// set levels again
-	//p[\primary][\level] = ~tempLevel;
-	//x[\primary].do{|item| item.set([\level, p[\primary][\level]])};
-	//p[\master][\masterLevel] = ~tempMasterLevel;
-	//x[\master].set([\masterLevel, p[\master][\masterLevel]]);
 
 	~presetIsReady = true;
 }.fork})},'/preset');
@@ -506,9 +422,6 @@ s.waitForBoot{{
 	p.master[\irbufnum] = ~irSpectrum.bufnum;
 	*/
 
-	// test recorder
-	// q.testRecBuf = Buffer.alloc(s, 960000, 5); // allocate a disk i/o buffer (20*48000 = 20s)
-
 
 	/*===================== SYNTHDEFS =====================*/
 
@@ -522,12 +435,7 @@ s.waitForBoot{{
 
 	/*===================== MAIN =====================*/
 
-	// 1.wait; // wait a second
-
 	s.sync;
-
-	//x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
-	//x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
 
 	// request parameters from GUI
 	n.do{|item| item.sendMsg(\bela, \booted) }; // send request via OSC to all addresses

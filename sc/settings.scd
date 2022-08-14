@@ -17,11 +17,13 @@ e.tbHpfFreq = 4000.0; // frequency of high-pass filter in Hz  (TBOD)
 e.cancelDel = 1.0; // Delay between TBOD trigger and cancel message, in FFT frames.
 
 // FBOD
+/*
 e.fbThreshDB = -20.0; // FBOD threshold in dB
 e.fbRelaxtime = 1.0; // specifies the time (in seconds) for the normalisation to "forget" about a recent onset. If you find too much re-triggering (e.g. as a note dies away unevenly) then you might wish to increase this value.
 e.fbFloorDB = 10.0.neg; // is a lower limit, connected to the idea of how quiet the sound is expected to get without becoming indistinguishable from noise. For some cleanly-recorded classical music with wide dynamic variations, I found it helpful to go down as far as 0.000001.
 e.fbMingap = 40; // specifies a minimum gap (in FFT frames) between onset detections, a brute-force way to prevent too many doubled detections.
 e.fbMedianspan = 22; // specifies the size (in FFT frames) of the median window used for smoothing the detection function before triggering.
+*/
 
 //e.od = 1; // toggle onset detection
 //e.output = 1; // toggle output synth
@@ -59,7 +61,7 @@ e.secondaryMasterDB = 0.0; // secondary level in dB
 e.yieldMasterDB = 5.0.neg; // yield level in dB
 e.masterHPF = 146.0; // master HPF cutoff in Hz
 e.masterLPF = 6900.0; // master LPF cutoff in Hz
-e.eq = 1; // output equalization
+// e.eq = 1; // output equalization
 e.masterLevel = 14.0; // Master level in dB
 
 // Experiment
@@ -101,7 +103,7 @@ e.yield = false; // yield sound active
 e.yieldThreshold = 0.999; // threshold velocity for breaking
 
 // Secondary Sound
-e.yield = false; // secondary sound active
+e.secondary = false; // secondary sound active
 e.secondaryMinDel = 0.5; // minimum start delay
 e.secondaryMaxDel = 1.0; // maximum start delay
 e.secondaryMinCount = 1; // min onset count for secondary trigger
