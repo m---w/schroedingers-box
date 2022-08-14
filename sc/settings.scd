@@ -97,9 +97,11 @@ e.testOnsetFreq = 1.5;
 
 
 // Yield sound
+e.yield = false; // yield sound active
 e.yieldThreshold = 0.999; // threshold velocity for breaking
 
 // Secondary Sound
+e.yield = false; // secondary sound active
 e.secondaryMinDel = 0.5; // minimum start delay
 e.secondaryMaxDel = 1.0; // maximum start delay
 e.secondaryMinCount = 1; // min onset count for secondary trigger

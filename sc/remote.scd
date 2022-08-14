@@ -203,7 +203,7 @@ OSCFunc({|msg, time|
 		;
 	};
 
-	var presetSpace = " Preset Name:  ";
+	var presetSpace = " Preset name:  ";
 
 	// dictionary that is returned by the GUI function
 	var elements = ();
@@ -298,7 +298,12 @@ OSCFunc({|msg, time|
 		elements[\participantID].valueAction = (e[\participantID] + 1).max(0).min(666);
 	});
 
-	elements[\presetName] = StaticText(elements[\w].view, 300@24)
+	elements[\toggles][\secondary] = makeToggle.(\secondary, "secondary");
+	elements[\toggles][\yield] = makeToggle.(\yield, "yield");
+
+	newline.();
+
+	elements[\presetName] = StaticText(elements[\w].view, 800@24)
 	.string_(presetSpace++e[\presetName])
 	.font_(Font("Helvetica", 16))
 	.stringColor_(Color.white)

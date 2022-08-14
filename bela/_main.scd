@@ -324,6 +324,8 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 	n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.master[\hpfPrimary]) };
 	n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
 	n.do{|item| item.sendMsg(\bela, \presetName, ~presetName) };
+	n.do{|item| item.sendMsg(\bela, \secondary, ~secondary) };
+	n.do{|item| item.sendMsg(\bela, \yield, ~yield) };
 
 	//finish
 	// if(~preset>=666){s.freeAll};
