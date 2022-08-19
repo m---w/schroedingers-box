@@ -129,4 +129,21 @@ SynthDef(\recorder, {|buf=0,primaryBus=0|
 }).send(s);
 
 
+// Big red button control
+SynthDef(\bigRedButton, {
+
+	arg
+	inPin = 0;
+
+	var button;
+
+	button = DigitalIn.kr(inPin);
+
+	//button = LFPulse.kr(0.1); // for debug
+
+	SendTrig.kr(button, id: 63); // send trigger with ID 63
+
+}).send(s);
+
+
 "done.".postln;

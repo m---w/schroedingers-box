@@ -233,7 +233,9 @@ if(~serverLogic, {
 	~oscSetFunc.(\panic, {|val, addr|
 		// free synths
 
-		s.freeAll;
+		//s.freeAll;
+
+		~dspGroup.freeAll;
 
 		/*
 		//x[\master].free;

@@ -12,6 +12,13 @@ OSCdef(\triggerLogic, { |msg, time|
 	var id = msg[2];
 	var val = msg[3];
 
+	// preset increment
+	if(id==63, {
+		"DigitalIn0 triggered!".postln;
+		~bigRedButtonFunc.();
+		~presetChangeFunc.(~presetNr);
+	});
+
 	// trigger only if preset other than 0!
 	if(~preset>0, {
 

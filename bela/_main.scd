@@ -28,7 +28,7 @@ if(~hostname==\bela, { // If running on Bela
 	s.options.sampleRate = 48000;
 	s.options.numAnalogInChannels = 4;
 	s.options.numAnalogOutChannels = 4;
-	s.options.numDigitalChannels = 0;
+	s.options.numDigitalChannels = 2;
 	s.options.headphoneLevel = 0;
 	s.options.pgaGainLeft = 0;
 	s.options.pgaGainRight = 0;
@@ -112,157 +112,166 @@ PathName.new((~path+/+"presets").standardizePath).files.do{ |item|
 q[\presetIDs] = q[\presetIDs].sort; // Get list of found presets in ascending order
 
 
-// OSC DEF for PRESETS
-OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
-	~presetIsReady = false;
+// PRESET CHANGE FUNCTION
+~presetChangeFunc = { |preset|
+	if(~presetIsReady, { {
+		~presetIsReady = false;
 
-	~preset = msg[1].asInteger; // set preset
-	("New sound selected:"+~preset).postln; // notify
+		~preset = preset; // set preset
+		("New sound selected:"+~preset).postln; // notify
 
-	// free everything that is playing
-	// x[\tt].free;
-	// x[\secondary].free;
-	// x[\yield].free;
-	s.freeAll; // free everything on server
-	Buffer.freeAll(s); // free all buffers on the server
-	s.sync;
-
-	// load default settings (these may be defined in the preset)
-	~secondary = false; // secondary sound on/off
-	~yield = false; // yield sound on/off
-	~voices = 3; // number of simultaneous voices (polyphony)
-	~ampfactor = 0.0; // primary sound level
-	~ampfactorSecondary = inf.neg; // secondary sound level
-	~ampfactorYield = inf.neg; // yield sound level
-	~yieldPossible = true; // yield didn't happen yet?
-	~secondaryCutoff = 20000.0; // cutoff for secondary sound
-	~onsetCounter = 0; // onset counter (for triggering secondary sound)
-	// ~primaryBuffers.do{|item| item.free }; // free buffers of primary sounds
-	// ~secondaryBuffers.do{|item| item.free }; // free buffers of secondary sounds
-	// ~yieldBuffers.do{|item| item.free }; // free buffers of yield sounds
-	// ~dummybuffer.free;
-	~dummybuffer = Buffer.alloc(s, 32, bufnum: 0);
-	~secondaryMaxCount = 6; // secondary max count
-	~hpfPrimary = 20.0; // default value for highpass filter of primary sound
-	~primaryBuffers = [~dummybuffer, ~dummybuffer];
-	~secondaryBuffers = [~dummybuffer, ~dummybuffer];
-	~yieldBuffers = [~dummybuffer, ~dummybuffer];
-	~presetName = "---";
-	~combFilterDryWet = 1.0.neg;
-
-
-
-	// Load preset
-	if(q[\presetIDs].includes(~preset)){
-		(~path+/+"presets/sound"++~preset.asInteger ++".scd").standardizePath.load; // load preset file
-	}{
-		// Notify if no preset was selected
-		"No valid preset selected. Press the button to start!";
-		~presetName = "invalid";
-	};
-
-	// clip number of voices
-	~voices = ~voices.max(~minVoices).min(~maxVoices); // clip number of voices
-
-	// init primary sound
-	p.primary[\level] = ~ampfactor.dbamp; // map preset variable to synth variable
-	// p.primary[\combFiltDryWet] = ~combFilterDryWet; // map preset variable to synth variable
-	// p.primary[\eqGain] = ~eqGain;
-	~soundSize = ~primaryBuffers.size; // number of primary sounds in this preset
-	~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
-	~soundBufnums = ~primaryBuffers.collect{|item| item.bufnum}; // array of bufnums for sound samples of this preset
-	~lastSoundID = ~soundIndArray.choose; // choose a random start index
-
-	// measurement mode
-	if(~measurement, {
-		p.od[\inchannels] = [0,0,2,3]; // 2nd channel (ch. 1) is used for measurement and thus deactivated for onset detection
-	},{
-		p.od[\inchannels] = [0,1,2,3]; // normal
-	});
-
-
-	// START SIGNAL PROCESSING (either server-side or sclang logic)
-	if(~serverLogic, { // server logic
-
-		// start onset detection
-		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
+		// free everything that is playing
+		// x[\tt].free;
+		// x[\secondary].free;
+		// x[\yield].free;
+		~dspGroup.freeAll; // free everything in dsp group
+		Buffer.freeAll(s); // free all buffers on the server
 		s.sync;
 
-		// re-load voicer SynthDef (found no other way to set number of voices dynamically)
-		(~path+/+"voicer.scd").standardizePath.load;
-		s.sync;
+		// load default settings (these may be defined in the preset)
+		~secondary = false; // secondary sound on/off
+		~yield = false; // yield sound on/off
+		~voices = 3; // number of simultaneous voices (polyphony)
+		~ampfactor = 0.0; // primary sound level
+		~ampfactorSecondary = inf.neg; // secondary sound level
+		~ampfactorYield = inf.neg; // yield sound level
+		~yieldPossible = true; // yield didn't happen yet?
+		~secondaryCutoff = 20000.0; // cutoff for secondary sound
+		~onsetCounter = 0; // onset counter (for triggering secondary sound)
+		// ~primaryBuffers.do{|item| item.free }; // free buffers of primary sounds
+		// ~secondaryBuffers.do{|item| item.free }; // free buffers of secondary sounds
+		// ~yieldBuffers.do{|item| item.free }; // free buffers of yield sounds
+		// ~dummybuffer.free;
+		~dummybuffer = Buffer.alloc(s, 32, bufnum: 0);
+		~secondaryMaxCount = 6; // secondary max count
+		~hpfPrimary = 20.0; // default value for highpass filter of primary sound
+		~primaryBuffers = [~dummybuffer, ~dummybuffer];
+		~secondaryBuffers = [~dummybuffer, ~dummybuffer];
+		~yieldBuffers = [~dummybuffer, ~dummybuffer];
+		~presetName = "---";
+		~combFilterDryWet = 1.0.neg;
 
-		// create new voicer and voices
-		x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
-		s.sync;
 
-		// start primary voices
-		x[\primary] = ~voices.collect{|i|
-			s.sync;
-			Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register;
+
+		// Load preset
+		if(q[\presetIDs].includes(~preset)){
+			(~path+/+"presets/sound"++~preset.asInteger ++".scd").standardizePath.load; // load preset file
+		}{
+			// Notify if no preset was selected
+			"No valid preset selected. Press the button to start!";
+			~presetName = "invalid";
 		};
+
+		// clip number of voices
+		~voices = ~voices.max(~minVoices).min(~maxVoices); // clip number of voices
+
+		// init primary sound
+		p.primary[\level] = ~ampfactor.dbamp; // map preset variable to synth variable
+		// p.primary[\combFiltDryWet] = ~combFilterDryWet; // map preset variable to synth variable
+		// p.primary[\eqGain] = ~eqGain;
+		~soundSize = ~primaryBuffers.size; // number of primary sounds in this preset
+		~soundIndArray = (0..(~soundSize-1)); // array of primary sound indices
+		~soundBufnums = ~primaryBuffers.collect{|item| item.bufnum}; // array of bufnums for sound samples of this preset
+		~lastSoundID = ~soundIndArray.choose; // choose a random start index
+
+		// measurement mode
+		if(~measurement, {
+			p.od[\inchannels] = [0,0,2,3]; // 2nd channel (ch. 1) is used for measurement and thus deactivated for onset detection
+		},{
+			p.od[\inchannels] = [0,1,2,3]; // normal
+		});
+
+
+		// START SIGNAL PROCESSING (either server-side or sclang logic)
+		if(~serverLogic, { // server logic
+
+			// start onset detection
+			x[\od] = Synth.new(\od, p.od.asKeyValuePairs, target: ~dspGroup, addAction: \addToHead).register; // start onset detection synth
+			s.sync;
+
+			// re-load voicer SynthDef (found no other way to set number of voices dynamically)
+			(~path+/+"voicer.scd").standardizePath.load;
+			s.sync;
+
+			// create new voicer and voices
+			x[\voicer] = Synth.after(x[\od], \voicer, p[\voicer].asKeyValuePairs).register;
+			s.sync;
+
+			// start primary voices
+			x[\primary] = ~voices.collect{|i|
+				s.sync;
+				Synth.after(x[\voicer], \primaryVoice, [\voiceID, i]++p[\primary].asKeyValuePairs).register;
+			};
+			s.sync;
+
+			// start master
+			x[\master] = Synth.new(\master, p.master.asKeyValuePairs, target: ~dspGroup, addAction: \addToTail).register; // start master synth
+			s.sync;
+
+		}, { // SCLang logic
+
+			x[\od] = Synth.new(\od, p.od.asKeyValuePairs, target: ~dspGroup, addAction: \addToHead).register; // start onset detection synth
+			x[\master] = Synth.new(\master, p.master.asKeyValuePairs, target: ~dspGroup, addAction: \addToTail).register; // start master synth
+
+			// free old voicer instance
+			v.free;
+
+			// new voicer setup
+			v = Voicer.new(voices: ~voices, things: \primary, bus: p.primary[\busnum], target: ~dspGroup, addAction: \addToHead); // start new voicer
+			v.latency = nil; // set latency of the voicer. nil means as soon as possible.
+			v.stealer = \preferLate; // set voice stealing algorithm
+
+		});
+
+		// init master
+		p.master[\hpfPrimary] = ~hpfPrimary; // map preset variable to synth variable
+		x[\master].set([\hpfPrimary, p.master[\hpfPrimary]]); // set hpf cutoff of primary sound in master synth
+
+		// init secondary sound
+		p.secondary[\level] = ~ampfactorSecondary.dbamp;
+		p.secondary[\upperCutoff] = ~secondaryCutoff;
+		p.secondary[\secondaryMaxCount] = ~secondaryMaxCount;
+		if(~secondary, {
+			~secondarySize = ~secondaryBuffers.size; // number of secondary sounds in this preset
+			~secondaryIndArray = (0..(~secondarySize-1)); // array of secondary sound indices
+			~lastSecondaryID = ~secondaryIndArray.choose; // choose a random start index
+		});
+
+		// init yield sound
+		p[\yield][\level] = ~ampfactorYield.dbamp;
+		if(~yield, {
+			~yieldSize = ~yieldBuffers.size; // number of yield sounds in this preset
+			~yieldIndArray = (0..(~yieldSize-1)); // array of yield sound indices
+			~lastYieldID = ~yieldIndArray.choose; // choose a random start index
+		});
+
+		// update remote GUI
+		if(~sendToRemote, {
+			n.do{|item| item.sendMsg(\bela, \primaryDB, p.primary[\level].ampdb) };
+			n.do{|item| item.sendMsg(\bela, \secondaryDB, p.secondary[\level].ampdb) };
+			n.do{|item| item.sendMsg(\bela, \yieldDB, p[\yield][\level].ampdb) };
+			// n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
+			// n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
+			// n.do{|item| item.sendMsg(\bela, \eqDryWet, p.primary[\eqDryWet]) };
+			n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.master[\hpfPrimary]) };
+			n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
+			n.do{|item| item.sendMsg(\bela, \presetName, ~presetName) };
+			n.do{|item| item.sendMsg(\bela, \secondary, ~secondary) };
+			n.do{|item| item.sendMsg(\bela, \yield, ~yield) };
+		});
+
 		s.sync;
 
-		// start master
-		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
-		s.sync;
+		~presetIsReady = true;
+	}.fork})
+};
 
-	}, { // SCLang logic
 
-		x[\od] = Synth.new(\od, p.od.asKeyValuePairs, addAction: \addToHead).register; // start onset detection synth
-		x[\master] = Synth.new(\master, p.master.asKeyValuePairs, addAction: \addToTail).register; // start master synth
-
-		// free old voicer instance
-		v.free;
-
-		// new voicer setup
-		v = Voicer.new(voices: ~voices, things: \primary, bus: p.primary[\busnum], addAction: \addToHead); // start new voicer
-		v.latency = nil; // set latency of the voicer. nil means as soon as possible.
-		v.stealer = \preferLate; // set voice stealing algorithm
-
-	});
-
-	// init master
-	p.master[\hpfPrimary] = ~hpfPrimary; // map preset variable to synth variable
-	x[\master].set([\hpfPrimary, p.master[\hpfPrimary]]); // set hpf cutoff of primary sound in master synth
-
-	// init secondary sound
-	p.secondary[\level] = ~ampfactorSecondary.dbamp;
-	p.secondary[\upperCutoff] = ~secondaryCutoff;
-	p.secondary[\secondaryMaxCount] = ~secondaryMaxCount;
-	if(~secondary, {
-		~secondarySize = ~secondaryBuffers.size; // number of secondary sounds in this preset
-		~secondaryIndArray = (0..(~secondarySize-1)); // array of secondary sound indices
-		~lastSecondaryID = ~secondaryIndArray.choose; // choose a random start index
-	});
-
-	// init yield sound
-	p[\yield][\level] = ~ampfactorYield.dbamp;
-	if(~yield, {
-		~yieldSize = ~yieldBuffers.size; // number of yield sounds in this preset
-		~yieldIndArray = (0..(~yieldSize-1)); // array of yield sound indices
-		~lastYieldID = ~yieldIndArray.choose; // choose a random start index
-	});
-
-	// update remote GUI
-	if(~sendToRemote, {
-		n.do{|item| item.sendMsg(\bela, \primaryDB, p.primary[\level].ampdb) };
-		n.do{|item| item.sendMsg(\bela, \secondaryDB, p.secondary[\level].ampdb) };
-		n.do{|item| item.sendMsg(\bela, \yieldDB, p[\yield][\level].ampdb) };
-		// n.do{|item| item.sendMsg(\bela, \secondaryCutoff, p.secondary[\upperCutoff]) };
-		// n.do{|item| item.sendMsg(\bela, \combFiltDryWet, p.primary[\combFilterDryWet]) };
-		// n.do{|item| item.sendMsg(\bela, \eqDryWet, p.primary[\eqDryWet]) };
-		n.do{|item| item.sendMsg(\bela, \hpfPrimary, p.master[\hpfPrimary]) };
-		n.do{|item| item.sendMsg(\bela, \secondaryMaxCount, p.secondary[\secondaryMaxCount]) };
-		n.do{|item| item.sendMsg(\bela, \presetName, ~presetName) };
-		n.do{|item| item.sendMsg(\bela, \secondary, ~secondary) };
-		n.do{|item| item.sendMsg(\bela, \yield, ~yield) };
-	});
-
-	s.sync;
-
-	~presetIsReady = true;
-}.fork})},'/preset');
+// OSC DEF for PRESETS
+OSCdef(\preset, { | msg, time |
+	var preset = msg[1].asInteger;
+	~presetChangeFunc.(preset);
+},'/preset');
 
 
 /*===================== GUI Control / OSC Receivers =====================*/
@@ -270,10 +279,17 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 (~path+/+"oscReceivers.scd").standardizePath.load; // load OSC receivers
 
 
+/*===================== Red Button on DigitalIn =====================*/
+
+(~path+/+"bigRedButtonBela.scd").standardizePath.load; // load OSC receivers
+
+
+
 /*===================== SOUND TRIGGERING =====================*/
 
 
 // Same for both versions
+
 
 /*--------------- Same for both versions: Randomization, mapping functions, yield and secondary sound ----------------*/
 
@@ -329,7 +345,7 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 			~secondaryPossible = false; // block secondary sound triggers until the synth has started
 			fork{
 				~randSecondaryDelay.().wait;
-				x[\secondary] = Synth.new(\secondary, p.secondary.asKeyValuePairs, addAction: \addToHead).register;
+				x[\secondary] = Synth.new(\secondary, p.secondary.asKeyValuePairs, target: ~dspGroup, addAction: \addToHead).register;
 				if(~debugSound, {
 					"Secondary sound started.".postln;
 				});
@@ -353,7 +369,7 @@ OSCdef(\preset, { | msg, time | if(~presetIsReady, { {
 			p[\yield][\vel] = p.primary[\vel]; // set yield velocity equal to primary velocity
 			p[\yield][\bufnum] = ~yieldBuffers[~chooseYield.()]; // choose random sample
 			p[\yield][\rate] = ~randRate.(); // choose random playback rate
-			x[\yield] = Synth.new(\yield, p[\yield].asKeyValuePairs, addAction: \addToHead); // create synth
+			x[\yield] = Synth.new(\yield, p[\yield].asKeyValuePairs, target: ~dspGroup, addAction: \addToHead); // create synth
 			// ~yieldPossible = false; // yield not possible anymore // WARNING: yield is always possible!
 		};
 	};
@@ -375,6 +391,10 @@ if(~serverLogic, {
 s.waitForBoot{{
 
 	/*===================== BUS AND BUFFER ALLOCATIONS =====================*/
+
+	// create server groups
+	~dspGroup = Group.new(s); // in this group are all synths for onset detection and sound processing
+	~ctlGroup = Group.new(s); // in this group is only ctl stuff (sensors)
 
 	// allocate busses
 	p.primary[\busnum] = Bus.audio(s, numChannels: 1);
@@ -438,6 +458,14 @@ s.waitForBoot{{
 	}, {
 		(~path+/+"synthdefs_sclang-logic.scd").standardizePath.load; // load synth defs
 	});
+
+	/*===================== CTL =====================*/
+
+	s.sync;
+
+	// start ctl synth for big red button
+	x[\bigRedButton] = Synth.new(\bigRedButton, [\inPin, 0], target: ~ctlGroup);
+
 
 	/*===================== MAIN =====================*/
 
