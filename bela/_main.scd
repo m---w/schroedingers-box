@@ -23,6 +23,8 @@ s = Server.local;
 ~sendToRemote = true; // send OSC update/sync messages to remote
 
 
+
+
 // Set up options
 if(~hostname==\bela, { // If running on Bela
 	s.options.sampleRate = 48000;
@@ -80,6 +82,105 @@ if(~serverLogic, {
 	~globalvel = 0.0; // init velocity
 	~sourcePos = 0.0!2; // init source position
 });
+
+
+// SETTINGS MAPPING INIT
+
+(~path+/+"../sc/settings.scd").standardizePath.load; // load settings file
+
+p[\od].tbThresh = e.tbThreshDB.dbamp;
+p[\od].tbThreshLo = e.tbThreshLoDB.dbamp;
+p[\od].velDelay = e.velDelay;
+p[\od].tbRefPeriod = e.tbRefPeriod;
+p[\od].tbLpf1Freq = e.tbLpf1Freq;
+p[\od].tbLpf2Freq = e.tbLpf2Freq;
+p[\od].tbHpfFreq = e.tbHpfFreq;
+p[\od].inGain1 = e.inGain1.dbamp;
+p[\od].inGain1 = e.inGain2.dbamp;
+p[\od].inGain1 = e.inGain3.dbamp;
+p[\od].inGain1 = e.inGain4.dbamp;
+
+q.rateRand = e.rateRand + 1.0;
+q.yieldThreshold = e.yieldThreshold;
+q.secondaryMinDel = e.secondaryMinDel;
+q.secondaryMaxDel = e.secondaryMaxDel;
+q.secondaryMinCount = e.secondaryMinCount;
+q.secondaryMaxCount = e.secondaryMaxCount;
+q.secondaryCountCurve = e.secondaryCountCurve;
+q.testOnsetVel = e.testOnsetVel;
+q.testOnsetFreq = e.testOnsetFreq;
+q.testOnsetPosX = e.testOnsetPosX;
+q.testOnsetPosY = e.testOnsetPosY;
+
+
+if(~serverLogic, {
+	// Server Logic
+	p.od.velMapInMax = e.velMapInMax;
+	p.od.velMapOutMin = e.velMapOutMin;
+	p.od.velMapOutMax = e.velMapOutMax;
+	p.primary.velPeakLevel = e.velPeakLevel;
+	p.primary.velPeakMapZeroDB = e.velPeakMapZeroDB;
+	p.voicer.eqMinFreq = e.eqMinFreq;
+	p.voicer.eqMaxFreq = e.eqMaxFreq;
+	p.voicer.slMaxPlaybackRate = e.slMaxPlaybackRate;
+	q.slMaxRatio = e.slMaxRatio;
+	p.od.slMaxRatioDB = q.slMaxRatio.ampdb;
+
+}, {
+	// SCLang Logic
+	q.velMapInMin = e.velMapInMin;
+	q.velMapInMax = e.velMapInMax;
+	q.velMapOutMin = e.velMapOutMin;
+	q.velMapOutMax = e.velMapOutMax;
+	q.velMapCurve = e.velMapCurve;
+	q.velPeakLevel = e.velPeakLevel;
+	q.velPeakMapZeroDB = e.velPeakMapZeroDB;
+	q.eqMinFreq = e.eqMinFreq;
+	q.eqMaxFreq = e.eqMaxFreq;
+	q.velMapInMin = e.velMapInMin;
+	q.slMaxPlaybackRate = e.slMaxPlaybackRate;
+	q.slMinPlaybackRate = q.slMaxPlaybackRate.reciprocal;
+	q.slMaxRatio = e.slMaxRatio;
+	q.slMinRatio = q.slMaxRatio.reciprocal;
+});
+
+// Primary Sound
+p.primary.eqGain = e.eqGain;
+p.primary.eqRQ = e.eqRQ;
+p.primary.level = e.primaryDB.dbamp;
+p.primary.velEnvDur = e.velEnvDur;
+p.master.hpfPrimary = e.hpfPrimary;
+
+// Secondary Sound
+p.secondary.upperCutoff = e.secondaryCutoff;
+p.secondary.level = e.secondaryDB.dbamp;
+
+// Yield Sound
+p[\yield].level = e.yieldDB.dbamp;
+
+// Master
+p.master.primaryLevel = e.primaryMasterDB.dbamp;
+p.master.secondaryLevel = e.secondaryMasterDB.dbamp;
+p.master.yieldLevel = e.yieldMasterDB.dbamp;
+p.master.lpf = e.masterLPF;
+p.master.hpf = e.masterHPF;
+p.master.eq = e.eq;
+p.master.masterLevel = e.masterLevel.dbamp;
+
+// Test Tone Generator
+p.tt.testFreq = e.testFreq;
+p.tt.noiseMasterDB = e.noiseMasterDB;
+p.tt.sineMasterDB = e.sineMasterDB;
+p.tt.toggleSine = e.toggleSine;
+p.tt.toggleNoise = e.toggleNoise;
+p.tt.toggle1 = e.toggle1;
+p.tt.toggle2 = e.toggle2;
+p.tt.toggle3 = e.toggle3;
+p.tt.toggle4 = e.toggle4;
+p.tt.flip1 = e.flip1;
+p.tt.flip2 = e.flip2;
+p.tt.flip3 = e.flip3;
+p.tt.flip4 = e.flip4;
 
 
 /*===================== SOUND SELECTION =====================*/

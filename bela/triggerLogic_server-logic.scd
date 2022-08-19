@@ -14,7 +14,7 @@ OSCdef(\triggerLogic, { |msg, time|
 
 	// preset increment
 	if(id==63, {
-		"DigitalIn0 triggered!".postln;
+		// "DigitalIn0 triggered!".postln;
 		~bigRedButtonFunc.();
 		~presetChangeFunc.(~presetNr);
 	});
