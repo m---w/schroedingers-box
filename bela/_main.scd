@@ -86,7 +86,7 @@ if(~serverLogic, {
 
 // SETTINGS MAPPING INIT
 
-(~path+/+"../sc/settings.scd").standardizePath.load; // load settings file
+(~path+/+"settings.scd").standardizePath.load; // load settings file
 
 p[\od].tbThresh = e.tbThreshDB.dbamp;
 p[\od].tbThreshLo = e.tbThreshLoDB.dbamp;

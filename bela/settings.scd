@@ -62,7 +62,7 @@ e.yieldMasterDB = 5.0.neg; // yield level in dB
 e.masterHPF = 50.0; // 146.0; // master HPF cutoff in Hz
 e.masterLPF = 18000.0; // 6900.0; // master LPF cutoff in Hz
 // e.eq = 1; // output equalization
-e.masterLevel = 14.0; // Master level in dB
+e.masterLevel = 6.0; // Master level in dB
 
 // Experiment
 e.participantID = 0; // participant ID
