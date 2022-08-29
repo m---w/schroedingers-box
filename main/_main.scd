@@ -20,8 +20,8 @@ s = Server.local;
 ~debugSound = false; // debug printing for sound triggering
 ~maxVoices = 3; // maximum number of allocated voices
 ~minVoices = 2; // minimum number of allocated voices (2 is basically one voice, but with smooth fadeout)
-~sendToRemote = true; // send OSC update/sync messages to remote
-
+~sendToRemote = false; // send OSC update/sync messages to remote
+~receiveOSC = false; // receive OSC messages
 
 
 
@@ -368,16 +368,20 @@ q[\presetIDs] = q[\presetIDs].sort; // Get list of found presets in ascending or
 };
 
 
-// OSC DEF for PRESETS
-OSCdef(\preset, { | msg, time |
-	var preset = msg[1].asInteger;
-	~presetChangeFunc.(preset);
-},'/preset');
-
 
 /*===================== GUI Control / OSC Receivers =====================*/
 
-(~path+/+"oscReceivers.scd").standardizePath.load; // load OSC receivers
+// OSC DEF for PRESETS
+if(~receiveOSC, {
+
+	OSCdef(\preset, { | msg, time |
+		var preset = msg[1].asInteger;
+		~presetChangeFunc.(preset);
+	},'/preset');
+
+	(~path+/+"oscReceivers.scd").standardizePath.load; // load OSC receivers
+
+});
 
 
 /*===================== Red Button on DigitalIn =====================*/

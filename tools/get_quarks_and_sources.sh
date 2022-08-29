@@ -10,6 +10,10 @@ echo "cloning sources..."
 mkdir -p $script_path/../install/quarks
 cd $script_path/../install/quarks
 
+if [ ! -d "quarks" ] ; then
+    git clone https://github.com/supercollider-quarks/quarks.git
+fi
+
 if [ ! -d "ddwVoicer" ] ; then
     git clone https://github.com/supercollider-quarks/ddwVoicer.git
 fi

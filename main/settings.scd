@@ -99,7 +99,7 @@ e.testOnsetFreq = 1.5;
 
 
 // Yield sound
-e.yield = false; // yield sound active
+e[\yield] = false; // yield sound active
 e.yieldThreshold = 0.999; // threshold velocity for breaking
 
 // Secondary Sound

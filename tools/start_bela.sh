@@ -4,6 +4,8 @@ CWD=$(pwd)
 BELAIP="bela.local"
 script_path=$(dirname $(readlink -f $0))
 
+$script_path/./set_date.sh
+
 # go to bela repository
 cd $script_path/../src/Bela/scripts
 
