@@ -41,10 +41,10 @@ e.velEnvDur = 0.04; // release time of velocity-controlled high-shelf
 e.velPeakLevel = 10.0; // peak level in dB for velocity-controlled high-shef
 e.velPeakMapCurve = 0.0; // HF Boost Curve Parameter
 e.velPeakMapZeroDB = -5.0; // HF Boost 0dB value. At the given value in dB there will be no HF boost. Above will be HF boost, below will be HF cut.
-e.inGain1 = -7.0; // input gain of Mic Channel 1
-e.inGain2 = 0.0; // input gain of Mic Channel 2
-e.inGain3 = 0.0; // input gain of Mic Channel 3
-e.inGain4 = -1.0; // input gain of Mic Channel 4
+e.inGain1 = -7.0; //-7.0; // input gain of Mic Channel 1
+e.inGain2 = 0.0; //0.0; // input gain of Mic Channel 2
+e.inGain3 = -4.0; //0.0; // input gain of Mic Channel 3
+e.inGain4 = 0.0; //-1.0; // input gain of Mic Channel 4
 
 // Preset Settings
 e.primaryDB = inf.neg; // primary level in dB
@@ -59,8 +59,8 @@ e.hpfPrimary = 20;
 e.primaryMasterDB = 0.0; // primary level in dB
 e.secondaryMasterDB = 0.0; // secondary level in dB
 e.yieldMasterDB = 5.0.neg; // yield level in dB
-e.masterHPF = 50.0; // 146.0; // master HPF cutoff in Hz
-e.masterLPF = 18000.0; // 6900.0; // master LPF cutoff in Hz
+e.masterHPF = 300.0; // 146.0; // master HPF cutoff in Hz
+e.masterLPF = 5000.0; // 6900.0; // master LPF cutoff in Hz
 // e.eq = 1; // output equalization
 e.masterLevel = 6.0; // Master level in dB
 

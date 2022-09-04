@@ -79,7 +79,7 @@ SynthDef(\master, {
 	// mute first few ms of creation
 	//out = out * EnvGen.kr(Env([0,0,1], [0.2, 0.05]), doneAction: 0);
 
-	out = Lop48.ar(HPF.ar(out*masterLevel, hpf), lpf).tanh; // output filtering and protection
+	out = Lop48.ar(Hip48.ar(out*masterLevel, hpf), lpf).tanh; // output filtering and protection
 	Out.ar(0, out!4); // write same signal to all output channels
 
 }).send(s);
@@ -116,7 +116,8 @@ SynthDef(\tt, {
 	var toggles = [toggle1, toggle2, toggle3, toggle4]; // channel state switches
 	var sigArray = toggles*flipToggles*sig; // 4ch test signal
 
-	Out.ar(0, (sigArray!2).flat); // play same signal to 1-4 and 5-8
+	// Out.ar(0, (sigArray!2).flat); // play same signal to 1-4 and 5-8
+	Out.ar(0, sigArray); // play same signal to 1-4
 
 }).send(s);
 

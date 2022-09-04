@@ -117,7 +117,7 @@ SynthDef(\od, {
 	sigRaw = SoundIn.ar(inchannels) * [inGain1, inGain2, inGain3, inGain4]; // input channels
 	// sigRawSum = sigRaw.sum; // mono mix version
 
-	sigRawAbs = HPF.ar(sigRaw, 1500.0).abs; // velocity signal
+	sigRawAbs = Hip48.ar(sigRaw, 1500.0).abs; // velocity signal
 
 
 	//=== TBOD ===
