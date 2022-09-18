@@ -16,6 +16,6 @@ rsync -avz --delete $script_path/../Extensions/ root@bela.local:~/.local/share/S
 
 rsync -avz $script_path/../src/supercollider/SCClassLibrary/* root@bela.local:/usr/share/SuperCollider/SCClassLibrary/
 
-rsync -avz --delete $script_path/../install/quarks/* root@bela.local:/root/.local/share/SuperCollider/Extensions/
+rsync -avz --delete --exclude '*.git' $script_path/../install/quarks/* root@bela.local:/root/.local/share/SuperCollider/Extensions/
 
 echo "done."
