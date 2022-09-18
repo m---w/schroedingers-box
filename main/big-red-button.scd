@@ -4,7 +4,7 @@ Midi connection to button controller
 and preset selection routine
 */
 
-
+/*
 fork{
 
 	// initialize the midi client
@@ -85,3 +85,4 @@ fork{
 	"Big red button initialised".postln;
 
 };
+*/

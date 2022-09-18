@@ -3,4 +3,4 @@
 ~secondaryBuffers = ~fillNSamples.("party-trompete_var", 6);
 ~secondary = true;
 ~ampfactor = 0.0;
-~ampfactorSecondary = 20;
+~ampfactorSecondary = 10;

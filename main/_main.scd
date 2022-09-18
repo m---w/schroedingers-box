@@ -20,8 +20,8 @@ s = Server.local;
 ~debugSound = false; // debug printing for sound triggering
 ~maxVoices = 3; // maximum number of allocated voices
 ~minVoices = 2; // minimum number of allocated voices (2 is basically one voice, but with smooth fadeout)
-~sendToRemote = true; // send OSC update/sync messages to remote
-~receiveOSC = true; // receive OSC messages
+~sendToRemote = false; // send OSC update/sync messages to remote
+~receiveOSC = false; // receive OSC messages
 
 
 

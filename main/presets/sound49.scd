@@ -3,5 +3,5 @@
 ~secondaryBuffers = ~fillSamples.(["boiler"]);
 ~secondary = true;
 ~ampfactor = 3.0;
-~ampfactorSecondary = 10.0;
+~ampfactorSecondary = 4.0;
 ~combFilterDryWet = 1.0;

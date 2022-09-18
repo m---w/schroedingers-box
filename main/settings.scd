@@ -59,8 +59,8 @@ e.hpfPrimary = 20;
 e.primaryMasterDB = 0.0; // primary level in dB
 e.secondaryMasterDB = 0.0; // secondary level in dB
 e.yieldMasterDB = 5.0.neg; // yield level in dB
-e.masterHPF = 300.0; // 146.0; // master HPF cutoff in Hz
-e.masterLPF = 5000.0; // 6900.0; // master LPF cutoff in Hz
+e.masterHPF = 250.0; // 146.0; // master HPF cutoff in Hz
+e.masterLPF = 20000.0; // 6900.0; // master LPF cutoff in Hz
 // e.eq = 1; // output equalization
 e.masterLevel = 6.0; // Master level in dB
 

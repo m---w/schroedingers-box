@@ -16,7 +16,7 @@ OSCdef(\triggerLogic, { |msg, time|
 	if(id==63, {
 		// "DigitalIn0 triggered!".postln;
 		~bigRedButtonFunc.();
-		~presetChangeFunc.(~presetNr);
+		~presetChangeFunc.(~preset);
 	});
 
 	// trigger only if preset other than 0!
